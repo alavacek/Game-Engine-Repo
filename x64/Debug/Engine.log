@@ -1,0 +1,16 @@
+﻿  Engine.cpp
+C:\Users\allie\Documents\Game Engine\HW6\Engine\src\SDLHelper.h(227,60): warning C4127: conditional expression is constant
+C:\Users\allie\Documents\Game Engine\HW6\Engine\src\SDLHelper.h(227,60): message : consider using 'if constexpr' statement instead
+C:\Users\allie\Documents\Game Engine\HW6\Engine\src\EngineUtils.h(30,30): warning C4189: 'errorCode': local variable is initialized but not referenced
+C:\Users\allie\Documents\Game Engine\HW6\Engine\src\Engine.cpp(112,9): warning C4553: '==': result of expression not used; did you intend '='?
+C:\Users\allie\Documents\Game Engine\HW6\Engine\src\Engine.cpp(430,45): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\allie\Documents\Game Engine\HW6\Engine\src\Engine.cpp(430,33): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\allie\Documents\Game Engine\HW6\Engine\src\Engine.cpp(441,32): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\allie\Documents\Game Engine\HW6\Engine\src\AudioHelper.h(125): warning C4702: unreachable code
+C:\Users\allie\Documents\Game Engine\HW6\Engine\src\SDLHelper.h(323): warning C4702: unreachable code
+  Engine.vcxproj -> C:\Users\allie\Documents\Game Engine\HW6\Engine\x64\Debug\Engine.exe
+  dlls\SDL2.dll
+  dlls\SDL2_image.dll
+  dlls\SDL2_mixer.dll
+  dlls\SDL2_ttf.dll
+          4 file(s) copied.

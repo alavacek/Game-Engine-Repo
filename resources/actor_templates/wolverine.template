@@ -1,0 +1,13 @@
+{
+  "name": "wolverine_template",
+  "view": "w",
+  "transform_position_x": 0,
+  "transform_position_y": 0,
+  "vel_x": 0,
+  "vel_y": 0,
+  "blocking": true,
+  "nearby_dialogue": "nearby template dialogue",
+  "contact_dialogue": "nearby contact dialogue",
+  "view_image": "dog",
+  "render_order": 1
+}
