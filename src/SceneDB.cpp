@@ -33,7 +33,6 @@ void SceneDB::LoadScene(const std::string& sceneName)
     const rapidjson::Value& actors = configDocument["actors"];
 
     // Clear the entities vector in case it's been used before
-    entities.clear();
     entityRenderOrder.clear();
 
 
@@ -45,8 +44,8 @@ void SceneDB::LoadScene(const std::string& sceneName)
         // Set base values
         std::string name = "";
         char view = '?';
-        int vel_x = 0;
-        int vel_y = 0;
+        float vel_x = 0;
+        float vel_y = 0;
         bool blocking = false;
         std::string nearbyDialogue = "";
         std::string contactDialogue = "";
@@ -71,7 +70,7 @@ void SceneDB::LoadScene(const std::string& sceneName)
 
                 transform = new Transform(entityTemplate->transform->position, entityTemplate->transform->scale, entityTemplate->transform->rotationDegrees);
                 spriteRenderer = new SpriteRenderer(entityTemplate->spriteRenderer->viewImageName, entityTemplate->spriteRenderer->viewPivotOffset, entityTemplate->spriteRenderer->renderOrder);
-
+                spriteRenderer->viewImageBack = entityTemplate->spriteRenderer->viewImageBack;
             }
             else
             {
@@ -84,8 +83,8 @@ void SceneDB::LoadScene(const std::string& sceneName)
         // Override template if applicable
         name = actor.HasMember("name") ? actor["name"].GetString() : name;
         view = actor.HasMember("view") ? actor["view"].GetString()[0] : view;
-        vel_x = actor.HasMember("vel_x") ? actor["vel_x"].GetInt() : vel_x;
-        vel_y = actor.HasMember("vel_y") ? actor["vel_y"].GetInt() : vel_y;
+        vel_x = actor.HasMember("vel_x") ? actor["vel_x"].GetFloat() : vel_x;
+        vel_y = actor.HasMember("vel_y") ? actor["vel_y"].GetFloat() : vel_y;
         blocking = actor.HasMember("blocking") ? actor["blocking"].GetBool() : blocking;
         nearbyDialogue = actor.HasMember("nearby_dialogue") ? actor["nearby_dialogue"].GetString() : nearbyDialogue;
         contactDialogue = actor.HasMember("contact_dialogue") ? actor["contact_dialogue"].GetString() : contactDialogue;
@@ -119,6 +118,12 @@ void SceneDB::LoadScene(const std::string& sceneName)
         {
             spriteRenderer->viewImageName = actor.HasMember("view_image") ? actor["view_image"].GetString() : spriteRenderer->viewImageName;
 
+            std::string viewImageBackName = actor.HasMember("view_image_back") ? actor["view_image_back"].GetString() : "";
+            if (viewImageBackName != "")
+            {
+                spriteRenderer->viewImageBack = ImageDB::LoadImage(viewImageBackName);
+            }
+
             spriteRenderer->viewPivotOffset.x = actor.HasMember("view_pivot_offset_x") ? actor["view_pivot_offset_x"].GetDouble() : spriteRenderer->viewPivotOffset.x;
             spriteRenderer->viewPivotOffset.y = actor.HasMember("view_pivot_offset_y") ? actor["view_pivot_offset_y"].GetDouble() : spriteRenderer->viewPivotOffset.y;
 
@@ -127,11 +132,14 @@ void SceneDB::LoadScene(const std::string& sceneName)
                 spriteRenderer->renderOrder = actor["render_order"].GetInt();
             }
 
+            spriteRenderer->movementBounce = actor.HasMember("movement_bounce_enabled") ? actor["movement_bounce_enabled"].GetBool() : spriteRenderer->movementBounce;
+
             spriteRenderer->ChangeSprite(spriteRenderer->viewImageName, spriteRenderer->viewPivotOffset);
         }
         else
         {
             std::string viewImageName = actor.HasMember("view_image") ? actor["view_image"].GetString() : "";
+            std::string viewImageBackName = actor.HasMember("view_image_back") ? actor["view_image_back"].GetString() : "";
 
             double viewPivotOffsetX = actor.HasMember("view_pivot_offset_x") ? actor["view_pivot_offset_x"].GetDouble() : -1.0;
             double viewPivotOffsetY = actor.HasMember("view_pivot_offset_y") ? actor["view_pivot_offset_y"].GetDouble() : -1.0;
@@ -146,18 +154,20 @@ void SceneDB::LoadScene(const std::string& sceneName)
                 renderOrder = std::nullopt;
             }
 
-            spriteRenderer = new SpriteRenderer(viewImageName, glm::dvec2(viewPivotOffsetX, viewPivotOffsetY), renderOrder);
+            bool movementBounce = actor.HasMember("movement_bounce_enabled") ? actor["movement_bounce_enabled"].GetBool() : false;
+
+            spriteRenderer = new SpriteRenderer(viewImageName, glm::dvec2(viewPivotOffsetX, viewPivotOffsetY), renderOrder, viewImageBackName, movementBounce);
         }
         
 
         // Create the Entity object
         Entity* entity = new Entity(
-            name, view, glm::ivec2(vel_x, vel_y), blocking, nearbyDialogue, contactDialogue, transform, spriteRenderer
+            name, view, glm::vec2(vel_x, vel_y), blocking, nearbyDialogue, contactDialogue, transform, spriteRenderer
         );
 
         // Add the entity to the entities vector
-        entities.push_back(entity);
         entityRenderOrder.push_back(entity);
+        entities.push_back(entity);
 
         if (name == "player")
         {
@@ -167,10 +177,11 @@ void SceneDB::LoadScene(const std::string& sceneName)
         entity->entityID = totalEntities;
         totalEntities++;
 
-        glm::ivec2 position(transform->position.x, transform->position.y);
+        glm::vec2 position(transform->position.x, transform->position.y);
 
+        glm::ivec2 hashedPosition = HashPositionToBucket(position);
         // Check if the position already exists in the map
-        locationOfEntitiesInScene[transform->position.x][transform->position.y].push_back(entity);
+        locationOfEntitiesInScene[hashedPosition.x][hashedPosition.y].push_back(entity);
 
         if (transform->position.x > maxWidth)
         {
@@ -247,7 +258,7 @@ Entity* SceneDB::GetPlayerEntity() {
 
 uint64_t SceneDB::GetNumberOfEntitiesInScene()
 {
-    return entities.size();
+    return entityRenderOrder.size();
 }
 
 Entity* SceneDB::GetEntityAtIndex(int index)
@@ -270,38 +281,52 @@ uint64_t SceneDB::GetSceneMaxWidth()
     return maxWidth;
 }
 
-void SceneDB::ChangeEntityPosition(Entity* entity, glm::ivec2 newPosition)
-{
-    
-    int entityIndexInLocationVec = IndexOfEntityAtPosition(entity);
+void SceneDB::ChangeEntityPosition(Entity* entity, glm::vec2 newPosition)
+{    
+    glm::ivec2 oldBucket = HashPositionToBucket(entity->transform->position);
+    glm::ivec2 newBucket = HashPositionToBucket(newPosition);
 
-    // remove from current position
-    locationOfEntitiesInScene[entity->transform->position.x][entity->transform->position.y].erase(locationOfEntitiesInScene[entity->transform->position.x][entity->transform->position.y].begin() + entityIndexInLocationVec);
+    if (oldBucket != newBucket)
+    {
+        int entityIndexInLocationVec = IndexOfEntityAtPosition(entity);
 
-    // update actual position
-    entity->transform->position = newPosition;
+        // remove from current position
+        locationOfEntitiesInScene[oldBucket.x][oldBucket.y].erase(locationOfEntitiesInScene[oldBucket.x][oldBucket.y].begin() + entityIndexInLocationVec);
 
-    // add to new bucket
-    auto insertionPoint = std::lower_bound(locationOfEntitiesInScene[entity->transform->position.x][entity->transform->position.y].begin(), locationOfEntitiesInScene[entity->transform->position.x][entity->transform->position.y].end(), entity,
-        [](Entity* a, Entity* b) { return a->entityID < b->entityID; });
+        // update actual position
+        entity->transform->position = newPosition;
 
-    // Insert the entity at the correct position
-    locationOfEntitiesInScene[entity->transform->position.x][entity->transform->position.y].insert(insertionPoint, entity);
+        // add to new bucket
+        auto& newBucketVec = locationOfEntitiesInScene[newBucket.x][newBucket.y];
+        auto insertionPoint = std::lower_bound(newBucketVec.begin(), newBucketVec.end(), entity,
+            [](Entity* a, Entity* b) { return a->entityID < b->entityID; });
+
+        // Insert the entity at the correct position in the new bucket
+        newBucketVec.insert(insertionPoint, entity);
+    }
+    else
+    {
+        // update actual position
+        entity->transform->position = newPosition;
+    }
 }
 
 int SceneDB::IndexOfEntityAtPosition(Entity* entity)
 {
+
+    glm::ivec2 hashedPosition = HashPositionToBucket(entity->transform->position);
+
     // binary search bc should be sorted by entityID
     int low = 0;
-    int high = locationOfEntitiesInScene[entity->transform->position.x][entity->transform->position.y].size() - 1;
+    int high = locationOfEntitiesInScene[hashedPosition.x][hashedPosition.y].size() - 1;
     while (low <= high) {
         int mid = low + (high - low) / 2;
 
-        if (locationOfEntitiesInScene[entity->transform->position.x][entity->transform->position.y][mid]->entityID == entity->entityID)
+        if (locationOfEntitiesInScene[hashedPosition.x][hashedPosition.y][mid]->entityID == entity->entityID)
             return mid;
 
         // If x greater, ignore left half
-        if (locationOfEntitiesInScene[entity->transform->position.x][entity->transform->position.y][mid]->entityID < entity->entityID)
+        if (locationOfEntitiesInScene[hashedPosition.x][hashedPosition.y][mid]->entityID < entity->entityID)
             low = mid + 1;
 
         // If x is smaller, ignore right half
@@ -312,6 +337,11 @@ int SceneDB::IndexOfEntityAtPosition(Entity* entity)
     //we messed up if we get here
     exit(0);
 
+}
+
+glm::ivec2 SceneDB::HashPositionToBucket(glm::vec2 pos)
+{
+    return glm::ivec2(static_cast<int>(std::round(pos.x)), static_cast<int>(std::round(pos.y)));
 }
 
 

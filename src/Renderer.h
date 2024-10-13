@@ -20,6 +20,8 @@ public:
 	static glm::ivec2 GetResolution() { return resolution; }
 	static glm::ivec2 GetCameraOffset() { return cameraOffset; }
 	static double GetZoomFactor() { return zoomFactor; }
+	static float GetCameraEaseFactor() { return cameraEaseFactor; }
+	static bool GetXScaleActorFlippingOnMovement() { return xScaleActorFlippingOnMovement; }
 
 private:
 	static SDL_Window* window;
@@ -27,6 +29,8 @@ private:
 	static glm::ivec2 resolution;
 	static glm::ivec2 cameraOffset;
 	static double zoomFactor;
+	static float cameraEaseFactor;
+	static bool xScaleActorFlippingOnMovement;
 };
 #endif
 

@@ -31,16 +31,17 @@ public:
 	uint64_t GetSceneMaxHeight();
 	uint64_t GetSceneMaxWidth();
 
-	void ChangeEntityPosition(Entity* entity, glm::ivec2 newPosition);
+	void ChangeEntityPosition(Entity* entity, glm::vec2 newPosition);
 	int IndexOfEntityAtPosition(Entity* entity);
+	glm::ivec2 HashPositionToBucket(glm::vec2 pos);
 
 	std::unordered_map<uint64_t, std::unordered_map<uint64_t, std::vector<Entity*>>> locationOfEntitiesInScene;
 	std::vector<Entity*> entityRenderOrder;
 
 private:
 	std::string currSceneName;
-
 	std::vector<Entity*> entities;
+
 	Entity* playerEnity;
 	int totalEntities = 0;
 	int maxHeight = 0;

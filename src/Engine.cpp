@@ -68,6 +68,15 @@ void Engine::ReadResources()
 			exit(0);
 		}
 	}
+
+	if (configDocument.HasMember("player_movement_speed") && configDocument["player_movement_speed"].IsFloat())
+	{
+		playerSpeed = configDocument["player_movement_speed"].GetFloat();
+	}
+	else
+	{
+		playerSpeed = 0.02f;
+	}
 }
 
 void Engine::Start()
@@ -147,25 +156,8 @@ void Engine::Input()
 		}
 		else
 		{
-			if (e.type == SDL_KEYDOWN)
-			{
-				// Handle key presses as directional input or quit command
-				switch (e.key.keysym.scancode)
-				{
-				case SDL_SCANCODE_N:
-					userInput = "n";
-					break;
-				case SDL_SCANCODE_E:
-					userInput = "e";
-					break;
-				case SDL_SCANCODE_S:
-					userInput = "s";
-					break;
-				case SDL_SCANCODE_W:
-					userInput = "w";
-					break;
-				}
-			}
+			Input::ProcessEvent(e);
+
 		}
 
 	}
@@ -181,27 +173,36 @@ void Engine::Update()
 		}
 
 		// move player according to input
-		glm::ivec2 proposedPlayerPosition = currScene->GetPlayerEntity()->transform->position;
-		
-		if (currScene->GetPlayerEntity() != nullptr && userInput != "")
+		glm::vec2 proposedPlayerPosition = currScene->GetPlayerEntity()->transform->position;
+		glm::vec2 proposedPlayerMovement = glm::vec2(0, 0);
+		bool actorFlippingOnMovement = Renderer::GetXScaleActorFlippingOnMovement();
+
+		if (currScene->GetPlayerEntity() != nullptr)
 		{
-			if (userInput == "n")
+			if (Input::GetKey(SDL_SCANCODE_W) || Input::GetKey(SDL_SCANCODE_UP))
 			{
-				proposedPlayerPosition = currScene->GetPlayerEntity()->transform->position - glm::ivec2(0, 1);
+				proposedPlayerMovement += glm::vec2(0, -1);
 			}
-			else if (userInput == "e")
+			if (Input::GetKey(SDL_SCANCODE_D) || Input::GetKey(SDL_SCANCODE_RIGHT))
 			{
-				proposedPlayerPosition = currScene->GetPlayerEntity()->transform->position + glm::ivec2(1, 0);
+				proposedPlayerMovement += glm::vec2(1, 0);
 			}
-			else if (userInput == "s")
+			if (Input::GetKey(SDL_SCANCODE_S) || Input::GetKey(SDL_SCANCODE_DOWN))
 			{
-				proposedPlayerPosition = currScene->GetPlayerEntity()->transform->position + glm::ivec2(0, 1);
+				proposedPlayerMovement += glm::vec2(0, 1);
 			}
-			else if (userInput == "w")
+			if (Input::GetKey(SDL_SCANCODE_A) || Input::GetKey(SDL_SCANCODE_LEFT))
 			{
-				proposedPlayerPosition = currScene->GetPlayerEntity()->transform->position - glm::ivec2(1, 0);
+				proposedPlayerMovement += glm::vec2(-1, 0);
 			}
-			userInput = "";
+
+			//normalize if necessary
+			if (proposedPlayerMovement != glm::vec2(0, 0))
+			{
+				proposedPlayerMovement = glm::normalize(proposedPlayerMovement) * playerSpeed;
+			}
+
+			proposedPlayerPosition += proposedPlayerMovement;
 		}
 
 		// Update Entities Position, iterate based on entityID
@@ -211,17 +212,18 @@ void Engine::Update()
 			// NPC Movement	
 			// only update position/velocity if they have a none zeroes velocity
 			// update every 60 frames
-			if (currEntity->entityName != "player" && Helper::GetFrameNumber() % 60 == 0 && currEntity->velocity != glm::ivec2(0, 0))
+			if (currEntity->entityName != "player" && currEntity->velocity != glm::vec2(0.0f, 0.0f))
 			{
 				// Position and Movement
-				glm::ivec2 proposedNPCMovement = currEntity->transform->position + currEntity->velocity;
+				glm::vec2 proposedNPCMovement = currEntity->transform->position + currEntity->velocity;
+				glm::ivec2 proposedHashedBucket = currScene->HashPositionToBucket(proposedNPCMovement); // TODO FIX WITH COLLISIONS
 
 				// is there a blocking actor at this location?
 				bool blockingActorAtLocation = false;
-				for (int i = 0; i < currScene->locationOfEntitiesInScene[proposedNPCMovement.x][proposedNPCMovement.y].size(); i++)
+				for (int i = 0; i < currScene->locationOfEntitiesInScene[proposedHashedBucket.x][proposedHashedBucket.y].size(); i++)
 				{
 					// does the current entity block?
-					if (currScene->locationOfEntitiesInScene[proposedNPCMovement.x][proposedNPCMovement.y][i]->blocking)
+					if (currScene->locationOfEntitiesInScene[proposedHashedBucket.x][proposedHashedBucket.y][i] != currEntity && currScene->locationOfEntitiesInScene[proposedHashedBucket.x][proposedHashedBucket.y][i]->blocking)
 					{
 						blockingActorAtLocation = true;
 						break;
@@ -243,22 +245,53 @@ void Engine::Update()
 			// Player Movement
 			else if (currEntity->entityName == "player")
 			{
-				// is there a blocking actor at proposedPlayer location?
-				bool blockingActorAtLocation = false;
-				for (int i = 0; i < currScene->locationOfEntitiesInScene[proposedPlayerPosition.x][proposedPlayerPosition.y].size(); i++)
+				if (proposedPlayerMovement != glm::vec2(0, 0))
 				{
-					// does the current entity block?
-					if (currScene->locationOfEntitiesInScene[proposedPlayerPosition.x][proposedPlayerPosition.y][i]->blocking)
+					glm::ivec2 proposedHashedBucket = currScene->HashPositionToBucket(proposedPlayerPosition);
+					// is there a blocking actor at proposedPlayer location?
+					bool blockingActorAtLocation = false;
+					for (int i = 0; i < currScene->locationOfEntitiesInScene[proposedHashedBucket.x][proposedHashedBucket.y].size(); i++)
 					{
-						blockingActorAtLocation = true;
-						break;
+						// does the current entity block?
+						if (currScene->locationOfEntitiesInScene[proposedHashedBucket.x][proposedHashedBucket.y][i] != currEntity && currScene->locationOfEntitiesInScene[proposedHashedBucket.x][proposedHashedBucket.y][i]->blocking)
+						{
+							blockingActorAtLocation = true;
+							break;
+						}
 					}
+
+					// ensure can move in that direction
+					if (!blockingActorAtLocation)
+					{
+						currScene->ChangeEntityPosition(currEntity, proposedPlayerPosition);
+						currEntity->velocity = proposedPlayerMovement;
+					}
+
+				}
+				else
+				{
+					currEntity->velocity = glm::vec2(0, 0);
+				}	
+			}
+
+			if (actorFlippingOnMovement)
+			{
+				if (currEntity->velocity.x < 0)
+				{
+					currEntity->spriteRenderer->flipSpriteVertically = true;
+				}
+				else if (currEntity->velocity.x > 0)
+				{
+					currEntity->spriteRenderer->flipSpriteVertically = false;
 				}
 
-				// ensure can move in that direction
-				if (!blockingActorAtLocation)
+				if (currEntity->velocity.y < 0)
 				{
-					currScene->ChangeEntityPosition(currEntity, proposedPlayerPosition);
+					currEntity->spriteRenderer->showBackImage = true;
+				}
+				else if (currEntity->velocity.y > 0)
+				{
+					currEntity->spriteRenderer->showBackImage = false;
 				}
 			}
 		}
@@ -300,6 +333,9 @@ void Engine::Update()
 				AudioDB::PlayBGM(configDocument["game_over_bad_audio"].GetString());
 			}
 		}
+
+		// Late Update
+		Input::LateUpdate();
 	}
 }
 
@@ -311,10 +347,12 @@ void Engine::DetermineDialoguesToPrint()
 	// Determine NPC Dialogue 
 	DialogueType dialogueType = NONE;
 	
-	for (int xPos = std::max(0, currScene->GetPlayerEntity()->transform->position.x - 1); xPos <= currScene->GetPlayerEntity()->transform->position.x + 1; xPos++)
+	glm::ivec2 playerPositionBucket = currScene->HashPositionToBucket(currScene->GetPlayerEntity()->transform->position);
+	for (int xPos = std::max(0, playerPositionBucket.x - 1); xPos <= playerPositionBucket.x + 1; xPos++)
 	{
-		for (int yPos = std::max(0, currScene->GetPlayerEntity()->transform->position.y - 1); yPos <= currScene->GetPlayerEntity()->transform->position.y + 1; yPos++)
+		for (int yPos = std::max(0, playerPositionBucket.y - 1); yPos <= playerPositionBucket.y + 1; yPos++)
 		{
+
 			if (!currScene->locationOfEntitiesInScene[xPos].empty() && !currScene->locationOfEntitiesInScene[xPos][yPos].empty())
 			{
 				for (int entityIndex = 0; entityIndex < currScene->locationOfEntitiesInScene[xPos][yPos].size(); entityIndex++)
@@ -410,14 +448,13 @@ void Engine::Render()
 		}
 		else if (state == INPROGRESS)
 		{
-			glm::ivec2 centerPos = currScene->GetPlayerEntity() != nullptr ? currScene->GetPlayerEntity()->transform->position : glm::ivec2(0, 0);
+			glm::vec2 centerPos = currScene->GetPlayerEntity() != nullptr ? currScene->GetPlayerEntity()->transform->position : glm::vec2(0, 0);
 			glm::ivec2 resolution = Renderer::GetResolution();
 			
 			double zoomFactor = Renderer::GetZoomFactor();
 
-			//Entity* player = currScene->GetPlayerEntity();
-			cameraRect.x = static_cast<int>(std::round((centerPos.x * pixelsPerUnit) - (resolution.x / (2 * zoomFactor)) + Renderer::GetCameraOffset().x));
-			cameraRect.y = static_cast<int>(std::round((centerPos.y * pixelsPerUnit) - (resolution.y / (2 * zoomFactor)) + Renderer::GetCameraOffset().y));
+			cameraRect.x = glm::mix(cameraRect.x, static_cast<int>(std::round((centerPos.x * pixelsPerUnit) - (resolution.x / (2 * zoomFactor)) + Renderer::GetCameraOffset().x)), Renderer::GetCameraEaseFactor());
+			cameraRect.y = glm::mix(cameraRect.y, static_cast<int>(std::round((centerPos.y * pixelsPerUnit) - (resolution.y / (2 * zoomFactor)) + Renderer::GetCameraOffset().y)), Renderer::GetCameraEaseFactor());
 
 			//Render Map
 			//int rowBoundMin = centerPos.y - ((resolution.y / pixelsPerUnit) / 2);
@@ -428,10 +465,10 @@ void Engine::Render()
 			// render visible map
 			// TODO: Culling
 			SDL_RenderSetScale(renderer, zoomFactor, zoomFactor);
-
+			
 			for (Entity* entity : currScene->entityRenderOrder)
 			{
-				entity->spriteRenderer->RenderEntity(entity, &cameraRect, pixelsPerUnit);
+				entity->spriteRenderer->RenderEntity(entity, &cameraRect, pixelsPerUnit, entity->velocity != glm::vec2(0,0));
 			}
 		
 			// Reset for UI and alike

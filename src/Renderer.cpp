@@ -5,6 +5,8 @@ SDL_Renderer* Renderer::renderer;
 glm::ivec2 Renderer::resolution;
 glm::ivec2 Renderer::cameraOffset = { 0,0 };
 double Renderer::zoomFactor = 1;
+float Renderer::cameraEaseFactor = 1;
+bool Renderer::xScaleActorFlippingOnMovement = false;
 
 void Renderer::RendererInit()
 {
@@ -58,6 +60,21 @@ void Renderer::RendererInit()
 		if (renderingConfigDoc.HasMember("zoom_factor") && renderingConfigDoc["zoom_factor"].IsDouble())
 		{
 			zoomFactor = renderingConfigDoc["zoom_factor"].GetDouble();
+		}
+
+		if (renderingConfigDoc.HasMember("zoom_factor") && renderingConfigDoc["zoom_factor"].IsDouble())
+		{
+			zoomFactor = renderingConfigDoc["zoom_factor"].GetDouble();
+		}
+
+		if (renderingConfigDoc.HasMember("cam_ease_factor") && renderingConfigDoc["cam_ease_factor"].IsFloat())
+		{
+			cameraEaseFactor = renderingConfigDoc["cam_ease_factor"].GetFloat();
+		}
+
+		if (renderingConfigDoc.HasMember("x_scale_actor_flipping_on_movement") && renderingConfigDoc["x_scale_actor_flipping_on_movement"].GetBool())
+		{
+			xScaleActorFlippingOnMovement = renderingConfigDoc["x_scale_actor_flipping_on_movement"].GetBool();
 		}
 	}
 

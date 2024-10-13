@@ -15,6 +15,7 @@
 #include "Entity.h"
 #include "glm/glm.hpp"
 #include "ImageDB.h"
+#include "Input.h"
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/document.h"
 #include "Renderer.h"
@@ -56,7 +57,6 @@ private:
 	SDL_Rect cameraRect;
 	std::vector<std::pair<uint64_t, std::string>> entityDialoguesToPrint;
 
-	std::string userInput;
 	std::string pendingScene;
 
 	std::string configPath;
@@ -66,8 +66,10 @@ private:
 	SDL_Renderer* renderer;
 	SDL_Texture* hpImage;
 
+	float playerSpeed;
 	int playerHealth;
 	int playerScore;
+
 	static int pixelsPerUnit;
 	int frameSinceDamageTaken;
 	GameState state = INTRO;

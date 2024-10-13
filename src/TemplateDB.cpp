@@ -24,8 +24,8 @@ void TemplateDB::LoadTemplates()
                 // Extract values from the JSON
                 std::string name = templateDocument.HasMember("name") ? templateDocument["name"].GetString() : "";
                 char view = templateDocument.HasMember("view") ? templateDocument["view"].GetString()[0] : '?';
-                int vel_x = templateDocument.HasMember("vel_x") ? templateDocument["vel_x"].GetInt() : 0;
-                int vel_y = templateDocument.HasMember("vel_y") ? templateDocument["vel_y"].GetInt() : 0;
+                int vel_x = templateDocument.HasMember("vel_x") ? templateDocument["vel_x"].GetFloat() : 0;
+                int vel_y = templateDocument.HasMember("vel_y") ? templateDocument["vel_y"].GetFloat() : 0;
                 bool blocking = templateDocument.HasMember("blocking") ? templateDocument["blocking"].GetBool() : false;
                 std::string nearbyDialogue = templateDocument.HasMember("nearby_dialogue") ? templateDocument["nearby_dialogue"].GetString() : "";
                 std::string contactDialogue = templateDocument.HasMember("contact_dialogue") ? templateDocument["contact_dialogue"].GetString() : "";
@@ -45,6 +45,7 @@ void TemplateDB::LoadTemplates()
 
                 // Sprite Renderer
                 std::string viewImageName = templateDocument.HasMember("view_image") ? templateDocument["view_image"].GetString() : "";
+                std::string viewImageBackName = templateDocument.HasMember("view_image_back") ? templateDocument["view_image_back"].GetString() : "";
 
                 double viewPivotOffsetX = templateDocument.HasMember("view_pivot_offset_x") ? templateDocument["view_pivot_offset_x"].GetDouble() : -1.0;
                 double viewPivotOffsetY = templateDocument.HasMember("view_pivot_offset_y") ? templateDocument["view_pivot_offset_y"].GetDouble() : -1.0;
@@ -59,11 +60,13 @@ void TemplateDB::LoadTemplates()
                     renderOrder = std::nullopt;
                 }
 
-                SpriteRenderer* spriteRenderer = new SpriteRenderer(viewImageName, glm::dvec2(viewPivotOffsetX, viewPivotOffsetY), renderOrder);
+                bool movementBounce = templateDocument.HasMember("movement_bounce_enabled") ? templateDocument["movement_bounce_enabled"].GetBool() : false;
+
+                SpriteRenderer* spriteRenderer = new SpriteRenderer(viewImageName, glm::dvec2(viewPivotOffsetX, viewPivotOffsetY), renderOrder, viewImageBackName, movementBounce);
 
                 // Create the Entity object
                 Template* newEntityTemplate = new Template(
-                    templateName, name, view, glm::ivec2(vel_x, vel_y), blocking, nearbyDialogue, contactDialogue, transform, spriteRenderer
+                    templateName, name, view, glm::vec2(vel_x, vel_y), blocking, nearbyDialogue, contactDialogue, transform, spriteRenderer
                 );
 
                 templates[templateName] = newEntityTemplate;

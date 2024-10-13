@@ -19,9 +19,9 @@ public:
 	static bool GetKeyUp(SDL_Scancode keycode);
 
 private:
-	static std::unordered_map<SDL_Scancode, INPUT_STATE> keyboard_states;
-	static std::vector<SDL_Scancode> just_became_down_scancodes;
-	static std::vector<SDL_Scancode> just_became_up_scancodes;
+	static std::unordered_map<SDL_Scancode, INPUT_STATE> keyboardStates;
+	static std::vector<SDL_Scancode> justBecameDownScancodes;
+	static std::vector<SDL_Scancode> justBecameUpScancodes;
 };
 
 #endif

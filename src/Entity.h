@@ -34,8 +34,7 @@ public:
 	Transform* transform;
 	SpriteRenderer* spriteRenderer;
 
-	glm::ivec2 velocity;
-	bool blocking;
+	glm::vec2 velocity;
 	std::string nearbyDialogue;
 	std::string contactDialogue;
 
@@ -48,8 +47,9 @@ public:
 	std::vector<Component> components;
 
 	int entityID;
+	bool blocking;
 
-	Entity(std::string entity_name, char view, glm::ivec2 initial_velocity,
+	Entity(std::string entity_name, char view, glm::vec2 initial_velocity,
 		bool blocking, std::string nearby_dialogue, std::string contact_dialogue,
 		Transform* transform_in, SpriteRenderer* sprite_in)
 		: entityName(entity_name), view(view), transform(transform_in),
@@ -66,7 +66,7 @@ private:
 class Transform
 {
 public:
-	glm::ivec2 position;
+	glm::vec2 position;
 	glm::vec2 scale;
 
 	float rotationDegrees;
@@ -80,17 +80,25 @@ class SpriteRenderer
 public:
 	glm::dvec2 viewPivotOffset;
 	SDL_Texture* viewImage;
+	SDL_Texture* viewImageBack;
 	std::string viewImageName;
 	std::optional<int> renderOrder;
 
-	// Updated constructor to handle view_image and pivot offset logic
-	SpriteRenderer(const std::string& viewImageName_in = "", glm::dvec2 pivot = { -1, -1 }, std::optional<int> renderOrderIn = std::nullopt)
-		: viewImageName(viewImageName_in), viewPivotOffset(pivot), viewImage(nullptr), renderOrder(renderOrderIn)
-	{
-		viewImageName = viewImageName_in;
+	bool movementBounce;
+	bool flipSpriteVertically = false;
+	bool showBackImage = false;
 
+	// Updated constructor to handle view_image and pivot offset logic
+	SpriteRenderer(const std::string& viewImageName_in = "", glm::dvec2 pivot = { -1, -1 }, std::optional<int> renderOrderIn = std::nullopt, const std::string& viewImageBackName = "", bool movementBounceIn = false)
+		: viewImageName(viewImageName_in), viewPivotOffset(pivot), viewImage(nullptr), renderOrder(renderOrderIn), movementBounce(movementBounceIn)
+	{
 		if (!viewImageName.empty()) {
 			viewImage = ImageDB::LoadImage(viewImageName);
+		}
+
+		if (!viewImageBackName.empty())
+		{
+			viewImageBack = ImageDB::LoadImage(viewImageBackName);
 		}
 
 		// Calculate default pivot offset if not provided
@@ -113,7 +121,7 @@ public:
 
 	void ChangeSprite(const std::string& viewImageName_in = "", glm::dvec2 pivot = { -1, -1 });
 
-	void RenderEntity(Entity* entity, SDL_Rect* cameraRect, int pixelsPerUnit);
+	void RenderEntity(Entity* entity, SDL_Rect* cameraRect, int pixelsPerUnit, bool bounce = false);
 };
 
 #endif

@@ -56,7 +56,7 @@ void SpriteRenderer::ChangeSprite(const std::string& viewImageName_in, glm::dvec
 	}
 }
 
-void SpriteRenderer::RenderEntity(Entity* entity, SDL_Rect* cameraRect, int pixelsPerUnit)
+void SpriteRenderer::RenderEntity(Entity* entity, SDL_Rect* cameraRect, int pixelsPerUnit, bool bounce)
 {
 	if (!entity->spriteRenderer->viewImage) return;  // Skip rendering if no view_image
 
@@ -71,6 +71,7 @@ void SpriteRenderer::RenderEntity(Entity* entity, SDL_Rect* cameraRect, int pixe
 	pivotY = std::round(pivotY);
 
 	double zoomFactor = Renderer::GetZoomFactor();
+
 	// Calculate destination rectangle
 	SDL_Rect dstRect;
 	dstRect.w = static_cast<int>(std::round(imgWidth * std::abs(entity->transform->scale.x)));
@@ -78,14 +79,29 @@ void SpriteRenderer::RenderEntity(Entity* entity, SDL_Rect* cameraRect, int pixe
 	dstRect.x = static_cast<int>(std::round(entity->transform->position.x * pixelsPerUnit - cameraRect->x - pivotX * std::abs(entity->transform->scale.x)));
 	dstRect.y = static_cast<int>(std::round(entity->transform->position.y * pixelsPerUnit - cameraRect->y - pivotY * std::abs(entity->transform->scale.y)));
 
+	if (movementBounce && bounce)
+	{
+		dstRect.y += -glm::abs(glm::sin(Helper::GetFrameNumber() * 0.15f)) * 10.0f;
+	}
+
 	// Determine flip
 	SDL_RendererFlip flip = SDL_FLIP_NONE;
-	if (entity->transform->scale.x < 0) flip = (SDL_RendererFlip)(flip | SDL_FLIP_HORIZONTAL);
+	// entity->transform->scale.x < 0 XOR flipSpriteVertically
+	if (!(entity->transform->scale.x < 0) != !flipSpriteVertically) flip = (SDL_RendererFlip)(flip | SDL_FLIP_HORIZONTAL);
 	if (entity->transform->scale.y < 0) flip = (SDL_RendererFlip)(flip | SDL_FLIP_VERTICAL);
 
 	// Render with rotation around the pivot point
 	SDL_Point pivot = { static_cast<int>(pivotX), static_cast<int>(pivotY) };
-	Helper::SDL_RenderCopyEx498(entity->entityID, entity->entityName, Renderer::GetRenderer(), entity->spriteRenderer->viewImage, nullptr, &dstRect, entity->transform->rotationDegrees, &pivot, flip);
+
+	if (showBackImage && entity->spriteRenderer->viewImageBack)
+	{
+		Helper::SDL_RenderCopyEx498(entity->entityID, entity->entityName, Renderer::GetRenderer(), entity->spriteRenderer->viewImageBack, nullptr, &dstRect, entity->transform->rotationDegrees, &pivot, flip);
+	}
+	else
+	{
+		Helper::SDL_RenderCopyEx498(entity->entityID, entity->entityName, Renderer::GetRenderer(), entity->spriteRenderer->viewImage, nullptr, &dstRect, entity->transform->rotationDegrees, &pivot, flip);
+	}
+	
 }
 
 Entity::~Entity()
