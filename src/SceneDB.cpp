@@ -43,15 +43,14 @@ void SceneDB::LoadScene(const std::string& sceneName)
 
         // Set base values
         std::string name = "";
-        char view = '?';
         float vel_x = 0;
         float vel_y = 0;
-        bool blocking = false;
         std::string nearbyDialogue = "";
         std::string contactDialogue = "";
 
         Transform* transform = nullptr;
         SpriteRenderer* spriteRenderer = nullptr;
+        Collider* collider = nullptr;
 
         if (actor.HasMember("template"))
         {
@@ -61,16 +60,15 @@ void SceneDB::LoadScene(const std::string& sceneName)
             {
                 // Extract values from the JSON
                 name = entityTemplate->entityName;
-                view = entityTemplate->view;
                 vel_x = entityTemplate->velocity.x;
                 vel_y = entityTemplate->velocity.y;
-                blocking = entityTemplate->blocking;
                 nearbyDialogue = entityTemplate->nearbyDialogue;
                 contactDialogue = entityTemplate->contactDialogue;
 
                 transform = new Transform(entityTemplate->transform->position, entityTemplate->transform->scale, entityTemplate->transform->rotationDegrees);
                 spriteRenderer = new SpriteRenderer(entityTemplate->spriteRenderer->viewImageName, entityTemplate->spriteRenderer->viewPivotOffset, entityTemplate->spriteRenderer->renderOrder);
                 spriteRenderer->viewImageBack = entityTemplate->spriteRenderer->viewImageBack;
+                collider = new Collider(entityTemplate->collider->colliderWidth, entityTemplate->collider->colliderHeight);
             }
             else
             {
@@ -82,10 +80,8 @@ void SceneDB::LoadScene(const std::string& sceneName)
         // Extract values from the JSON
         // Override template if applicable
         name = actor.HasMember("name") ? actor["name"].GetString() : name;
-        view = actor.HasMember("view") ? actor["view"].GetString()[0] : view;
         vel_x = actor.HasMember("vel_x") ? actor["vel_x"].GetFloat() : vel_x;
         vel_y = actor.HasMember("vel_y") ? actor["vel_y"].GetFloat() : vel_y;
-        blocking = actor.HasMember("blocking") ? actor["blocking"].GetBool() : blocking;
         nearbyDialogue = actor.HasMember("nearby_dialogue") ? actor["nearby_dialogue"].GetString() : nearbyDialogue;
         contactDialogue = actor.HasMember("contact_dialogue") ? actor["contact_dialogue"].GetString() : contactDialogue;
 
@@ -158,11 +154,28 @@ void SceneDB::LoadScene(const std::string& sceneName)
 
             spriteRenderer = new SpriteRenderer(viewImageName, glm::dvec2(viewPivotOffsetX, viewPivotOffsetY), renderOrder, viewImageBackName, movementBounce);
         }
-        
 
+        // Collider updates
+        if (collider != nullptr)
+        {
+            collider->colliderWidth = actor.HasMember("box_collider_width") ? actor["box_collider_width"].GetFloat() : collider->colliderWidth;
+            collider->colliderHeight = actor.HasMember("box_collider_height") ? actor["box_collider_height"].GetFloat() : collider->colliderHeight;
+        }
+        else
+        {
+
+            float colliderWidth = actor.HasMember("box_collider_width") ? actor["box_collider_width"].GetFloat() : 0;
+            float colliderHeight = actor.HasMember("box_collider_height") ? actor["box_collider_height"].GetFloat() : 0;
+
+            if (colliderWidth != 0 && colliderHeight != 0)
+            {
+                collider = new Collider(colliderHeight, colliderWidth);
+            }
+        }
+        
         // Create the Entity object
         Entity* entity = new Entity(
-            name, view, glm::vec2(vel_x, vel_y), blocking, nearbyDialogue, contactDialogue, transform, spriteRenderer
+            name, glm::vec2(vel_x, vel_y), nearbyDialogue, contactDialogue, transform, spriteRenderer, collider
         );
 
         // Add the entity to the entities vector

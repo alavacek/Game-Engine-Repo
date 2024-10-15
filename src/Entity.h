@@ -21,6 +21,7 @@ enum DialogueType
 
 class Transform;
 class SpriteRenderer;
+class Collider;
 
 
 class Entity
@@ -29,16 +30,17 @@ public:
 	static bool CompareEntities(const Entity* a, const Entity* b);
 
 	std::string entityName;
-	char view;
 	
 	Transform* transform;
 	SpriteRenderer* spriteRenderer;
+	Collider* collider;
 
 	glm::vec2 velocity;
 	std::string nearbyDialogue;
 	std::string contactDialogue;
 
 	bool hasIncreasedScore = false;
+	bool hasTriggeredNearbyDialogue = false;
 	DialogueType nearbyDialogueType = NONE;
 	DialogueType contactDialogueType = NONE;
 	std::string nearbySceneToLoad; // will be set to "" if not relevant
@@ -47,14 +49,13 @@ public:
 	std::vector<Component> components;
 
 	int entityID;
-	bool blocking;
 
-	Entity(std::string entity_name, char view, glm::vec2 initial_velocity,
-		bool blocking, std::string nearby_dialogue, std::string contact_dialogue,
-		Transform* transform_in, SpriteRenderer* sprite_in)
-		: entityName(entity_name), view(view), transform(transform_in),
-		spriteRenderer(sprite_in), velocity(initial_velocity), blocking(blocking),
-		nearbyDialogue(nearby_dialogue), contactDialogue(contact_dialogue) {}
+	Entity(std::string entityName, glm::vec2 initialVelocity,
+		std::string nearbyDialogue, std::string contactDialogue,
+		Transform* transformIn, SpriteRenderer* spriteIn, Collider* colliderIn)
+		: entityName(entityName), transform(transformIn),
+		spriteRenderer(spriteIn), collider(colliderIn), velocity(initialVelocity),
+		nearbyDialogue(nearbyDialogue), contactDialogue(contactDialogue) {}
 
 	Entity() {}
 
@@ -122,6 +123,16 @@ public:
 	void ChangeSprite(const std::string& viewImageName_in = "", glm::dvec2 pivot = { -1, -1 });
 
 	void RenderEntity(Entity* entity, SDL_Rect* cameraRect, int pixelsPerUnit, bool bounce = false);
+};
+
+class Collider
+{
+public:
+	float colliderWidth;
+	float colliderHeight;
+
+	Collider(float width, float height)
+		: colliderWidth(width), colliderHeight(height) {}
 };
 
 #endif

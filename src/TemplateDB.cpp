@@ -23,10 +23,8 @@ void TemplateDB::LoadTemplates()
 
                 // Extract values from the JSON
                 std::string name = templateDocument.HasMember("name") ? templateDocument["name"].GetString() : "";
-                char view = templateDocument.HasMember("view") ? templateDocument["view"].GetString()[0] : '?';
                 int vel_x = templateDocument.HasMember("vel_x") ? templateDocument["vel_x"].GetFloat() : 0;
                 int vel_y = templateDocument.HasMember("vel_y") ? templateDocument["vel_y"].GetFloat() : 0;
-                bool blocking = templateDocument.HasMember("blocking") ? templateDocument["blocking"].GetBool() : false;
                 std::string nearbyDialogue = templateDocument.HasMember("nearby_dialogue") ? templateDocument["nearby_dialogue"].GetString() : "";
                 std::string contactDialogue = templateDocument.HasMember("contact_dialogue") ? templateDocument["contact_dialogue"].GetString() : "";
 
@@ -64,9 +62,19 @@ void TemplateDB::LoadTemplates()
 
                 SpriteRenderer* spriteRenderer = new SpriteRenderer(viewImageName, glm::dvec2(viewPivotOffsetX, viewPivotOffsetY), renderOrder, viewImageBackName, movementBounce);
 
+                // Collider
+                Collider* collider = nullptr;
+                float colliderWidth = templateDocument.HasMember("box_collider_width") ? templateDocument["box_collider_width"].GetFloat() : 0;
+                float colliderHeight = templateDocument.HasMember("box_collider_height") ? templateDocument["box_collider_height"].GetFloat() : 0;
+                         
+                if (colliderWidth != 0 && colliderHeight != 0)
+                {
+                    collider = new Collider(colliderHeight, colliderWidth);
+                }
+
                 // Create the Entity object
                 Template* newEntityTemplate = new Template(
-                    templateName, name, view, glm::vec2(vel_x, vel_y), blocking, nearbyDialogue, contactDialogue, transform, spriteRenderer
+                    templateName, name, glm::vec2(vel_x, vel_y), nearbyDialogue, contactDialogue, transform, spriteRenderer, collider
                 );
 
                 templates[templateName] = newEntityTemplate;

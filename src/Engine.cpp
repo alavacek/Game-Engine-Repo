@@ -265,6 +265,17 @@ void Engine::Update()
 					{
 						currScene->ChangeEntityPosition(currEntity, proposedPlayerPosition);
 						currEntity->velocity = proposedPlayerMovement;
+
+						// Play walking audio if 20th frame
+						if (Helper::GetFrameNumber() % 20 == 0)
+						{
+							// TODO: is accessing configDoc this much expensive? Assess w profilers
+							if (configDocument.HasMember("step_sfx") && configDocument["step_sfx"].IsString())
+							{
+								AudioDB::PlayChannel(Helper::GetFrameNumber() % 48 + 2, configDocument["step_sfx"].GetString(), false);
+							}
+						}
+
 					}
 
 				}
@@ -397,6 +408,17 @@ void Engine::DetermineDialoguesToPrint()
 							{
 								entityDialoguesToPrint.push_back({ currEntity->entityID, currEntity->nearbyDialogue });
 							}
+
+							// handle first audio output for nearby 
+							if (!currEntity->hasTriggeredNearbyDialogue)
+							{
+								currEntity->hasTriggeredNearbyDialogue = true;
+								// Play score audio
+								if (configDocument.HasMember("nearby_dialogue_sfx") && configDocument["nearby_dialogue_sfx"].IsString())
+								{
+									AudioDB::PlayChannel(Helper::GetFrameNumber() % 48 + 2, configDocument["nearby_dialogue_sfx"].GetString(), false);
+								}
+							}
 						}
 
 						//handle dialogue commands
@@ -405,11 +427,24 @@ void Engine::DetermineDialoguesToPrint()
 							playerHealth--;
 							inHealthCooldown = true;
 							frameSinceDamageTaken = Helper::GetFrameNumber();
+
+							// Play damage audio
+							if (configDocument.HasMember("damage_sfx") && configDocument["damage_sfx"].IsString())
+							{
+								// the +2 prevents us from clobbering channel 0 or 1
+								AudioDB::PlayChannel(Helper::GetFrameNumber() % 48 + 2, configDocument["damage_sfx"].GetString(), false);
+							}
 						}
 						else if (!currEntity->hasIncreasedScore && dialogueType == SCOREUP)
 						{
 							playerScore++;
 							currEntity->hasIncreasedScore = true;
+
+							// Play score audio
+							if (configDocument.HasMember("score_sfx") && configDocument["score_sfx"].IsString())
+							{
+								AudioDB::PlayChannel(1, configDocument["score_sfx"].GetString(), false);
+							}
 						}
 						else if (dialogueType == YOUWIN)
 						{
