@@ -3,6 +3,7 @@
 
 #include <optional>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "Component.h"
@@ -22,6 +23,7 @@ enum DialogueType
 class Transform;
 class SpriteRenderer;
 class Collider;
+class TriggerCollider;
 
 
 class Entity
@@ -34,6 +36,7 @@ public:
 	Transform* transform;
 	SpriteRenderer* spriteRenderer;
 	Collider* collider;
+	TriggerCollider* triggerCollider;
 
 	glm::vec2 velocity;
 	std::string nearbyDialogue;
@@ -52,10 +55,11 @@ public:
 
 	Entity(std::string entityName, glm::vec2 initialVelocity,
 		std::string nearbyDialogue, std::string contactDialogue,
-		Transform* transformIn, SpriteRenderer* spriteIn, Collider* colliderIn)
+		Transform* transformIn, SpriteRenderer* spriteIn, 
+		Collider* colliderIn, TriggerCollider* triggerColliderIn)
 		: entityName(entityName), transform(transformIn),
-		spriteRenderer(spriteIn), collider(colliderIn), velocity(initialVelocity),
-		nearbyDialogue(nearbyDialogue), contactDialogue(contactDialogue) {}
+		spriteRenderer(spriteIn), collider(colliderIn), triggerCollider(triggerColliderIn),
+		velocity(initialVelocity), nearbyDialogue(nearbyDialogue), contactDialogue(contactDialogue) {}
 
 	Entity() {}
 
@@ -89,6 +93,9 @@ public:
 	bool flipSpriteVertically = false;
 	bool showBackImage = false;
 
+	bool useDefaultPivotX;
+	bool useDefaultPivotY;
+
 	// Updated constructor to handle view_image and pivot offset logic
 	SpriteRenderer(const std::string& viewImageName_in = "", glm::dvec2 pivot = { -1, -1 }, std::optional<int> renderOrderIn = std::nullopt, const std::string& viewImageBackName = "", bool movementBounceIn = false)
 		: viewImageName(viewImageName_in), viewPivotOffset(pivot), viewImage(nullptr), renderOrder(renderOrderIn), movementBounce(movementBounceIn)
@@ -102,6 +109,10 @@ public:
 			viewImageBack = ImageDB::LoadImage(viewImageBackName);
 		}
 
+		// used for templating 
+		useDefaultPivotX = false;
+		useDefaultPivotY = false;
+
 		// Calculate default pivot offset if not provided
 		if (viewImage && (viewPivotOffset.x == -1 || viewPivotOffset.y == -1))
 		{
@@ -111,27 +122,41 @@ public:
 			if (viewPivotOffset.x == -1)
 			{
 				viewPivotOffset.x = w * 0.5;
+				useDefaultPivotX = true;
 			}
 
 			if (viewPivotOffset.y == -1)
 			{
 				viewPivotOffset.y = h * 0.5;
+				useDefaultPivotY = true;
 			}
 		}
 	}
 
 	void ChangeSprite(const std::string& viewImageName_in = "", glm::dvec2 pivot = { -1, -1 });
 
-	void RenderEntity(Entity* entity, SDL_Rect* cameraRect, int pixelsPerUnit, bool bounce = false);
+	void RenderEntity(Entity* entity, SDL_Rect* cameraRect, int pixelsPerUnit, bool bounce = false, bool drawCollision = false);
 };
 
 class Collider
 {
 public:
+	std::unordered_set<Entity*> collidingEntitiesThisFrame;
 	float colliderWidth;
 	float colliderHeight;
 
 	Collider(float width, float height)
+		: colliderWidth(width), colliderHeight(height) {}
+};
+
+class TriggerCollider
+{
+public:
+	std::unordered_set<Entity*> triggeringEntitiesThisFrame;
+	float colliderWidth;
+	float colliderHeight;
+
+	TriggerCollider(float width, float height)
 		: colliderWidth(width), colliderHeight(height) {}
 };
 

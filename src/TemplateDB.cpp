@@ -69,12 +69,22 @@ void TemplateDB::LoadTemplates()
                          
                 if (colliderWidth != 0 && colliderHeight != 0)
                 {
-                    collider = new Collider(colliderHeight, colliderWidth);
+                    collider = new Collider(colliderWidth, colliderHeight);
+                }
+
+                // Trigger Collider
+                TriggerCollider* triggerCollider = nullptr;
+                float triggerColliderWidth = templateDocument.HasMember("box_trigger_width") ? templateDocument["box_trigger_width"].GetFloat() : 0;
+                float triggerColliderHeight = templateDocument.HasMember("box_trigger_height") ? templateDocument["box_trigger_height"].GetFloat() : 0;
+
+                if (triggerColliderWidth != 0 && triggerColliderHeight != 0)
+                {
+                    triggerCollider = new TriggerCollider(triggerColliderWidth, triggerColliderHeight);
                 }
 
                 // Create the Entity object
                 Template* newEntityTemplate = new Template(
-                    templateName, name, glm::vec2(vel_x, vel_y), nearbyDialogue, contactDialogue, transform, spriteRenderer, collider
+                    templateName, name, glm::vec2(vel_x, vel_y), nearbyDialogue, contactDialogue, transform, spriteRenderer, collider, triggerCollider
                 );
 
                 templates[templateName] = newEntityTemplate;

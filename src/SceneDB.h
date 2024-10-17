@@ -31,11 +31,19 @@ public:
 	uint64_t GetSceneMaxHeight();
 	uint64_t GetSceneMaxWidth();
 
-	void ChangeEntityPosition(Entity* entity, glm::vec2 newPosition);
-	int IndexOfEntityAtPosition(Entity* entity);
-	glm::ivec2 HashPositionToBucket(glm::vec2 pos);
+	bool CanMoveEntityToPosition(Entity* entity, glm::vec2 proposedPosition);
+	bool DetermineEntityTriggerCollisions(Entity* entity);
 
-	std::unordered_map<uint64_t, std::unordered_map<uint64_t, std::vector<Entity*>>> locationOfEntitiesInScene;
+	void ChangeEntityPosition(Entity* entity, glm::vec2 newPosition);
+
+	int IndexOfEntityAtCollisionPosition(Entity* entity, glm::ivec2 hashedPosition);
+	int IndexOfEntityAtTriggernPosition(Entity* entity, glm::ivec2 hashedPosition);
+
+	glm::ivec2 HashPositionToBucket(glm::vec2 pos);
+	glm::ivec2 HashTriggerPositionToBucket(glm::vec2 pos);
+
+	std::unordered_map<uint64_t, std::unordered_map<uint64_t, std::vector<Entity*>>> collisionsOfEntitiesInScene;
+	std::unordered_map<uint64_t, std::unordered_map<uint64_t, std::vector<Entity*>>> triggersOfEntitiesInScene;
 	std::vector<Entity*> entityRenderOrder;
 
 private:

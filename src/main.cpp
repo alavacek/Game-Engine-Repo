@@ -19,13 +19,5 @@ int main(int argc, char* argv[])
 	Engine engine;
 	engine.GameLoop();
 
-
-
-	//Game Loop
-
-	while (true)
-	{
-
-		
-	}
+	return 0;
 }

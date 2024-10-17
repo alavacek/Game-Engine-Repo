@@ -9,5 +9,7 @@
   "nearby_dialogue": "nearby template dialogue",
   "contact_dialogue": "nearby contact dialogue",
   "view_image": "dog",
-  "render_order": 1
+  "render_order": 1,
+  "box_collider_width": 2.0,
+  "box_collider_height": 2.0
 }

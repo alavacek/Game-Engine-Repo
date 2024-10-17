@@ -51,6 +51,7 @@ void SceneDB::LoadScene(const std::string& sceneName)
         Transform* transform = nullptr;
         SpriteRenderer* spriteRenderer = nullptr;
         Collider* collider = nullptr;
+        TriggerCollider* triggerCollider = nullptr;
 
         if (actor.HasMember("template"))
         {
@@ -66,9 +67,15 @@ void SceneDB::LoadScene(const std::string& sceneName)
                 contactDialogue = entityTemplate->contactDialogue;
 
                 transform = new Transform(entityTemplate->transform->position, entityTemplate->transform->scale, entityTemplate->transform->rotationDegrees);
+
                 spriteRenderer = new SpriteRenderer(entityTemplate->spriteRenderer->viewImageName, entityTemplate->spriteRenderer->viewPivotOffset, entityTemplate->spriteRenderer->renderOrder);
                 spriteRenderer->viewImageBack = entityTemplate->spriteRenderer->viewImageBack;
-                collider = new Collider(entityTemplate->collider->colliderWidth, entityTemplate->collider->colliderHeight);
+                // determine if new pivots should be calculated or not
+                spriteRenderer->useDefaultPivotX = entityTemplate->spriteRenderer->useDefaultPivotX;
+                spriteRenderer->useDefaultPivotY = entityTemplate->spriteRenderer->useDefaultPivotY;
+
+                collider = entityTemplate->collider ? new Collider(entityTemplate->collider->colliderWidth, entityTemplate->collider->colliderHeight) : nullptr;
+                triggerCollider = entityTemplate->triggerCollider ? new TriggerCollider(entityTemplate->triggerCollider->colliderWidth, entityTemplate->triggerCollider->colliderHeight) : nullptr;
             }
             else
             {
@@ -169,13 +176,31 @@ void SceneDB::LoadScene(const std::string& sceneName)
 
             if (colliderWidth != 0 && colliderHeight != 0)
             {
-                collider = new Collider(colliderHeight, colliderWidth);
+                collider = new Collider(colliderWidth, colliderHeight);
+            }
+        }
+
+        // Trigger Collider updates
+        if (triggerCollider != nullptr)
+        {
+            triggerCollider->colliderWidth = actor.HasMember("box_trigger_width") ? actor["box_trigger_width"].GetFloat() : triggerCollider->colliderWidth;
+            triggerCollider->colliderHeight = actor.HasMember("box_trigger_height") ? actor["box_trigger_height"].GetFloat() : triggerCollider->colliderHeight;
+        }
+        else
+        {
+
+            float triggerColliderWidth = actor.HasMember("box_trigger_width") ? actor["box_trigger_width"].GetFloat() : 0;
+            float triggerColliderHeight = actor.HasMember("box_trigger_height") ? actor["box_trigger_height"].GetFloat() : 0;
+
+            if (triggerColliderWidth != 0 && triggerColliderHeight != 0)
+            {
+                triggerCollider = new TriggerCollider(triggerColliderWidth, triggerColliderHeight);
             }
         }
         
         // Create the Entity object
         Entity* entity = new Entity(
-            name, glm::vec2(vel_x, vel_y), nearbyDialogue, contactDialogue, transform, spriteRenderer, collider
+            name, glm::vec2(vel_x, vel_y), nearbyDialogue, contactDialogue, transform, spriteRenderer, collider, triggerCollider
         );
 
         // Add the entity to the entities vector
@@ -192,18 +217,66 @@ void SceneDB::LoadScene(const std::string& sceneName)
 
         glm::vec2 position(transform->position.x, transform->position.y);
 
-        glm::ivec2 hashedPosition = HashPositionToBucket(position);
-        // Check if the position already exists in the map
-        locationOfEntitiesInScene[hashedPosition.x][hashedPosition.y].push_back(entity);
-
-        if (transform->position.x > maxWidth)
+        // fill spatial map
+        if (collider != nullptr)
         {
-            maxWidth = transform->position.x;
+            float colliderHalfWidth = (entity->collider->colliderWidth / 2) * entity->transform->scale.x;
+            float colliderHalfHeight = (entity->collider->colliderHeight / 2) * entity->transform->scale.y;
+
+            glm::ivec2 upperLeftHashedPosition = HashPositionToBucket(glm::vec2(position.x - colliderHalfWidth, position.y - colliderHalfHeight));
+            glm::ivec2 lowerRightHashedPosition = HashPositionToBucket(glm::vec2(position.x + colliderHalfWidth, position.y + colliderHalfHeight));
+
+            for (int y = upperLeftHashedPosition.y; y <= lowerRightHashedPosition.y; y++)
+            {
+                for (int x = upperLeftHashedPosition.x; x <= lowerRightHashedPosition.x; x++)
+                {
+                    glm::ivec2 hashedPosition(x, y);
+
+                    // Check if the position already exists in the map
+                    collisionsOfEntitiesInScene[hashedPosition.x][hashedPosition.y].push_back(entity);
+
+                    if (transform->position.x > maxWidth)
+                    {
+                        maxWidth = transform->position.x;
+                    }
+
+                    if (transform->position.y > maxHeight)
+                    {
+                        maxHeight = transform->position.y;
+                    }
+                }
+            }
         }
 
-        if (transform->position.y > maxHeight)
+        // fill spatial map
+        if (triggerCollider != nullptr)
         {
-            maxHeight = transform->position.y;
+            float colliderHalfWidth = (entity->triggerCollider->colliderWidth / 2) * entity->transform->scale.x;
+            float colliderHalfHeight = (entity->triggerCollider->colliderHeight / 2) * entity->transform->scale.y;
+
+            glm::ivec2 upperLeftHashedPosition = HashTriggerPositionToBucket(glm::vec2(position.x - colliderHalfWidth, position.y - colliderHalfHeight));
+            glm::ivec2 lowerRightHashedPosition = HashTriggerPositionToBucket(glm::vec2(position.x + colliderHalfWidth, position.y + colliderHalfHeight));
+
+            for (int y = upperLeftHashedPosition.y; y <= lowerRightHashedPosition.y; y++)
+            {
+                for (int x = upperLeftHashedPosition.x; x <= lowerRightHashedPosition.x; x++)
+                {
+                    glm::ivec2 hashedPosition(x, y);
+
+                    // Check if the position already exists in the map
+                    triggersOfEntitiesInScene[hashedPosition.x][hashedPosition.y].push_back(entity);
+
+                    if (transform->position.x > maxWidth)
+                    {
+                        maxWidth = transform->position.x;
+                    }
+
+                    if (transform->position.y > maxHeight)
+                    {
+                        maxHeight = transform->position.y;
+                    }
+                }
+            }
         }
 
         ParseEntityDialogue(entity);
@@ -294,52 +367,234 @@ uint64_t SceneDB::GetSceneMaxWidth()
     return maxWidth;
 }
 
-void SceneDB::ChangeEntityPosition(Entity* entity, glm::vec2 newPosition)
-{    
-    glm::ivec2 oldBucket = HashPositionToBucket(entity->transform->position);
-    glm::ivec2 newBucket = HashPositionToBucket(newPosition);
-
-    if (oldBucket != newBucket)
+bool SceneDB::CanMoveEntityToPosition(Entity* entity, glm::vec2 proposedPosition)
+{
+    if (entity->collider != nullptr && entity->collider->colliderWidth != 0 && entity->collider->colliderHeight != 0)
     {
-        int entityIndexInLocationVec = IndexOfEntityAtPosition(entity);
+        float colliderHalfWidth = (entity->collider->colliderWidth / 2) * entity->transform->scale.x;
+        float colliderHalfHeight = (entity->collider->colliderHeight / 2) * entity->transform->scale.y;
 
-        // remove from current position
-        locationOfEntitiesInScene[oldBucket.x][oldBucket.y].erase(locationOfEntitiesInScene[oldBucket.x][oldBucket.y].begin() + entityIndexInLocationVec);
+        glm::vec2 proposedUpperLeftPosition = glm::vec2(proposedPosition.x - colliderHalfWidth, proposedPosition.y - colliderHalfHeight);
+        glm::vec2 proposedLowerRightPosition = glm::vec2(glm::vec2(proposedPosition.x + colliderHalfWidth, proposedPosition.y + colliderHalfHeight));
 
-        // update actual position
-        entity->transform->position = newPosition;
+        glm::ivec2 proposedUpperLeftHashedPosition = HashPositionToBucket(proposedUpperLeftPosition);
+        glm::ivec2 proposedLowerRightHashedPosition = HashPositionToBucket(proposedLowerRightPosition);
 
-        // add to new bucket
-        auto& newBucketVec = locationOfEntitiesInScene[newBucket.x][newBucket.y];
-        auto insertionPoint = std::lower_bound(newBucketVec.begin(), newBucketVec.end(), entity,
-            [](Entity* a, Entity* b) { return a->entityID < b->entityID; });
+        for (int y = proposedUpperLeftHashedPosition.y - 1; y <= proposedLowerRightHashedPosition.y + 1; y++)
+        {
+            for (int x = proposedUpperLeftHashedPosition.x - 1; x <= proposedLowerRightHashedPosition.x + 1; x++)
+            {
+                for (int i = 0; i < collisionsOfEntitiesInScene[x][y].size(); i++)
+                {
+                    Entity* otherEntity = collisionsOfEntitiesInScene[x][y][i];
+                    // does the current entity block?
+                    if (otherEntity != entity && otherEntity->collider != nullptr
+                        && otherEntity->collider->colliderWidth != 0 && otherEntity->collider->colliderHeight != 0)
+                    {
+                        float otherColliderHalfWidth = (otherEntity->collider->colliderWidth / 2) * otherEntity->transform->scale.x;
+                        float otherColliderHalfHeight = (otherEntity->collider->colliderHeight / 2) * otherEntity->transform->scale.y;
 
-        // Insert the entity at the correct position in the new bucket
-        newBucketVec.insert(insertionPoint, entity);
+                        glm::vec2 otherUpperLeftPosition = glm::vec2(otherEntity->transform->position.x - otherColliderHalfWidth, otherEntity->transform->position.y - otherColliderHalfHeight);
+                        glm::vec2 otherLowerRightPosition = glm::vec2(otherEntity->transform->position.x + otherColliderHalfWidth, otherEntity->transform->position.y + otherColliderHalfHeight);
+
+                        if (proposedLowerRightPosition.x > otherUpperLeftPosition.x && proposedUpperLeftPosition.x < otherLowerRightPosition.x)
+                        {
+                            if (proposedLowerRightPosition.y > otherUpperLeftPosition.y && proposedUpperLeftPosition.y < otherLowerRightPosition.y)
+                            {
+                                entity->collider->collidingEntitiesThisFrame.insert(otherEntity);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (entity->collider->collidingEntitiesThisFrame.size() > 0)
+        {
+            return false;
+        }
     }
-    else
-    {
-        // update actual position
-        entity->transform->position = newPosition;
-    }
+
+    return true;
 }
 
-int SceneDB::IndexOfEntityAtPosition(Entity* entity)
+bool SceneDB::DetermineEntityTriggerCollisions(Entity* entity)
 {
+    if (entity->triggerCollider != nullptr && entity->triggerCollider->colliderWidth != 0 && entity->triggerCollider->colliderHeight != 0)
+    {
+        float colliderHalfWidth = (entity->triggerCollider->colliderWidth / 2) * entity->transform->scale.x;
+        float colliderHalfHeight = (entity->triggerCollider->colliderHeight / 2) * entity->transform->scale.y;
 
-    glm::ivec2 hashedPosition = HashPositionToBucket(entity->transform->position);
+        glm::vec2 proposedUpperLeftPosition = glm::vec2(entity->transform->position.x - colliderHalfWidth, entity->transform->position.y - colliderHalfHeight);
+        glm::vec2 proposedLowerRightPosition = glm::vec2(glm::vec2(entity->transform->position.x + colliderHalfWidth, entity->transform->position.y + colliderHalfHeight));
 
+        glm::ivec2 proposedUpperLeftHashedPosition = HashPositionToBucket(proposedUpperLeftPosition);
+        glm::ivec2 proposedLowerRightHashedPosition = HashPositionToBucket(proposedLowerRightPosition);
+
+        for (int y = proposedUpperLeftHashedPosition.y - 1; y <= proposedLowerRightHashedPosition.y + 1; y++)
+        {
+            for (int x = proposedUpperLeftHashedPosition.x - 1; x <= proposedLowerRightHashedPosition.x + 1; x++)
+            {
+                for (int i = 0; i < triggersOfEntitiesInScene[x][y].size(); i++)
+                {
+                    Entity* otherEntity = triggersOfEntitiesInScene[x][y][i];
+                    // does the current entity block?
+                    if (otherEntity != entity && otherEntity->collider != nullptr
+                        && otherEntity->collider->colliderWidth != 0 && otherEntity->collider->colliderHeight != 0)
+                    {
+                        float otherColliderHalfWidth = (otherEntity->triggerCollider->colliderWidth / 2) * otherEntity->transform->scale.x;
+                        float otherColliderHalfHeight = (otherEntity->triggerCollider->colliderHeight / 2) * otherEntity->transform->scale.y;
+
+                        glm::vec2 otherUpperLeftPosition = glm::vec2(otherEntity->transform->position.x - otherColliderHalfWidth, otherEntity->transform->position.y - otherColliderHalfHeight);
+                        glm::vec2 otherLowerRightPosition = glm::vec2(otherEntity->transform->position.x + otherColliderHalfWidth, otherEntity->transform->position.y + otherColliderHalfHeight);
+
+                        if (proposedLowerRightPosition.x > otherUpperLeftPosition.x && proposedUpperLeftPosition.x < otherLowerRightPosition.x)
+                        {
+                            if (proposedLowerRightPosition.y > otherUpperLeftPosition.y && proposedUpperLeftPosition.y < otherLowerRightPosition.y)
+                            {
+                                entity->triggerCollider->triggeringEntitiesThisFrame.insert(otherEntity);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (entity->triggerCollider->triggeringEntitiesThisFrame.size() > 0)
+        {
+            return false;
+        }
+
+        return true;
+    }
+    // No triggers if trigger collider is invalid
+    else
+    {
+        return false;
+    }
+    
+}
+
+void SceneDB::ChangeEntityPosition(Entity* entity, glm::vec2 newPosition)
+{    
+    // additional collision logic
+    if (entity->collider != nullptr && entity->collider->colliderWidth != 0 && entity->collider->colliderHeight != 0)
+    {
+        // NOTE: this implementation will NOT allow for dynamic collider changes!
+        float colliderHalfWidth = (entity->collider->colliderWidth / 2) * entity->transform->scale.x;
+        float colliderHalfHeight = (entity->collider->colliderHeight / 2) * entity->transform->scale.y;
+        glm::vec2 entityPosition = glm::vec2(entity->transform->position.x, entity->transform->position.y);
+
+        // current position info
+        glm::ivec2 oldUpperLeftHashedPosition = HashPositionToBucket(glm::vec2(entityPosition.x - colliderHalfWidth, entityPosition.y - colliderHalfHeight));
+        glm::ivec2 oldLowerRightHashedPosition = HashPositionToBucket(glm::vec2(entityPosition.x + colliderHalfWidth, entityPosition.y + colliderHalfHeight));
+
+        // new position info
+        glm::ivec2 newUpperLeftHashedPosition = HashPositionToBucket(glm::vec2(newPosition.x - colliderHalfWidth, newPosition.y - colliderHalfHeight));
+        glm::ivec2 newLowerRightHashedPosition = HashPositionToBucket(glm::vec2(newPosition.x + colliderHalfWidth, newPosition.y + colliderHalfHeight));
+
+        if (oldUpperLeftHashedPosition != newUpperLeftHashedPosition && oldLowerRightHashedPosition != newLowerRightHashedPosition)
+        {
+            for (int y = oldUpperLeftHashedPosition.y; y <= oldLowerRightHashedPosition.y; ++y) {
+                for (int x = oldUpperLeftHashedPosition.x; x <= oldLowerRightHashedPosition.x; ++x) {
+                    // Only remove from the old area if it's not part of the new area
+                    if (x < newUpperLeftHashedPosition.x || x > newLowerRightHashedPosition.x || y < newUpperLeftHashedPosition.y || y > newLowerRightHashedPosition.y)
+                    {
+                        int entityIndexInLocationVec = IndexOfEntityAtCollisionPosition(entity, glm::ivec2(x, y));
+
+                        // remove from current position
+                        collisionsOfEntitiesInScene[x][y].erase(collisionsOfEntitiesInScene[x][y].begin() + entityIndexInLocationVec);
+                    }
+                }
+            }
+
+            // Add entity to new buckets it now occupies
+            for (int y = newUpperLeftHashedPosition.y; y <= newLowerRightHashedPosition.y; ++y) {
+                for (int x = newUpperLeftHashedPosition.x; x <= newLowerRightHashedPosition.x; ++x) {
+                    // Only add to the new area if it's not part of the old area
+                    if (x < oldUpperLeftHashedPosition.x || x > oldLowerRightHashedPosition.x || y < oldUpperLeftHashedPosition.y || y > oldLowerRightHashedPosition.y)
+                    {
+                        // add to new bucket
+                        auto& newBucketVec = collisionsOfEntitiesInScene[x][y];
+                        auto insertionPoint = std::lower_bound(newBucketVec.begin(), newBucketVec.end(), entity,
+                            [](Entity* a, Entity* b) { return a->entityID < b->entityID; });
+
+                        // Insert the entity at the correct position in the new bucket
+                        newBucketVec.insert(insertionPoint, entity);
+                    }
+                }
+            }
+        }
+    }
+
+    // additional trigger logic
+    if (entity->triggerCollider != nullptr && entity->triggerCollider->colliderWidth != 0 && entity->triggerCollider->colliderHeight != 0)
+    {
+        // NOTE: this implementation will NOT allow for dynamic collider changes!
+        float colliderHalfWidth = (entity->triggerCollider->colliderWidth / 2) * entity->transform->scale.x;
+        float colliderHalfHeight = (entity->triggerCollider->colliderHeight / 2) * entity->transform->scale.y;
+        glm::vec2 entityPosition = glm::vec2(entity->transform->position.x, entity->transform->position.y);
+
+        // current position info
+        glm::ivec2 oldUpperLeftHashedPosition = HashTriggerPositionToBucket(glm::vec2(entityPosition.x - colliderHalfWidth, entityPosition.y - colliderHalfHeight));
+        glm::ivec2 oldLowerRightHashedPosition = HashTriggerPositionToBucket(glm::vec2(entityPosition.x + colliderHalfWidth, entityPosition.y + colliderHalfHeight));
+
+        // new position info
+        glm::ivec2 newUpperLeftHashedPosition = HashTriggerPositionToBucket(glm::vec2(newPosition.x - colliderHalfWidth, newPosition.y - colliderHalfHeight));
+        glm::ivec2 newLowerRightHashedPosition = HashTriggerPositionToBucket(glm::vec2(newPosition.x + colliderHalfWidth, newPosition.y + colliderHalfHeight));
+
+        if (oldUpperLeftHashedPosition != newUpperLeftHashedPosition && oldLowerRightHashedPosition != newLowerRightHashedPosition)
+        {
+            for (int y = oldUpperLeftHashedPosition.y; y <= oldLowerRightHashedPosition.y; ++y) {
+                for (int x = oldUpperLeftHashedPosition.x; x <= oldLowerRightHashedPosition.x; ++x) {
+                    // Only remove from the old area if it's not part of the new area
+                    if (x < newUpperLeftHashedPosition.x || x > newLowerRightHashedPosition.x || y < newUpperLeftHashedPosition.y || y > newLowerRightHashedPosition.y)
+                    {
+                        int entityIndexInLocationVec = IndexOfEntityAtTriggernPosition(entity, glm::ivec2(x, y));
+
+                        // remove from current position
+                        triggersOfEntitiesInScene[x][y].erase(triggersOfEntitiesInScene[x][y].begin() + entityIndexInLocationVec);
+                    }
+                }
+            }
+
+            // Add entity to new buckets it now occupies
+            for (int y = newUpperLeftHashedPosition.y; y <= newLowerRightHashedPosition.y; ++y) {
+                for (int x = newUpperLeftHashedPosition.x; x <= newLowerRightHashedPosition.x; ++x) {
+                    // Only add to the new area if it's not part of the old area
+                    if (x < oldUpperLeftHashedPosition.x || x > oldLowerRightHashedPosition.x || y < oldUpperLeftHashedPosition.y || y > oldLowerRightHashedPosition.y)
+                    {
+                        // add to new bucket
+                        auto& newBucketVec = triggersOfEntitiesInScene[x][y];
+                        auto insertionPoint = std::lower_bound(newBucketVec.begin(), newBucketVec.end(), entity,
+                            [](Entity* a, Entity* b) { return a->entityID < b->entityID; });
+
+                        // Insert the entity at the correct position in the new bucket
+                        newBucketVec.insert(insertionPoint, entity);
+                    }
+                }
+            }
+        }
+    }
+
+    // update actual position
+    entity->transform->position = newPosition;
+    return;
+}
+
+int SceneDB::IndexOfEntityAtCollisionPosition(Entity* entity, glm::ivec2 hashedPosition)
+{
     // binary search bc should be sorted by entityID
     int low = 0;
-    int high = locationOfEntitiesInScene[hashedPosition.x][hashedPosition.y].size() - 1;
+    int high = collisionsOfEntitiesInScene[hashedPosition.x][hashedPosition.y].size() - 1;
     while (low <= high) {
         int mid = low + (high - low) / 2;
 
-        if (locationOfEntitiesInScene[hashedPosition.x][hashedPosition.y][mid]->entityID == entity->entityID)
+        if (collisionsOfEntitiesInScene[hashedPosition.x][hashedPosition.y][mid]->entityID == entity->entityID)
             return mid;
 
         // If x greater, ignore left half
-        if (locationOfEntitiesInScene[hashedPosition.x][hashedPosition.y][mid]->entityID < entity->entityID)
+        if (collisionsOfEntitiesInScene[hashedPosition.x][hashedPosition.y][mid]->entityID < entity->entityID)
             low = mid + 1;
 
         // If x is smaller, ignore right half
@@ -349,10 +604,38 @@ int SceneDB::IndexOfEntityAtPosition(Entity* entity)
 
     //we messed up if we get here
     exit(0);
+}
 
+int SceneDB::IndexOfEntityAtTriggernPosition(Entity* entity, glm::ivec2 hashedPosition)
+{
+    // binary search bc should be sorted by entityID
+    int low = 0;
+    int high = triggersOfEntitiesInScene[hashedPosition.x][hashedPosition.y].size() - 1;
+    while (low <= high) {
+        int mid = low + (high - low) / 2;
+
+        if (triggersOfEntitiesInScene[hashedPosition.x][hashedPosition.y][mid]->entityID == entity->entityID)
+            return mid;
+
+        // If x greater, ignore left half
+        if (triggersOfEntitiesInScene[hashedPosition.x][hashedPosition.y][mid]->entityID < entity->entityID)
+            low = mid + 1;
+
+        // If x is smaller, ignore right half
+        else
+            high = mid - 1;
+    }
+
+    //we messed up if we get here
+    exit(0);
 }
 
 glm::ivec2 SceneDB::HashPositionToBucket(glm::vec2 pos)
+{
+    return glm::ivec2(static_cast<int>(std::round(pos.x)), static_cast<int>(std::round(pos.y)));
+}
+
+glm::ivec2 SceneDB::HashTriggerPositionToBucket(glm::vec2 pos)
 {
     return glm::ivec2(static_cast<int>(std::round(pos.x)), static_cast<int>(std::round(pos.y)));
 }

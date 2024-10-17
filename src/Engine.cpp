@@ -206,34 +206,32 @@ void Engine::Update()
 		}
 
 		// Update Entities Position, iterate based on entityID
+		// Determine Collisions and Movement Updates
 		for (int entityIndex = 0; entityIndex < currScene->GetNumberOfEntitiesInScene(); entityIndex++)
 		{
 			Entity* currEntity = currScene->GetEntityAtIndex(entityIndex);
+
+			if (currEntity->collider != nullptr)
+			{
+				// Reset collision structure
+				currEntity->collider->collidingEntitiesThisFrame.clear();
+			}
+
 			// NPC Movement	
 			// only update position/velocity if they have a none zeroes velocity
 			// update every 60 frames
 			if (currEntity->entityName != "player" && currEntity->velocity != glm::vec2(0.0f, 0.0f))
 			{
 				// Position and Movement
-				glm::vec2 proposedNPCMovement = currEntity->transform->position + currEntity->velocity;
-				glm::ivec2 proposedHashedBucket = currScene->HashPositionToBucket(proposedNPCMovement); // TODO FIX WITH COLLISIONS
+				glm::vec2 proposedNPCPosition = currEntity->transform->position + currEntity->velocity;
+
+				// glm::ivec2 proposedHashedBucket = currScene->HashPositionToBucket(proposedNPCMovement); 
 
 				// is there a blocking actor at this location?
-				bool blockingActorAtLocation = false;
-				for (int i = 0; i < currScene->locationOfEntitiesInScene[proposedHashedBucket.x][proposedHashedBucket.y].size(); i++)
-				{
-					// does the current entity block?
-					if (currScene->locationOfEntitiesInScene[proposedHashedBucket.x][proposedHashedBucket.y][i] != currEntity && currScene->locationOfEntitiesInScene[proposedHashedBucket.x][proposedHashedBucket.y][i]->blocking)
-					{
-						blockingActorAtLocation = true;
-						break;
-					}
-				}
-
 				// ensure can move in that direction
-				if (!blockingActorAtLocation)
+				if (currScene->CanMoveEntityToPosition(currEntity, proposedNPCPosition))
 				{
-					currScene->ChangeEntityPosition(currEntity, proposedNPCMovement);
+					currScene->ChangeEntityPosition(currEntity, proposedNPCPosition);
 				}
 				// direction was blocked, flip velocity
 				else
@@ -247,21 +245,9 @@ void Engine::Update()
 			{
 				if (proposedPlayerMovement != glm::vec2(0, 0))
 				{
-					glm::ivec2 proposedHashedBucket = currScene->HashPositionToBucket(proposedPlayerPosition);
+					// glm::ivec2 proposedHashedBucket = currScene->HashPositionToBucket(proposedPlayerPosition);
 					// is there a blocking actor at proposedPlayer location?
-					bool blockingActorAtLocation = false;
-					for (int i = 0; i < currScene->locationOfEntitiesInScene[proposedHashedBucket.x][proposedHashedBucket.y].size(); i++)
-					{
-						// does the current entity block?
-						if (currScene->locationOfEntitiesInScene[proposedHashedBucket.x][proposedHashedBucket.y][i] != currEntity && currScene->locationOfEntitiesInScene[proposedHashedBucket.x][proposedHashedBucket.y][i]->blocking)
-						{
-							blockingActorAtLocation = true;
-							break;
-						}
-					}
-
-					// ensure can move in that direction
-					if (!blockingActorAtLocation)
+					if (currScene->CanMoveEntityToPosition(currEntity, proposedPlayerPosition))
 					{
 						currScene->ChangeEntityPosition(currEntity, proposedPlayerPosition);
 						currEntity->velocity = proposedPlayerMovement;
@@ -275,9 +261,7 @@ void Engine::Update()
 								AudioDB::PlayChannel(Helper::GetFrameNumber() % 48 + 2, configDocument["step_sfx"].GetString(), false);
 							}
 						}
-
 					}
-
 				}
 				else
 				{
@@ -307,6 +291,21 @@ void Engine::Update()
 			}
 		}
 
+		// Determine Trigger Collider updates
+		for (int entityIndex = 0; entityIndex < currScene->GetNumberOfEntitiesInScene(); entityIndex++)
+		{
+			Entity* currEntity = currScene->GetEntityAtIndex(entityIndex);
+
+			if (currEntity->triggerCollider != nullptr)
+			{
+				// Reset trigger collision structure
+				currEntity->triggerCollider->triggeringEntitiesThisFrame.clear();
+
+				currScene->DetermineEntityTriggerCollisions(currEntity);
+			}
+		}
+
+		// Determine if still in health cooldown
 		if (inHealthCooldown)
 		{
 			if (Helper::GetFrameNumber() >= frameSinceDamageTaken + 180)
@@ -352,112 +351,87 @@ void Engine::Update()
 
 void Engine::DetermineDialoguesToPrint()
 {
+	Entity* player = currScene->GetPlayerEntity();
+
+	if (player == nullptr)
+	{
+		return;
+	}
+
 	// sacrifices space for time
 	entityDialoguesToPrint.clear();
 
 	// Determine NPC Dialogue 
 	DialogueType dialogueType = NONE;
 	
-	glm::ivec2 playerPositionBucket = currScene->HashPositionToBucket(currScene->GetPlayerEntity()->transform->position);
-	for (int xPos = std::max(0, playerPositionBucket.x - 1); xPos <= playerPositionBucket.x + 1; xPos++)
+	// Collisions
+	if (player->collider)
 	{
-		for (int yPos = std::max(0, playerPositionBucket.y - 1); yPos <= playerPositionBucket.y + 1; yPos++)
+		// determine which dialogues to print and actions that will be taken
+		for (const auto& currEntity : player->collider->collidingEntitiesThisFrame)
 		{
-
-			if (!currScene->locationOfEntitiesInScene[xPos].empty() && !currScene->locationOfEntitiesInScene[xPos][yPos].empty())
+			if (currEntity->contactDialogue == "")
 			{
-				for (int entityIndex = 0; entityIndex < currScene->locationOfEntitiesInScene[xPos][yPos].size(); entityIndex++)
+				continue;
+			}
+
+			dialogueType = NONE;
+
+			//store dialogue commands
+			dialogueType = currEntity->contactDialogueType;
+
+			// if has proceed to command, dont render this dialogue
+			if (currEntity->contactSceneToLoad != "")
+			{
+				pendingScene = currEntity->contactSceneToLoad;
+			}
+			else
+			{
+				entityDialoguesToPrint.push_back({ currEntity->entityID, currEntity->contactDialogue });
+			}
+
+			HandleDialogueCommands(dialogueType, currEntity);
+
+
+
+
+		}
+	}
+	
+	if (player->triggerCollider)
+	{
+		for (const auto& currEntity : player->triggerCollider->triggeringEntitiesThisFrame)
+		{
+			if (currEntity->nearbyDialogue == "")
+			{
+				continue;
+			}
+
+			//store dialogue commands
+			dialogueType = currEntity->nearbyDialogueType;
+
+			// if has proceed to command, dont render this dialogue
+			if (currEntity->nearbySceneToLoad != "")
+			{
+				pendingScene = currEntity->nearbySceneToLoad;
+			}
+			else
+			{
+				entityDialoguesToPrint.push_back({ currEntity->entityID, currEntity->nearbyDialogue });
+			}
+
+			// handle first audio output for nearby 
+			if (!currEntity->hasTriggeredNearbyDialogue)
+			{
+				currEntity->hasTriggeredNearbyDialogue = true;
+				// Play score audio
+				if (configDocument.HasMember("nearby_dialogue_sfx") && configDocument["nearby_dialogue_sfx"].IsString())
 				{
-					Entity* currEntity = currScene->locationOfEntitiesInScene[xPos][yPos][entityIndex];
-					if (currEntity->entityName != "player")
-					{
-						// Dialogue
-						// determine which dialogues to print and actions that will be taken
-						dialogueType = NONE;
-
-						// contact dialogue
-						if (xPos == currScene->GetPlayerEntity()->transform->position.x && yPos == currScene->GetPlayerEntity()->transform->position.y)
-						{
-							//store dialogue commands
-							dialogueType = currEntity->contactDialogueType;
-
-							// if has proceed to command, dont render this dialogue
-							if (currEntity->contactSceneToLoad != "")
-							{
-								pendingScene = currEntity->contactSceneToLoad;
-							}
-							else
-							{
-								entityDialoguesToPrint.push_back({ currEntity->entityID, currEntity->contactDialogue });
-							}
-
-							
-						}
-						// nearby dialogue
-						else
-						{
-							//store dialogue commands
-							dialogueType = currEntity->nearbyDialogueType;
-
-							// if has proceed to command, dont render this dialogue
-							if (currEntity->nearbySceneToLoad != "")
-							{
-								pendingScene = currEntity->nearbySceneToLoad;
-							}
-							else
-							{
-								entityDialoguesToPrint.push_back({ currEntity->entityID, currEntity->nearbyDialogue });
-							}
-
-							// handle first audio output for nearby 
-							if (!currEntity->hasTriggeredNearbyDialogue)
-							{
-								currEntity->hasTriggeredNearbyDialogue = true;
-								// Play score audio
-								if (configDocument.HasMember("nearby_dialogue_sfx") && configDocument["nearby_dialogue_sfx"].IsString())
-								{
-									AudioDB::PlayChannel(Helper::GetFrameNumber() % 48 + 2, configDocument["nearby_dialogue_sfx"].GetString(), false);
-								}
-							}
-						}
-
-						//handle dialogue commands
-						if (!inHealthCooldown && dialogueType == HEALTHDOWN)
-						{
-							playerHealth--;
-							inHealthCooldown = true;
-							frameSinceDamageTaken = Helper::GetFrameNumber();
-
-							// Play damage audio
-							if (configDocument.HasMember("damage_sfx") && configDocument["damage_sfx"].IsString())
-							{
-								// the +2 prevents us from clobbering channel 0 or 1
-								AudioDB::PlayChannel(Helper::GetFrameNumber() % 48 + 2, configDocument["damage_sfx"].GetString(), false);
-							}
-						}
-						else if (!currEntity->hasIncreasedScore && dialogueType == SCOREUP)
-						{
-							playerScore++;
-							currEntity->hasIncreasedScore = true;
-
-							// Play score audio
-							if (configDocument.HasMember("score_sfx") && configDocument["score_sfx"].IsString())
-							{
-								AudioDB::PlayChannel(1, configDocument["score_sfx"].GetString(), false);
-							}
-						}
-						else if (dialogueType == YOUWIN)
-						{
-							state = WON;
-						}
-						else if (dialogueType == GAMEOVER)
-						{
-							//TODO: what if state was alr set to WON this frame?
-							state = LOST;
-						}
-					}
+					AudioDB::PlayChannel(Helper::GetFrameNumber() % 48 + 2, configDocument["nearby_dialogue_sfx"].GetString(), false);
 				}
 			}
+
+			HandleDialogueCommands(dialogueType, currEntity);
 		}
 	}
 
@@ -466,6 +440,44 @@ void Engine::DetermineDialoguesToPrint()
 			return a.first < b.first;
 	});
 
+}
+
+void Engine::HandleDialogueCommands(DialogueType type, Entity* speakingEntity)
+{
+	//handle dialogue commands
+	if (!inHealthCooldown && type == HEALTHDOWN)
+	{
+		playerHealth--;
+		inHealthCooldown = true;
+		frameSinceDamageTaken = Helper::GetFrameNumber();
+
+		// Play damage audio
+		if (configDocument.HasMember("damage_sfx") && configDocument["damage_sfx"].IsString())
+		{
+			// the +2 prevents us from clobbering channel 0 or 1
+			AudioDB::PlayChannel(Helper::GetFrameNumber() % 48 + 2, configDocument["damage_sfx"].GetString(), false);
+		}
+	}
+	else if (!speakingEntity->hasIncreasedScore && type == SCOREUP)
+	{
+		playerScore++;
+		speakingEntity->hasIncreasedScore = true;
+
+		// Play score audio
+		if (configDocument.HasMember("score_sfx") && configDocument["score_sfx"].IsString())
+		{
+			AudioDB::PlayChannel(1, configDocument["score_sfx"].GetString(), false);
+		}
+	}
+	else if (type == YOUWIN)
+	{
+		state = WON;
+	}
+	else if (type == GAMEOVER)
+	{
+		//TODO: what if state was alr set to WON this frame?
+		state = LOST;
+	}
 }
 
 void Engine::Render()
@@ -503,7 +515,7 @@ void Engine::Render()
 			
 			for (Entity* entity : currScene->entityRenderOrder)
 			{
-				entity->spriteRenderer->RenderEntity(entity, &cameraRect, pixelsPerUnit, entity->velocity != glm::vec2(0,0));
+				entity->spriteRenderer->RenderEntity(entity, &cameraRect, pixelsPerUnit, entity->velocity != glm::vec2(0,0), debugShowCollisions);
 			}
 		
 			// Reset for UI and alike

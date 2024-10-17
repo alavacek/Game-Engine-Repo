@@ -46,6 +46,7 @@ public:
 
 	void Update();
 	void DetermineDialoguesToPrint();
+	void HandleDialogueCommands(DialogueType type, Entity* speakingEntity);
 
 	void Render();
 
@@ -76,6 +77,7 @@ private:
 
 	bool isRunning = true;	
 	bool inHealthCooldown = false;
+	bool debugShowCollisions = true;
 };
 
 #endif
