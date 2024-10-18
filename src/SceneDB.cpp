@@ -117,7 +117,7 @@ void SceneDB::LoadScene(const std::string& sceneName)
 
             int transformRotationDegrees = actor.HasMember("transform_rotation_degrees") ? actor["transform_rotation_degrees"].GetDouble() : 0.0;
 
-            transform = new Transform(glm::ivec2(transformPositionX, transformPositionY), glm::vec2(transformScaleX, transformScaleY), transformRotationDegrees);
+            transform = new Transform(glm::vec2(transformPositionX, transformPositionY), glm::vec2(transformScaleX, transformScaleY), transformRotationDegrees);
         }
 
         // Sprite Renderer updates
@@ -249,6 +249,7 @@ void SceneDB::LoadScene(const std::string& sceneName)
             triggersSpatialMapSize = ((triggersSpatialMapSize * (numberOfTriggers * 2)) + (triggerCollider->colliderWidth + triggerCollider->colliderHeight)) / ((numberOfTriggers * 2) + 2);
             numberOfTriggers++;
         }
+
     }
 
     // Fill spatial maps
@@ -268,9 +269,9 @@ void SceneDB::LoadScene(const std::string& sceneName)
             glm::ivec2 upperLeftHashedPosition = HashPositionToBucket(glm::vec2(position.x - colliderHalfWidth, position.y - colliderHalfHeight));
             glm::ivec2 lowerRightHashedPosition = HashPositionToBucket(glm::vec2(position.x + colliderHalfWidth, position.y + colliderHalfHeight));
 
-            for (int y = upperLeftHashedPosition.y; y <= lowerRightHashedPosition.y; y++)
+            for (int y = upperLeftHashedPosition.y; y <= lowerRightHashedPosition.y; y = y + collisionsSpatialMapSize)
             {
-                for (int x = upperLeftHashedPosition.x; x <= lowerRightHashedPosition.x; x++)
+                for (int x = upperLeftHashedPosition.x; x <= lowerRightHashedPosition.x; x = x + collisionsSpatialMapSize)
                 {
                     glm::ivec2 hashedPosition(x, y);
 
@@ -299,11 +300,11 @@ void SceneDB::LoadScene(const std::string& sceneName)
             glm::ivec2 upperLeftHashedPosition = HashTriggerPositionToBucket(glm::vec2(position.x - colliderHalfWidth, position.y - colliderHalfHeight));
             glm::ivec2 lowerRightHashedPosition = HashTriggerPositionToBucket(glm::vec2(position.x + colliderHalfWidth, position.y + colliderHalfHeight));
 
-            for (int y = upperLeftHashedPosition.y; y <= lowerRightHashedPosition.y; y++)
+            for (int y = upperLeftHashedPosition.y; y <= lowerRightHashedPosition.y; y = y + triggersSpatialMapSize)
             {
-                for (int x = upperLeftHashedPosition.x; x <= lowerRightHashedPosition.x; x++)
+                for (int x = upperLeftHashedPosition.x; x <= lowerRightHashedPosition.x; x = x + triggersSpatialMapSize)
                 {
-                    glm::ivec2 hashedPosition(x, y);
+                    glm::vec2 hashedPosition(x, y);
 
                     // Check if the position already exists in the map
                     triggersOfEntitiesInScene[hashedPosition.x][hashedPosition.y].push_back(entity);
@@ -420,9 +421,9 @@ bool SceneDB::CanMoveEntityToPosition(Entity* entity, glm::vec2 proposedPosition
         glm::ivec2 proposedUpperLeftHashedPosition = HashPositionToBucket(proposedUpperLeftPosition);
         glm::ivec2 proposedLowerRightHashedPosition = HashPositionToBucket(proposedLowerRightPosition);
 
-        for (int y = proposedUpperLeftHashedPosition.y - 1; y <= proposedLowerRightHashedPosition.y + 1; y++)
+        for (int y = proposedUpperLeftHashedPosition.y - collisionsSpatialMapSize; y <= proposedLowerRightHashedPosition.y + collisionsSpatialMapSize; y = y + collisionsSpatialMapSize)
         {
-            for (int x = proposedUpperLeftHashedPosition.x - 1; x <= proposedLowerRightHashedPosition.x + 1; x++)
+            for (int x = proposedUpperLeftHashedPosition.x - collisionsSpatialMapSize; x <= proposedLowerRightHashedPosition.x + collisionsSpatialMapSize; x = x + collisionsSpatialMapSize)
             {
                 for (int i = 0; i < collisionsOfEntitiesInScene[x][y].size(); i++)
                 {
@@ -468,12 +469,12 @@ bool SceneDB::DetermineEntityTriggerCollisions(Entity* entity)
         glm::vec2 proposedUpperLeftPosition = glm::vec2(entity->transform->position.x - colliderHalfWidth, entity->transform->position.y - colliderHalfHeight);
         glm::vec2 proposedLowerRightPosition = glm::vec2(glm::vec2(entity->transform->position.x + colliderHalfWidth, entity->transform->position.y + colliderHalfHeight));
 
-        glm::ivec2 proposedUpperLeftHashedPosition = HashPositionToBucket(proposedUpperLeftPosition);
-        glm::ivec2 proposedLowerRightHashedPosition = HashPositionToBucket(proposedLowerRightPosition);
+        glm::ivec2 proposedUpperLeftHashedPosition = HashTriggerPositionToBucket(proposedUpperLeftPosition);
+        glm::ivec2 proposedLowerRightHashedPosition = HashTriggerPositionToBucket(proposedLowerRightPosition);
 
-        for (int y = proposedUpperLeftHashedPosition.y - 1; y <= proposedLowerRightHashedPosition.y + 1; y++)
+        for (int y = proposedUpperLeftHashedPosition.y - triggersSpatialMapSize; y <= proposedLowerRightHashedPosition.y + triggersSpatialMapSize; y = y + triggersSpatialMapSize)
         {
-            for (int x = proposedUpperLeftHashedPosition.x - 1; x <= proposedLowerRightHashedPosition.x + 1; x++)
+            for (int x = proposedUpperLeftHashedPosition.x - triggersSpatialMapSize; x <= proposedLowerRightHashedPosition.x + triggersSpatialMapSize; x = x + triggersSpatialMapSize)
             {
                 for (int i = 0; i < triggersOfEntitiesInScene[x][y].size(); i++)
                 {
@@ -535,8 +536,8 @@ void SceneDB::ChangeEntityPosition(Entity* entity, glm::vec2 newPosition)
 
         if (oldUpperLeftHashedPosition != newUpperLeftHashedPosition && oldLowerRightHashedPosition != newLowerRightHashedPosition)
         {
-            for (int y = oldUpperLeftHashedPosition.y; y <= oldLowerRightHashedPosition.y; ++y) {
-                for (int x = oldUpperLeftHashedPosition.x; x <= oldLowerRightHashedPosition.x; ++x) {
+            for (int y = oldUpperLeftHashedPosition.y; y <= oldLowerRightHashedPosition.y; y = y + collisionsSpatialMapSize) {
+                for (int x = oldUpperLeftHashedPosition.x; x <= oldLowerRightHashedPosition.x; x = x + collisionsSpatialMapSize) {
                     // Only remove from the old area if it's not part of the new area
                     if (x < newUpperLeftHashedPosition.x || x > newLowerRightHashedPosition.x || y < newUpperLeftHashedPosition.y || y > newLowerRightHashedPosition.y)
                     {
@@ -549,8 +550,8 @@ void SceneDB::ChangeEntityPosition(Entity* entity, glm::vec2 newPosition)
             }
 
             // Add entity to new buckets it now occupies
-            for (int y = newUpperLeftHashedPosition.y; y <= newLowerRightHashedPosition.y; ++y) {
-                for (int x = newUpperLeftHashedPosition.x; x <= newLowerRightHashedPosition.x; ++x) {
+            for (int y = newUpperLeftHashedPosition.y; y <= newLowerRightHashedPosition.y;  y = y + collisionsSpatialMapSize) {
+                for (int x = newUpperLeftHashedPosition.x; x <= newLowerRightHashedPosition.x; x = x + collisionsSpatialMapSize) {
                     // Only add to the new area if it's not part of the old area
                     if (x < oldUpperLeftHashedPosition.x || x > oldLowerRightHashedPosition.x || y < oldUpperLeftHashedPosition.y || y > oldLowerRightHashedPosition.y)
                     {
@@ -585,8 +586,8 @@ void SceneDB::ChangeEntityPosition(Entity* entity, glm::vec2 newPosition)
 
         if (oldUpperLeftHashedPosition != newUpperLeftHashedPosition && oldLowerRightHashedPosition != newLowerRightHashedPosition)
         {
-            for (int y = oldUpperLeftHashedPosition.y; y <= oldLowerRightHashedPosition.y; ++y) {
-                for (int x = oldUpperLeftHashedPosition.x; x <= oldLowerRightHashedPosition.x; ++x) {
+            for (int y = oldUpperLeftHashedPosition.y; y <= oldLowerRightHashedPosition.y; y = y + triggersSpatialMapSize) {
+                for (int x = oldUpperLeftHashedPosition.x; x <= oldLowerRightHashedPosition.x; x = x + triggersSpatialMapSize) {
                     // Only remove from the old area if it's not part of the new area
                     if (x < newUpperLeftHashedPosition.x || x > newLowerRightHashedPosition.x || y < newUpperLeftHashedPosition.y || y > newLowerRightHashedPosition.y)
                     {
@@ -599,8 +600,8 @@ void SceneDB::ChangeEntityPosition(Entity* entity, glm::vec2 newPosition)
             }
 
             // Add entity to new buckets it now occupies
-            for (int y = newUpperLeftHashedPosition.y; y <= newLowerRightHashedPosition.y; ++y) {
-                for (int x = newUpperLeftHashedPosition.x; x <= newLowerRightHashedPosition.x; ++x) {
+            for (int y = newUpperLeftHashedPosition.y; y <= newLowerRightHashedPosition.y; y = y + triggersSpatialMapSize) {
+                for (int x = newUpperLeftHashedPosition.x; x <= newLowerRightHashedPosition.x; x = x + triggersSpatialMapSize) {
                     // Only add to the new area if it's not part of the old area
                     if (x < oldUpperLeftHashedPosition.x || x > oldLowerRightHashedPosition.x || y < oldUpperLeftHashedPosition.y || y > oldLowerRightHashedPosition.y)
                     {
@@ -672,12 +673,12 @@ int SceneDB::IndexOfEntityAtTriggernPosition(Entity* entity, glm::ivec2 hashedPo
 
 glm::ivec2 SceneDB::HashPositionToBucket(glm::vec2 pos)
 {
-    return glm::ivec2(static_cast<int>(std::floor(pos.x)), static_cast<int>(std::floor(pos.y)));
+    return glm::ivec2(static_cast<int>((std::floor(pos.x / collisionsSpatialMapSize)) * collisionsSpatialMapSize), static_cast<int>((std::floor(pos.y / collisionsSpatialMapSize)) * collisionsSpatialMapSize));
 }
 
 glm::ivec2 SceneDB::HashTriggerPositionToBucket(glm::vec2 pos)
 {
-    return glm::ivec2(static_cast<int>(std::floor(pos.x)), static_cast<int>(std::floor(pos.y)));
+    return glm::ivec2(static_cast<int>((std::floor(pos.x / triggersSpatialMapSize)) * triggersSpatialMapSize), static_cast<int>((std::floor(pos.y / triggersSpatialMapSize)) * triggersSpatialMapSize));
 }
 
 

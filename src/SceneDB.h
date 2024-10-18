@@ -42,8 +42,8 @@ public:
 	glm::ivec2 HashPositionToBucket(glm::vec2 pos);
 	glm::ivec2 HashTriggerPositionToBucket(glm::vec2 pos);
 
-	std::unordered_map<uint64_t, std::unordered_map<uint64_t, std::vector<Entity*>>> collisionsOfEntitiesInScene;
-	std::unordered_map<uint64_t, std::unordered_map<uint64_t, std::vector<Entity*>>> triggersOfEntitiesInScene;
+	std::unordered_map<int, std::unordered_map<int, std::vector<Entity*>>> collisionsOfEntitiesInScene;
+	std::unordered_map<int, std::unordered_map<int, std::vector<Entity*>>> triggersOfEntitiesInScene;
 	std::vector<Entity*> entityRenderOrder;
 
 private:
@@ -54,8 +54,8 @@ private:
 	int totalEntities = 0;
 	int maxHeight = 0;
 	int maxWidth = 0;
-	float collisionsSpatialMapSize;
-	float triggersSpatialMapSize;
+	int collisionsSpatialMapSize;
+	int triggersSpatialMapSize;
 };
 
 #endif
