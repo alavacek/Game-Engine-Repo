@@ -122,8 +122,16 @@ void Engine::Start()
 	}
 
 	// set up camera
-	cameraRect.w = Renderer::GetResolution().x;
-	cameraRect.h = Renderer::GetResolution().y;
+	glm::ivec2 resolution = Renderer::GetResolution();
+	double zoomFactor = Renderer::GetZoomFactor();
+
+	cameraRect.w = static_cast<int>(std::round(resolution.x / zoomFactor));
+	cameraRect.h = static_cast<int>(std::round(resolution.y / zoomFactor));
+
+	glm::vec2 centerPos = currScene->GetPlayerEntity() != nullptr ? currScene->GetPlayerEntity()->transform->position : glm::vec2(0, 0);
+
+	cameraRect.x = static_cast<int>(std::round((centerPos.x * pixelsPerUnit) - (cameraRect.w / 2) + Renderer::GetCameraOffset().x));
+	cameraRect.y = static_cast<int>(std::round((centerPos.y * pixelsPerUnit) - (cameraRect.h / 2) + Renderer::GetCameraOffset().y));
 }
 
 void Engine::Input()
@@ -211,6 +219,18 @@ void Engine::Update()
 		{
 			Entity* currEntity = currScene->GetEntityAtIndex(entityIndex);
 
+			// Attack and Damage Image updates
+			// Attack
+			if (currEntity->framesLeftOfAttackIndicator > 0)
+			{
+				currEntity->framesLeftOfAttackIndicator--;
+			}
+			// Damage
+			if (currEntity->framesLeftOfDamageIndicator > 0)
+			{
+				currEntity->framesLeftOfDamageIndicator--;
+			}
+
 			if (currEntity->collider != nullptr)
 			{
 				// Reset collision structure
@@ -224,8 +244,6 @@ void Engine::Update()
 			{
 				// Position and Movement
 				glm::vec2 proposedNPCPosition = currEntity->transform->position + currEntity->velocity;
-
-				// glm::ivec2 proposedHashedBucket = currScene->HashPositionToBucket(proposedNPCMovement); 
 
 				// is there a blocking actor at this location?
 				// ensure can move in that direction
@@ -451,6 +469,17 @@ void Engine::HandleDialogueCommands(DialogueType type, Entity* speakingEntity)
 		inHealthCooldown = true;
 		frameSinceDamageTaken = Helper::GetFrameNumber();
 
+		// Set up for visual indicator
+		if (currScene->GetPlayerEntity()->spriteRenderer && currScene->GetPlayerEntity()->spriteRenderer->viewImageDamage)
+		{
+			currScene->GetPlayerEntity()->framesLeftOfDamageIndicator = framesOfDamageIndicator;
+		}
+
+		if (speakingEntity->spriteRenderer && speakingEntity->spriteRenderer->viewImageAttack)
+		{
+			speakingEntity->framesLeftOfAttackIndicator = framesOfAttackIndicator;
+		}
+
 		// Play damage audio
 		if (configDocument.HasMember("damage_sfx") && configDocument["damage_sfx"].IsString())
 		{
@@ -500,8 +529,8 @@ void Engine::Render()
 			
 			double zoomFactor = Renderer::GetZoomFactor();
 
-			cameraRect.x = glm::mix(cameraRect.x, static_cast<int>(std::round((centerPos.x * pixelsPerUnit) - (resolution.x / (2 * zoomFactor)) + Renderer::GetCameraOffset().x)), Renderer::GetCameraEaseFactor());
-			cameraRect.y = glm::mix(cameraRect.y, static_cast<int>(std::round((centerPos.y * pixelsPerUnit) - (resolution.y / (2 * zoomFactor)) + Renderer::GetCameraOffset().y)), Renderer::GetCameraEaseFactor());
+			cameraRect.x = glm::mix(cameraRect.x, static_cast<int>(std::round((centerPos.x * pixelsPerUnit) - (cameraRect.w / 2) + Renderer::GetCameraOffset().x)), Renderer::GetCameraEaseFactor());
+			cameraRect.y = glm::mix(cameraRect.y, static_cast<int>(std::round((centerPos.y * pixelsPerUnit) - (cameraRect.h / 2) + Renderer::GetCameraOffset().y)), Renderer::GetCameraEaseFactor());
 
 			//Render Map
 			//int rowBoundMin = centerPos.y - ((resolution.y / pixelsPerUnit) / 2);
@@ -510,7 +539,6 @@ void Engine::Render()
 			//int colBoundMax = centerPos.x + ((resolution.x / pixelsPerUnit) / 2);
 
 			// render visible map
-			// TODO: Culling
 			SDL_RenderSetScale(renderer, zoomFactor, zoomFactor);
 			
 			for (Entity* entity : currScene->entityRenderOrder)

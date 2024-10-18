@@ -54,6 +54,8 @@ private:
 	int totalEntities = 0;
 	int maxHeight = 0;
 	int maxWidth = 0;
+	float collisionsSpatialMapSize;
+	float triggersSpatialMapSize;
 };
 
 #endif

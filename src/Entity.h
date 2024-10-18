@@ -38,20 +38,23 @@ public:
 	Collider* collider;
 	TriggerCollider* triggerCollider;
 
-	glm::vec2 velocity;
 	std::string nearbyDialogue;
 	std::string contactDialogue;
-
-	bool hasIncreasedScore = false;
-	bool hasTriggeredNearbyDialogue = false;
-	DialogueType nearbyDialogueType = NONE;
-	DialogueType contactDialogueType = NONE;
 	std::string nearbySceneToLoad; // will be set to "" if not relevant
 	std::string contactSceneToLoad; // will be set to "" if not relevant
 
-	std::vector<Component> components;
+	glm::vec2 velocity;
+
+	DialogueType nearbyDialogueType = NONE;
+	DialogueType contactDialogueType = NONE;
 
 	int entityID;
+	int framesLeftOfDamageIndicator = 0;
+	int framesLeftOfAttackIndicator = 0;
+
+	bool hasIncreasedScore = false;
+	bool hasTriggeredNearbyDialogue = false;
+
 
 	Entity(std::string entityName, glm::vec2 initialVelocity,
 		std::string nearbyDialogue, std::string contactDialogue,
@@ -86,6 +89,9 @@ public:
 	glm::dvec2 viewPivotOffset;
 	SDL_Texture* viewImage;
 	SDL_Texture* viewImageBack;
+	SDL_Texture* viewImageDamage;
+	SDL_Texture* viewImageAttack;
+
 	std::string viewImageName;
 	std::optional<int> renderOrder;
 
@@ -97,7 +103,8 @@ public:
 	bool useDefaultPivotY;
 
 	// Updated constructor to handle view_image and pivot offset logic
-	SpriteRenderer(const std::string& viewImageName_in = "", glm::dvec2 pivot = { -1, -1 }, std::optional<int> renderOrderIn = std::nullopt, const std::string& viewImageBackName = "", bool movementBounceIn = false)
+	SpriteRenderer(const std::string& viewImageName_in = "", glm::dvec2 pivot = { -1, -1 }, std::optional<int> renderOrderIn = std::nullopt, const std::string& viewImageBackName = "", 
+		bool movementBounceIn = false, const std::string& viewImageDamageName = "", const std::string& viewImageAttackName = "")
 		: viewImageName(viewImageName_in), viewPivotOffset(pivot), viewImage(nullptr), renderOrder(renderOrderIn), movementBounce(movementBounceIn)
 	{
 		if (!viewImageName.empty()) {
@@ -107,6 +114,16 @@ public:
 		if (!viewImageBackName.empty())
 		{
 			viewImageBack = ImageDB::LoadImage(viewImageBackName);
+		}
+
+		if (!viewImageDamageName.empty())
+		{
+			viewImageDamage = ImageDB::LoadImage(viewImageDamageName);
+		}
+
+		if (!viewImageAttackName.empty())
+		{
+			viewImageAttack = ImageDB::LoadImage(viewImageAttackName);
 		}
 
 		// used for templating 
@@ -136,6 +153,8 @@ public:
 	void ChangeSprite(const std::string& viewImageName_in = "", glm::dvec2 pivot = { -1, -1 });
 
 	void RenderEntity(Entity* entity, SDL_Rect* cameraRect, int pixelsPerUnit, bool bounce = false, bool drawCollision = false);
+
+	static bool IsEntityInView(SDL_Rect* entityDestinationRect);
 };
 
 class Collider

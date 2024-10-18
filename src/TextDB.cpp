@@ -1,6 +1,6 @@
 #include "TextDB.h"
 
-
+std::unordered_map<TextKey, SDL_Texture*, TextKeyHash> TextDB::cachedTextures;
 std::vector<std::string> TextDB::introTexts;
 TTF_Font* TextDB::font;
 SDL_Color TextDB::white = { 255, 255, 255, 255 };
@@ -8,6 +8,10 @@ SDL_Color TextDB::white = { 255, 255, 255, 255 };
 uint16_t TextDB::currIntroText = 0;
 bool TextDB::finishedIntro = false;
 
+// SDL Color equality operator for hash tuple key
+bool operator==(const SDL_Color& lhs, const SDL_Color& rhs) {
+    return lhs.r == rhs.r && lhs.g == rhs.g && lhs.b == rhs.b && lhs.a == rhs.a;
+}
 
 void TextDB::TextDB_Init(const std::string& fontName)
 {
@@ -68,11 +72,25 @@ void TextDB::DrawCurrentIntroText(uint32_t windowHeight)
 
 void TextDB::DrawText(const std::string& textContent, uint32_t fontSize, SDL_Color fontColor, uint32_t x, uint32_t y)
 {
-    SDL_Surface* textSurface = TTF_RenderText_Solid(font, textContent.c_str(), fontColor);
-    SDL_Texture* textTexture = SDL_CreateTextureFromSurface(Renderer::GetRenderer(), textSurface);
+    TextKey key = std::make_tuple(textContent, fontSize, fontColor);
+    SDL_Texture* textTexture;
 
-    SDL_Rect textRect = { x, y, textSurface->w, textSurface->h };
+    // Does not exist yet
+    if (cachedTextures.find(key) == cachedTextures.end())
+    {
+        SDL_Surface* textSurface = TTF_RenderText_Solid(font, textContent.c_str(), fontColor);
+        textTexture = SDL_CreateTextureFromSurface(Renderer::GetRenderer(), textSurface);
+
+        cachedTextures[key] = textTexture;
+
+        SDL_FreeSurface(textSurface);
+    }
+    else
+    {
+        textTexture = cachedTextures[key];
+    }
+
+    SDL_Rect textRect = { x, y, 0, 0 };
+    SDL_QueryTexture(textTexture, nullptr, nullptr, &textRect.w, &textRect.h);
     SDL_RenderCopy(Renderer::GetRenderer(), textTexture, NULL, &textRect);
-    SDL_FreeSurface(textSurface);
-    SDL_DestroyTexture(textTexture);
 }

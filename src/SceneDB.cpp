@@ -35,6 +35,8 @@ void SceneDB::LoadScene(const std::string& sceneName)
     // Clear the entities vector in case it's been used before
     entityRenderOrder.clear();
 
+    int numberOfColliders = 0;
+    int numberOfTriggers = 0;
 
     // Loop through each actor in the JSON array
     for (rapidjson::SizeType i = 0; i < actors.Size(); i++)
@@ -70,6 +72,8 @@ void SceneDB::LoadScene(const std::string& sceneName)
 
                 spriteRenderer = new SpriteRenderer(entityTemplate->spriteRenderer->viewImageName, entityTemplate->spriteRenderer->viewPivotOffset, entityTemplate->spriteRenderer->renderOrder);
                 spriteRenderer->viewImageBack = entityTemplate->spriteRenderer->viewImageBack;
+                spriteRenderer->viewImageDamage = entityTemplate->spriteRenderer->viewImageDamage;
+                spriteRenderer->viewImageAttack = entityTemplate->spriteRenderer->viewImageAttack;
                 // determine if new pivots should be calculated or not
                 spriteRenderer->useDefaultPivotX = entityTemplate->spriteRenderer->useDefaultPivotX;
                 spriteRenderer->useDefaultPivotY = entityTemplate->spriteRenderer->useDefaultPivotY;
@@ -127,6 +131,18 @@ void SceneDB::LoadScene(const std::string& sceneName)
                 spriteRenderer->viewImageBack = ImageDB::LoadImage(viewImageBackName);
             }
 
+            std::string viewImageDamageName = actor.HasMember("view_image_damage") ? actor["view_image_damage"].GetString() : "";
+            if (viewImageDamageName != "")
+            {
+                spriteRenderer->viewImageDamage = ImageDB::LoadImage(viewImageDamageName);
+            }
+
+            std::string viewImageAttackName = actor.HasMember("view_image_attack") ? actor["view_image_attack"].GetString() : "";
+            if (viewImageAttackName != "")
+            {
+                spriteRenderer->viewImageAttack = ImageDB::LoadImage(viewImageAttackName);
+            }
+
             spriteRenderer->viewPivotOffset.x = actor.HasMember("view_pivot_offset_x") ? actor["view_pivot_offset_x"].GetDouble() : spriteRenderer->viewPivotOffset.x;
             spriteRenderer->viewPivotOffset.y = actor.HasMember("view_pivot_offset_y") ? actor["view_pivot_offset_y"].GetDouble() : spriteRenderer->viewPivotOffset.y;
 
@@ -143,6 +159,8 @@ void SceneDB::LoadScene(const std::string& sceneName)
         {
             std::string viewImageName = actor.HasMember("view_image") ? actor["view_image"].GetString() : "";
             std::string viewImageBackName = actor.HasMember("view_image_back") ? actor["view_image_back"].GetString() : "";
+            std::string viewImageDamageName = actor.HasMember("view_image_damage") ? actor["view_image_damage"].GetString() : "";
+            std::string viewImageAttackName = actor.HasMember("view_image_attack") ? actor["view_image_attack"].GetString() : "";
 
             double viewPivotOffsetX = actor.HasMember("view_pivot_offset_x") ? actor["view_pivot_offset_x"].GetDouble() : -1.0;
             double viewPivotOffsetY = actor.HasMember("view_pivot_offset_y") ? actor["view_pivot_offset_y"].GetDouble() : -1.0;
@@ -159,7 +177,8 @@ void SceneDB::LoadScene(const std::string& sceneName)
 
             bool movementBounce = actor.HasMember("movement_bounce_enabled") ? actor["movement_bounce_enabled"].GetBool() : false;
 
-            spriteRenderer = new SpriteRenderer(viewImageName, glm::dvec2(viewPivotOffsetX, viewPivotOffsetY), renderOrder, viewImageBackName, movementBounce);
+            spriteRenderer = new SpriteRenderer(viewImageName, glm::dvec2(viewPivotOffsetX, viewPivotOffsetY), renderOrder, viewImageBackName, 
+                movementBounce, viewImageDamageName, viewImageAttackName);
         }
 
         // Collider updates
@@ -215,6 +234,29 @@ void SceneDB::LoadScene(const std::string& sceneName)
         entity->entityID = totalEntities;
         totalEntities++;
 
+        ParseEntityDialogue(entity);
+
+        // Running average of collider size
+        if (collider != nullptr && collider->colliderWidth != 0 && collider->colliderHeight != 0)
+        {
+            collisionsSpatialMapSize = ((collisionsSpatialMapSize * (numberOfColliders * 2)) + (collider->colliderWidth + collider->colliderHeight)) / ((numberOfColliders * 2) + 2);
+            numberOfColliders++;
+        }
+
+        // Running average of trigger collider size
+        if (triggerCollider != nullptr && triggerCollider->colliderWidth != 0 && triggerCollider->colliderHeight != 0)
+        {
+            triggersSpatialMapSize = ((triggersSpatialMapSize * (numberOfTriggers * 2)) + (triggerCollider->colliderWidth + triggerCollider->colliderHeight)) / ((numberOfTriggers * 2) + 2);
+            numberOfTriggers++;
+        }
+    }
+
+    // Fill spatial maps
+    for (auto entity : entities)
+    {
+        Transform* transform = entity->transform;
+        Collider* collider = entity->collider;
+        TriggerCollider* triggerCollider = entity->triggerCollider;
         glm::vec2 position(transform->position.x, transform->position.y);
 
         // fill spatial map
@@ -278,8 +320,6 @@ void SceneDB::LoadScene(const std::string& sceneName)
                 }
             }
         }
-
-        ParseEntityDialogue(entity);
     }
 }
 
@@ -632,12 +672,12 @@ int SceneDB::IndexOfEntityAtTriggernPosition(Entity* entity, glm::ivec2 hashedPo
 
 glm::ivec2 SceneDB::HashPositionToBucket(glm::vec2 pos)
 {
-    return glm::ivec2(static_cast<int>(std::round(pos.x)), static_cast<int>(std::round(pos.y)));
+    return glm::ivec2(static_cast<int>(std::floor(pos.x)), static_cast<int>(std::floor(pos.y)));
 }
 
 glm::ivec2 SceneDB::HashTriggerPositionToBucket(glm::vec2 pos)
 {
-    return glm::ivec2(static_cast<int>(std::round(pos.x)), static_cast<int>(std::round(pos.y)));
+    return glm::ivec2(static_cast<int>(std::floor(pos.x)), static_cast<int>(std::floor(pos.y)));
 }
 
 

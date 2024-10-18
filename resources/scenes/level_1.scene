@@ -43,7 +43,8 @@
       "box_collider_width": 2.0,
       "box_collider_height": 2.0,
       "box_trigger_width": 4.0,
-      "box_trigger_height": 4.0
+      "box_trigger_height": 4.0,
+      "view_image_attack": "cat_attack"
     },
     {
       "name": "spartan3",
@@ -75,7 +76,8 @@
       "box_collider_width": 2.0,
       "box_collider_height": 2.0,
       "box_trigger_width": 4.0,
-      "box_trigger_height": 4.0
+      "box_trigger_height": 4.0,
+      "view_image_attack": "cat_attack"
     },
     {
       "name": "spartan5",
@@ -88,6 +90,7 @@
       "nearby_dialogue": "Hey, you! (the spartan throws a fake plastic spear at you. It bounces off but kinda hurts your ego a bit. [health down])",
       "contact_dialogue": "Gotcha! (the spartan is right next to you, and pokes you with a fake plastic spear. They're really into it and having a good time, and we can't be having that. [health down])",
       "view_image": "dog",
+      "movement_bounce_enabled": true,
       "box_collider_width": 2.0,
       "box_collider_height": 2.0,
       "box_trigger_width": 4.0,
@@ -104,10 +107,12 @@
       "nearby_dialogue": "Hey, you! (the spartan throws a fake plastic spear at you. It bounces off but kinda hurts your ego a bit. [health down])",
       "contact_dialogue": "Gotcha! (the spartan is right next to you, and pokes you with a fake plastic spear. They're really into it and having a good time, and we can't be having that. [health down])",
       "view_image": "cat",
+      "movement_bounce_enabled": true,
       "box_collider_width": 2.0,
       "box_collider_height": 2.0,
       "box_trigger_width": 4.0,
-      "box_trigger_height": 4.0
+      "box_trigger_height": 4.0,
+      "view_image_attack": "cat_attack"
     },
     {
       "name": "sparty",
@@ -120,6 +125,7 @@
       "nearby_dialogue": "Oh no... it's Sparty himself! His sinister unflinching eyes scan the darkness in your direction. You'd better be extra careful!",
       "contact_dialogue": "(you bump into sparty and he falls onto you clumsily. It's all very embarrassing and you can feel the life squeezing out of you) [game over]",
       "view_image": "dog",
+      "movement_bounce_enabled": true,
       "box_collider_width": 2.0,
       "box_collider_height": 2.0,
       "box_trigger_width": 4.0,
@@ -139,7 +145,8 @@
       "box_collider_width": 2.0,
       "box_collider_height": 2.0,
       "box_trigger_width": 4.0,
-      "box_trigger_height": 4.0
+      "box_trigger_height": 4.0,
+      "view_image_attack": "cat_attack"
     },
     {
       "name": "494 student",
@@ -169,7 +176,8 @@
       "box_collider_width": 2.0,
       "box_collider_height": 2.0,
       "box_trigger_width": 4.0,
-      "box_trigger_height": 4.0
+      "box_trigger_height": 4.0,
+      "view_image_attack": "cat_attack"
     },
     {
       "name": "exit_door_1",
@@ -199,7 +207,8 @@
       "contact_dialogue": "",
       "view_image": "cat",
       "box_trigger_width": 4.0,
-      "box_trigger_height": 4.0
+      "box_trigger_height": 4.0,
+      "view_image_attack": "cat_attack"
     },
     {
       "name": "friend2",
@@ -231,7 +240,8 @@
       "box_collider_width": 2.0,
       "box_collider_height": 2.0,
       "box_trigger_width": 4.0,
-      "box_trigger_height": 4.0
+      "box_trigger_height": 4.0,
+      "view_image_damage":  "cat_damage"
     }
   ]
 }

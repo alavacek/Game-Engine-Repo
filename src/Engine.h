@@ -75,6 +75,9 @@ private:
 	int frameSinceDamageTaken;
 	GameState state = INTRO;
 
+	int framesOfDamageIndicator = 30;
+	int framesOfAttackIndicator = 30;
+
 	bool isRunning = true;	
 	bool inHealthCooldown = false;
 	bool debugShowCollisions = true;

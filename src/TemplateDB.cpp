@@ -44,6 +44,8 @@ void TemplateDB::LoadTemplates()
                 // Sprite Renderer
                 std::string viewImageName = templateDocument.HasMember("view_image") ? templateDocument["view_image"].GetString() : "";
                 std::string viewImageBackName = templateDocument.HasMember("view_image_back") ? templateDocument["view_image_back"].GetString() : "";
+                std::string viewImageDamageName = templateDocument.HasMember("view_image_damage") ? templateDocument["view_image_damage"].GetString() : "";
+                std::string viewImageAttackName = templateDocument.HasMember("view_image_attack") ? templateDocument["view_image_attack"].GetString() : "";
 
                 double viewPivotOffsetX = templateDocument.HasMember("view_pivot_offset_x") ? templateDocument["view_pivot_offset_x"].GetDouble() : -1.0;
                 double viewPivotOffsetY = templateDocument.HasMember("view_pivot_offset_y") ? templateDocument["view_pivot_offset_y"].GetDouble() : -1.0;
@@ -60,7 +62,8 @@ void TemplateDB::LoadTemplates()
 
                 bool movementBounce = templateDocument.HasMember("movement_bounce_enabled") ? templateDocument["movement_bounce_enabled"].GetBool() : false;
 
-                SpriteRenderer* spriteRenderer = new SpriteRenderer(viewImageName, glm::dvec2(viewPivotOffsetX, viewPivotOffsetY), renderOrder, viewImageBackName, movementBounce);
+                SpriteRenderer* spriteRenderer = new SpriteRenderer(viewImageName, glm::dvec2(viewPivotOffsetX, viewPivotOffsetY), renderOrder, viewImageBackName, 
+                    movementBounce, viewImageDamageName, viewImageAttackName);
 
                 // Collider
                 Collider* collider = nullptr;

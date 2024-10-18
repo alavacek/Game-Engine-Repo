@@ -67,9 +67,32 @@ void SpriteRenderer::RenderEntity(Entity* entity, SDL_Rect* cameraRect, int pixe
 {
 	if (!entity->spriteRenderer->viewImage) return;  // Skip rendering if no view_image
 
+	SDL_Texture* textureToRender;
+
+	// in attack indicator
+	if (entity->framesLeftOfAttackIndicator > 0 && entity->spriteRenderer->viewImageAttack)
+	{
+		textureToRender = entity->spriteRenderer->viewImageAttack;
+	}
+	// in damage indicator
+	else if (entity->framesLeftOfDamageIndicator > 0 && entity->spriteRenderer->viewImageDamage)
+	{
+		textureToRender = entity->spriteRenderer->viewImageDamage;
+	}
+	// walking backwards and has back image
+	else if (showBackImage && entity->spriteRenderer->viewImageBack)
+	{
+		textureToRender = entity->spriteRenderer->viewImageBack;
+	}
+	// default
+	else
+	{
+		textureToRender = entity->spriteRenderer->viewImage;
+	}
+
 	// Get image dimensions
 	int imgWidth, imgHeight;
-	SDL_QueryTexture(entity->spriteRenderer->viewImage, nullptr, nullptr, &imgWidth, &imgHeight);
+	SDL_QueryTexture(textureToRender, nullptr, nullptr, &imgWidth, &imgHeight);
 	float scaleX = entity->transform->scale.x;
 
 	// Calculate pivot point (default to center)
@@ -78,8 +101,6 @@ void SpriteRenderer::RenderEntity(Entity* entity, SDL_Rect* cameraRect, int pixe
 
 	pivotX = std::round(pivotX);  // Optional: round to integer for pixel-perfect precision
 	pivotY = std::round(pivotY);
-
-	double zoomFactor = Renderer::GetZoomFactor();
 
 	// Calculate destination rectangle
 	SDL_Rect dstRect;
@@ -99,18 +120,16 @@ void SpriteRenderer::RenderEntity(Entity* entity, SDL_Rect* cameraRect, int pixe
 	if (!(entity->transform->scale.x < 0) != !flipSpriteVertically) flip = (SDL_RendererFlip)(flip | SDL_FLIP_HORIZONTAL);
 	if (entity->transform->scale.y < 0) flip = (SDL_RendererFlip)(flip | SDL_FLIP_VERTICAL);
 
+	// TODO: culling 
+	if (!SpriteRenderer::IsEntityInView(&dstRect))
+	{
+		return;
+	}
+
 	// Render with rotation around the pivot point
 	SDL_Point pivot = { static_cast<int>(pivotX), static_cast<int>(pivotY) };
 	SDL_Renderer* renderer = Renderer::GetRenderer();
-
-	if (showBackImage && entity->spriteRenderer->viewImageBack)
-	{
-		Helper::SDL_RenderCopyEx498(entity->entityID, entity->entityName, renderer, entity->spriteRenderer->viewImageBack, nullptr, &dstRect, entity->transform->rotationDegrees, &pivot, flip);
-	}
-	else
-	{
-		Helper::SDL_RenderCopyEx498(entity->entityID, entity->entityName, renderer, entity->spriteRenderer->viewImage, nullptr, &dstRect, entity->transform->rotationDegrees, &pivot, flip);
-	}
+	Helper::SDL_RenderCopyEx498(entity->entityID, entity->entityName, renderer, textureToRender, nullptr, &dstRect, entity->transform->rotationDegrees, &pivot, flip);
 
 	if (drawCollision)
 	{
@@ -160,6 +179,17 @@ void SpriteRenderer::RenderEntity(Entity* entity, SDL_Rect* cameraRect, int pixe
 			SDL_RenderDrawLine(renderer, upperLeftCorner.x, lowerRightCorner.y, upperLeftCorner.x, upperLeftCorner.y);
 		}
 	}
-	
 }
 
+bool SpriteRenderer::IsEntityInView(SDL_Rect* entityDestinationRect)
+{
+	if ((entityDestinationRect->x + entityDestinationRect->w < 0) ||
+		(entityDestinationRect->y + entityDestinationRect->h < 0) || 
+		(entityDestinationRect->x > (Renderer::GetResolution().x / Renderer::GetZoomFactor())) || 
+		(entityDestinationRect->y > (Renderer::GetResolution().y / Renderer::GetZoomFactor())))
+	{
+		return false;
+	}
+	
+	return true;
+}
