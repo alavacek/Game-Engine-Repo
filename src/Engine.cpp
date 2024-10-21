@@ -2,8 +2,24 @@
 
 int Engine::pixelsPerUnit = 100;
 
+void CppDebugLog(const std::string& message)
+{
+	std::cout << message << std::endl;
+}
+
 void Engine::GameLoop()
 {
+	lua_State* luaState = luaL_newstate();
+	luaL_openlibs(luaState);
+	luabridge::setGlobal(luaState, "It was c++ the whole time", "message");
+
+	luabridge::getGlobalNamespace(luaState)
+		.beginNamespace("Debug")
+		.addFunction("Log", &CppDebugLog)
+		.endNamespace();
+
+	luaL_dofile(luaState, "code.lua");
+
 	Start();
 
 	while (isRunning)
@@ -54,28 +70,6 @@ void Engine::ReadResources()
 		// no initial scene specified
 		std::cout << "error: initial_scene unspecified";
 		exit(0);
-	}
-
-	if (currScene->GetPlayerEntity() != nullptr)
-	{
-		if (configDocument.HasMember("hp_image") && configDocument["hp_image"].IsString())
-		{
-			hpImage = ImageDB::LoadImage(configDocument["hp_image"].GetString());
-		}
-		else
-		{
-			std::cout << "error: player actor requires an hp_image be defined";
-			exit(0);
-		}
-	}
-
-	if (configDocument.HasMember("player_movement_speed") && configDocument["player_movement_speed"].IsFloat())
-	{
-		playerSpeed = configDocument["player_movement_speed"].GetFloat();
-	}
-	else
-	{
-		playerSpeed = 0.02f;
 	}
 }
 
@@ -130,8 +124,8 @@ void Engine::Start()
 
 	glm::vec2 centerPos = currScene->GetPlayerEntity() != nullptr ? currScene->GetPlayerEntity()->transform->position : glm::vec2(0, 0);
 
-	cameraRect.x = static_cast<int>(std::round((centerPos.x * pixelsPerUnit) - (cameraRect.w / 2) + Renderer::GetCameraOffset().x));
-	cameraRect.y = static_cast<int>(std::round((centerPos.y * pixelsPerUnit) - (cameraRect.h / 2) + Renderer::GetCameraOffset().y));
+	cameraRect.x = static_cast<int>(std::round((centerPos.x * pixelsPerUnit) - (cameraRect.w / 2)));
+	cameraRect.y = static_cast<int>(std::round((centerPos.y * pixelsPerUnit) - (cameraRect.h / 2)));
 }
 
 void Engine::Input()
@@ -183,7 +177,6 @@ void Engine::Update()
 		// move player according to input
 		glm::vec2 proposedPlayerPosition = currScene->GetPlayerEntity()->transform->position;
 		glm::vec2 proposedPlayerMovement = glm::vec2(0, 0);
-		bool actorFlippingOnMovement = Renderer::GetXScaleActorFlippingOnMovement();
 
 		if (currScene->GetPlayerEntity() != nullptr)
 		{
@@ -207,7 +200,8 @@ void Engine::Update()
 			//normalize if necessary
 			if (proposedPlayerMovement != glm::vec2(0, 0))
 			{
-				proposedPlayerMovement = glm::normalize(proposedPlayerMovement) * playerSpeed;
+				//TODO player speed variable has been removed, and set to 0.1f
+				proposedPlayerMovement = glm::normalize(proposedPlayerMovement) * 0.1f;
 			}
 
 			proposedPlayerPosition += proposedPlayerMovement;
@@ -287,26 +281,6 @@ void Engine::Update()
 				}	
 			}
 
-			if (actorFlippingOnMovement)
-			{
-				if (currEntity->velocity.x < 0)
-				{
-					currEntity->spriteRenderer->flipSpriteVertically = true;
-				}
-				else if (currEntity->velocity.x > 0)
-				{
-					currEntity->spriteRenderer->flipSpriteVertically = false;
-				}
-			}
-
-			if (currEntity->velocity.y < 0)
-			{
-				currEntity->spriteRenderer->showBackImage = true;
-			}
-			else if (currEntity->velocity.y > 0)
-			{
-				currEntity->spriteRenderer->showBackImage = false;
-			}
 		}
 
 		// Determine Trigger Collider updates
@@ -347,19 +321,11 @@ void Engine::Update()
 		//runs once 
 		if (state == WON)
 		{
-			AudioHelper::Mix_HaltChannel498(0);
-			if (configDocument.HasMember("game_over_good_audio") && configDocument["game_over_good_audio"].IsString())
-			{
-				AudioDB::PlayBGM(configDocument["game_over_good_audio"].GetString());
-			}
+
 		}
 		else if (state == LOST)
 		{
-			AudioHelper::Mix_HaltChannel498(0);
-			if (configDocument.HasMember("game_over_bad_audio") && configDocument["game_over_bad_audio"].IsString())
-			{
-				AudioDB::PlayBGM(configDocument["game_over_bad_audio"].GetString());
-			}
+
 		}
 
 		// Late Update
@@ -491,12 +457,6 @@ void Engine::HandleDialogueCommands(DialogueType type, Entity* speakingEntity)
 	{
 		playerScore++;
 		speakingEntity->hasIncreasedScore = true;
-
-		// Play score audio
-		if (configDocument.HasMember("score_sfx") && configDocument["score_sfx"].IsString())
-		{
-			AudioDB::PlayChannel(1, configDocument["score_sfx"].GetString(), false);
-		}
 	}
 	else if (type == YOUWIN)
 	{
@@ -529,8 +489,8 @@ void Engine::Render()
 			
 			double zoomFactor = Renderer::GetZoomFactor();
 
-			cameraRect.x = glm::mix(cameraRect.x, static_cast<int>(std::round((centerPos.x * pixelsPerUnit) - (cameraRect.w / 2) + Renderer::GetCameraOffset().x)), Renderer::GetCameraEaseFactor());
-			cameraRect.y = glm::mix(cameraRect.y, static_cast<int>(std::round((centerPos.y * pixelsPerUnit) - (cameraRect.h / 2) + Renderer::GetCameraOffset().y)), Renderer::GetCameraEaseFactor());
+			cameraRect.x = glm::mix(cameraRect.x, static_cast<int>(std::round((centerPos.x * pixelsPerUnit) - (cameraRect.w / 2))), Renderer::GetCameraEaseFactor());
+			cameraRect.y = glm::mix(cameraRect.y, static_cast<int>(std::round((centerPos.y * pixelsPerUnit) - (cameraRect.h / 2))), Renderer::GetCameraEaseFactor());
 
 			//Render Map
 			//int rowBoundMin = centerPos.y - ((resolution.y / pixelsPerUnit) / 2);
@@ -559,23 +519,6 @@ void Engine::Render()
 
 			if (currScene->GetPlayerEntity() != nullptr)
 			{
-				int hpWidth, hpHeight;
-				SDL_QueryTexture(hpImage, nullptr, nullptr, &hpWidth, &hpHeight);
-
-				int startX = 5;
-				int startY = 25;
-				// hearts
-				for (int i = 0; i < playerHealth; i++)
-				{
-					SDL_Rect dstRect;
-					dstRect.x = startX + i * (hpWidth + 5);
-					dstRect.y = startY;                     
-					dstRect.w = hpWidth;                    
-					dstRect.h = hpHeight;
-
-					SDL_RenderCopy(renderer, hpImage, nullptr, &dstRect);
-				}
-
 				// score
 				std::string scoreText = "score : " + std::to_string(playerScore);
 				TextDB::DrawText(scoreText, 16, { 255, 255, 255, 255 }, 5, 5);
@@ -596,27 +539,11 @@ void Engine::Render()
 		}
 		else if (state == WON)
 		{
-			// TODO: should this look up be cached?
-			if (configDocument.HasMember("game_over_good_image") && configDocument["game_over_good_image"].IsString())
-			{
-				SDL_RenderCopy(Renderer::GetRenderer(), ImageDB::LoadImage(configDocument["game_over_good_image"].GetString()), NULL, NULL);
-			}
-			else
-			{
-				exit(1);
-			}
+
 		}
 		else if (state == LOST)
 		{
-			// TODO: should this look up be cached?
-			if (configDocument.HasMember("game_over_bad_image") && configDocument["game_over_bad_image"].IsString())
-			{
-				SDL_RenderCopy(Renderer::GetRenderer(), ImageDB::LoadImage(configDocument["game_over_bad_image"].GetString()), NULL, NULL);
-			}
-			else
-			{
-				exit(1);
-			}
+
 		}
 
 		Helper::SDL_RenderPresent498(renderer);

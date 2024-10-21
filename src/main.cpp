@@ -8,12 +8,6 @@
 #include "SDLHelper.h"
 
 
-//int main()
-//{
-//	Engine engine;
-//	engine.GameLoop();
-//}
-
 int main(int argc, char* argv[])
 {
 	Engine engine;

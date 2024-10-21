@@ -16,6 +16,8 @@
 #include "glm/glm.hpp"
 #include "ImageDB.h"
 #include "Input.h"
+#include "lua.hpp"
+#include "LuaBridge.h"
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/document.h"
 #include "Renderer.h"
@@ -65,9 +67,7 @@ private:
 
 	SceneDB* currScene;
 	SDL_Renderer* renderer;
-	SDL_Texture* hpImage;
 
-	float playerSpeed;
 	int playerHealth;
 	int playerScore;
 
