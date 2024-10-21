@@ -297,15 +297,15 @@ void Engine::Update()
 				{
 					currEntity->spriteRenderer->flipSpriteVertically = false;
 				}
+			}
 
-				if (currEntity->velocity.y < 0)
-				{
-					currEntity->spriteRenderer->showBackImage = true;
-				}
-				else if (currEntity->velocity.y > 0)
-				{
-					currEntity->spriteRenderer->showBackImage = false;
-				}
+			if (currEntity->velocity.y < 0)
+			{
+				currEntity->spriteRenderer->showBackImage = true;
+			}
+			else if (currEntity->velocity.y > 0)
+			{
+				currEntity->spriteRenderer->showBackImage = false;
 			}
 		}
 
