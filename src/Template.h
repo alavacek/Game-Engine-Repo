@@ -9,11 +9,8 @@
 class Template : public Entity  // Make the inheritance public
 {
 public:
-    Template(std::string templateName, std::string entityName, glm::vec2 initialVelocity,
-        std::string nearbyDialogue, std::string contactDialogue,
-        Transform* transformIn, SpriteRenderer* spriteIn, 
-        Collider* colliderIn, TriggerCollider* triggerColliderIn)
-        : Entity(entityName, initialVelocity, nearbyDialogue, contactDialogue, transformIn, spriteIn, colliderIn, triggerColliderIn),
+    Template(const std::string& templateName, const std::string& entityName, const std::unordered_map<std::string, std::shared_ptr<luabridge::LuaRef>>& components)
+        : Entity(entityName, components),
         templateName(templateName) {}
 
     Template() {}

@@ -6,8 +6,12 @@
 #include <string>
 #include <unordered_map>
 
+#include "ComponentDB.h"
 #include "EngineUtils.h"
 #include "glm/glm.hpp"
+#include "lua.hpp"
+#include "LuaBridge.h"
+#include "LuaStateManager.h"
 #include "Template.h"
 #include "rapidjson/document.h"
 #include "rapidjson/filereadstream.h"

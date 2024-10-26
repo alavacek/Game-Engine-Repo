@@ -2,24 +2,8 @@
 
 int Engine::pixelsPerUnit = 100;
 
-void CppDebugLog(const std::string& message)
-{
-	std::cout << message << std::endl;
-}
-
 void Engine::GameLoop()
 {
-	lua_State* luaState = luaL_newstate();
-	luaL_openlibs(luaState);
-	luabridge::setGlobal(luaState, "It was c++ the whole time", "message");
-
-	luabridge::getGlobalNamespace(luaState)
-		.beginNamespace("Debug")
-		.addFunction("Log", &CppDebugLog)
-		.endNamespace();
-
-	luaL_dofile(luaState, "code.lua");
-
 	Start();
 
 	while (isRunning)
@@ -54,6 +38,9 @@ void Engine::ReadResources()
 	// rendering config
 	std::string renderingConfig = "resources/rendering.config";
 
+	// Determine what components exist in resources/component_types
+	ComponentDB::LoadComponents();
+
 	// template config
 	TemplateDB::LoadTemplates();
 
@@ -75,6 +62,10 @@ void Engine::ReadResources()
 
 void Engine::Start()
 {
+	// Lua Loading
+	LuaStateManager::Initialize();
+	lua_State* luaState = LuaStateManager::GetLuaState();
+
 	// set up renderer
 	Renderer::RendererInit();
 	renderer = Renderer::GetRenderer();
@@ -82,11 +73,6 @@ void Engine::Start()
 	ReadResources();
 
 	std::string game_start_message = configDocument["game_start_message"].GetString();
-	std::cout << game_start_message << "\n";
-
-	// Add Player Info
-	playerHealth = 3;
-	playerScore = 0;
 
 	// set up audio
 	AudioDB::InitAudio();
@@ -122,10 +108,14 @@ void Engine::Start()
 	cameraRect.w = static_cast<int>(std::round(resolution.x / zoomFactor));
 	cameraRect.h = static_cast<int>(std::round(resolution.y / zoomFactor));
 
-	glm::vec2 centerPos = currScene->GetPlayerEntity() != nullptr ? currScene->GetPlayerEntity()->transform->position : glm::vec2(0, 0);
+	glm::vec2 centerPos = glm::vec2(0,0)/* = currScene->GetPlayerEntity() != nullptr ? currScene->GetPlayerEntity()->transform->position : glm::vec2(0, 0)*/;
 
 	cameraRect.x = static_cast<int>(std::round((centerPos.x * pixelsPerUnit) - (cameraRect.w / 2)));
 	cameraRect.y = static_cast<int>(std::round((centerPos.y * pixelsPerUnit) - (cameraRect.h / 2)));
+
+
+	// Entity Start
+	currScene->Start();
 }
 
 void Engine::Input()
@@ -174,150 +164,9 @@ void Engine::Update()
 			return;
 		}
 
-		// move player according to input
-		glm::vec2 proposedPlayerPosition = currScene->GetPlayerEntity()->transform->position;
-		glm::vec2 proposedPlayerMovement = glm::vec2(0, 0);
-
-		if (currScene->GetPlayerEntity() != nullptr)
-		{
-			if (Input::GetKey(SDL_SCANCODE_W) || Input::GetKey(SDL_SCANCODE_UP))
-			{
-				proposedPlayerMovement += glm::vec2(0, -1);
-			}
-			if (Input::GetKey(SDL_SCANCODE_D) || Input::GetKey(SDL_SCANCODE_RIGHT))
-			{
-				proposedPlayerMovement += glm::vec2(1, 0);
-			}
-			if (Input::GetKey(SDL_SCANCODE_S) || Input::GetKey(SDL_SCANCODE_DOWN))
-			{
-				proposedPlayerMovement += glm::vec2(0, 1);
-			}
-			if (Input::GetKey(SDL_SCANCODE_A) || Input::GetKey(SDL_SCANCODE_LEFT))
-			{
-				proposedPlayerMovement += glm::vec2(-1, 0);
-			}
-
-			//normalize if necessary
-			if (proposedPlayerMovement != glm::vec2(0, 0))
-			{
-				//TODO player speed variable has been removed, and set to 0.1f
-				proposedPlayerMovement = glm::normalize(proposedPlayerMovement) * 0.1f;
-			}
-
-			proposedPlayerPosition += proposedPlayerMovement;
-		}
-
-		// Update Entities Position, iterate based on entityID
-		// Determine Collisions and Movement Updates
-		for (int entityIndex = 0; entityIndex < currScene->GetNumberOfEntitiesInScene(); entityIndex++)
-		{
-			Entity* currEntity = currScene->GetEntityAtIndex(entityIndex);
-
-			// Attack and Damage Image updates
-			// Attack
-			if (currEntity->framesLeftOfAttackIndicator > 0)
-			{
-				currEntity->framesLeftOfAttackIndicator--;
-			}
-			// Damage
-			if (currEntity->framesLeftOfDamageIndicator > 0)
-			{
-				currEntity->framesLeftOfDamageIndicator--;
-			}
-
-			if (currEntity->collider != nullptr)
-			{
-				// Reset collision structure
-				currEntity->collider->collidingEntitiesThisFrame.clear();
-			}
-
-			// NPC Movement	
-			// only update position/velocity if they have a none zeroes velocity
-			// update every 60 frames
-			if (currEntity->entityName != "player" && currEntity->velocity != glm::vec2(0.0f, 0.0f))
-			{
-				// Position and Movement
-				glm::vec2 proposedNPCPosition = currEntity->transform->position + currEntity->velocity;
-
-				// is there a blocking actor at this location?
-				// ensure can move in that direction
-				if (currScene->CanMoveEntityToPosition(currEntity, proposedNPCPosition))
-				{
-					currScene->ChangeEntityPosition(currEntity, proposedNPCPosition);
-				}
-				// direction was blocked, flip velocity
-				else
-				{
-					currEntity->velocity *= -1;
-				}
-					
-			}
-			// Player Movement
-			else if (currEntity->entityName == "player")
-			{
-				if (proposedPlayerMovement != glm::vec2(0, 0))
-				{
-					// glm::ivec2 proposedHashedBucket = currScene->HashPositionToBucket(proposedPlayerPosition);
-					// is there a blocking actor at proposedPlayer location?
-					if (currScene->CanMoveEntityToPosition(currEntity, proposedPlayerPosition))
-					{
-						currScene->ChangeEntityPosition(currEntity, proposedPlayerPosition);
-						currEntity->velocity = proposedPlayerMovement;
-
-						// Play walking audio if 20th frame
-						if (Helper::GetFrameNumber() % 20 == 0)
-						{
-							// TODO: is accessing configDoc this much expensive? Assess w profilers
-							if (configDocument.HasMember("step_sfx") && configDocument["step_sfx"].IsString())
-							{
-								AudioDB::PlayChannel(Helper::GetFrameNumber() % 48 + 2, configDocument["step_sfx"].GetString(), false);
-							}
-						}
-					}
-				}
-				else
-				{
-					currEntity->velocity = glm::vec2(0, 0);
-				}	
-			}
-
-		}
-
-		// Determine Trigger Collider updates
-		for (int entityIndex = 0; entityIndex < currScene->GetNumberOfEntitiesInScene(); entityIndex++)
-		{
-			Entity* currEntity = currScene->GetEntityAtIndex(entityIndex);
-
-			if (currEntity->triggerCollider != nullptr)
-			{
-				// Reset trigger collision structure
-				currEntity->triggerCollider->triggeringEntitiesThisFrame.clear();
-
-				currScene->DetermineEntityTriggerCollisions(currEntity);
-			}
-		}
-
-		// Determine if still in health cooldown
-		if (inHealthCooldown)
-		{
-			if (Helper::GetFrameNumber() >= frameSinceDamageTaken + 180)
-			{
-				inHealthCooldown = false;
-			}
-		}
-
-
 		// sort based on y positon or based on render order
 		std::sort(currScene->entityRenderOrder.begin(), currScene->entityRenderOrder.end(), Entity::CompareEntities);
 		
-		// state can change in these next 2 lines
-		DetermineDialoguesToPrint();
-
-		if (playerHealth <= 0)
-		{
-			state = LOST;
-		}
-
 		//runs once 
 		if (state == WON)
 		{
@@ -330,142 +179,6 @@ void Engine::Update()
 
 		// Late Update
 		Input::LateUpdate();
-	}
-}
-
-void Engine::DetermineDialoguesToPrint()
-{
-	Entity* player = currScene->GetPlayerEntity();
-
-	if (player == nullptr)
-	{
-		return;
-	}
-
-	// sacrifices space for time
-	entityDialoguesToPrint.clear();
-
-	// Determine NPC Dialogue 
-	DialogueType dialogueType = NONE;
-	
-	// Collisions
-	if (player->collider)
-	{
-		// determine which dialogues to print and actions that will be taken
-		for (const auto& currEntity : player->collider->collidingEntitiesThisFrame)
-		{
-			if (currEntity->contactDialogue == "")
-			{
-				continue;
-			}
-
-			dialogueType = NONE;
-
-			//store dialogue commands
-			dialogueType = currEntity->contactDialogueType;
-
-			// if has proceed to command, dont render this dialogue
-			if (currEntity->contactSceneToLoad != "")
-			{
-				pendingScene = currEntity->contactSceneToLoad;
-			}
-			else
-			{
-				entityDialoguesToPrint.push_back({ currEntity->entityID, currEntity->contactDialogue });
-			}
-
-			HandleDialogueCommands(dialogueType, currEntity);
-
-
-
-
-		}
-	}
-	
-	if (player->triggerCollider)
-	{
-		for (const auto& currEntity : player->triggerCollider->triggeringEntitiesThisFrame)
-		{
-			if (currEntity->nearbyDialogue == "")
-			{
-				continue;
-			}
-
-			//store dialogue commands
-			dialogueType = currEntity->nearbyDialogueType;
-
-			// if has proceed to command, dont render this dialogue
-			if (currEntity->nearbySceneToLoad != "")
-			{
-				pendingScene = currEntity->nearbySceneToLoad;
-			}
-			else
-			{
-				entityDialoguesToPrint.push_back({ currEntity->entityID, currEntity->nearbyDialogue });
-			}
-
-			// handle first audio output for nearby 
-			if (!currEntity->hasTriggeredNearbyDialogue)
-			{
-				currEntity->hasTriggeredNearbyDialogue = true;
-				// Play score audio
-				if (configDocument.HasMember("nearby_dialogue_sfx") && configDocument["nearby_dialogue_sfx"].IsString())
-				{
-					AudioDB::PlayChannel(Helper::GetFrameNumber() % 48 + 2, configDocument["nearby_dialogue_sfx"].GetString(), false);
-				}
-			}
-
-			HandleDialogueCommands(dialogueType, currEntity);
-		}
-	}
-
-	// sort based on entityID
-	std::sort(entityDialoguesToPrint.begin(), entityDialoguesToPrint.end(), [](const std::pair<uint64_t, std::string>& a, const std::pair<uint64_t, std::string>& b) {
-			return a.first < b.first;
-	});
-
-}
-
-void Engine::HandleDialogueCommands(DialogueType type, Entity* speakingEntity)
-{
-	//handle dialogue commands
-	if (!inHealthCooldown && type == HEALTHDOWN)
-	{
-		playerHealth--;
-		inHealthCooldown = true;
-		frameSinceDamageTaken = Helper::GetFrameNumber();
-
-		// Set up for visual indicator
-		if (currScene->GetPlayerEntity()->spriteRenderer && currScene->GetPlayerEntity()->spriteRenderer->viewImageDamage)
-		{
-			currScene->GetPlayerEntity()->framesLeftOfDamageIndicator = framesOfDamageIndicator;
-		}
-
-		if (speakingEntity->spriteRenderer && speakingEntity->spriteRenderer->viewImageAttack)
-		{
-			speakingEntity->framesLeftOfAttackIndicator = framesOfAttackIndicator;
-		}
-
-		// Play damage audio
-		if (configDocument.HasMember("damage_sfx") && configDocument["damage_sfx"].IsString())
-		{
-			// the +2 prevents us from clobbering channel 0 or 1
-			AudioDB::PlayChannel(Helper::GetFrameNumber() % 48 + 2, configDocument["damage_sfx"].GetString(), false);
-		}
-	}
-	else if (!speakingEntity->hasIncreasedScore && type == SCOREUP)
-	{
-		playerScore++;
-		speakingEntity->hasIncreasedScore = true;
-	}
-	else if (type == YOUWIN)
-	{
-		state = WON;
-	}
-	else if (type == GAMEOVER)
-	{
-		//TODO: what if state was alr set to WON this frame?
-		state = LOST;
 	}
 }
 
@@ -484,7 +197,7 @@ void Engine::Render()
 		}
 		else if (state == INPROGRESS)
 		{
-			glm::vec2 centerPos = currScene->GetPlayerEntity() != nullptr ? currScene->GetPlayerEntity()->transform->position : glm::vec2(0, 0);
+			glm::vec2 centerPos = glm::vec2(0,0)/* = currScene->GetPlayerEntity() != nullptr ? currScene->GetPlayerEntity()->transform->position : glm::vec2(0, 0)*/;
 			glm::ivec2 resolution = Renderer::GetResolution();
 			
 			double zoomFactor = Renderer::GetZoomFactor();
@@ -492,38 +205,13 @@ void Engine::Render()
 			cameraRect.x = glm::mix(cameraRect.x, static_cast<int>(std::round((centerPos.x * pixelsPerUnit) - (cameraRect.w / 2))), Renderer::GetCameraEaseFactor());
 			cameraRect.y = glm::mix(cameraRect.y, static_cast<int>(std::round((centerPos.y * pixelsPerUnit) - (cameraRect.h / 2))), Renderer::GetCameraEaseFactor());
 
-			//Render Map
-			//int rowBoundMin = centerPos.y - ((resolution.y / pixelsPerUnit) / 2);
-			//int rowBoundMax = centerPos.y + ((resolution.y / pixelsPerUnit) / 2);
-			//int colBoundMin = centerPos.x - ((resolution.x / pixelsPerUnit) / 2);
-			//int colBoundMax = centerPos.x + ((resolution.x / pixelsPerUnit) / 2);
-
 			// render visible map
 			SDL_RenderSetScale(renderer, zoomFactor, zoomFactor);
 			
 			for (Entity* entity : currScene->entityRenderOrder)
 			{
-				entity->spriteRenderer->RenderEntity(entity, &cameraRect, pixelsPerUnit, entity->velocity != glm::vec2(0,0), debugShowCollisions);
-			}
-		
-			// Reset for UI and alike
-			SDL_RenderSetScale(renderer, 1.0, 1.0);
-
-			//NPC Dialogue
-			int numberOfDialoguesToShow = entityDialoguesToPrint.size();
-			for (int dialogueIndex = 0; dialogueIndex < numberOfDialoguesToShow; dialogueIndex++)
-			{
-				int drawPositionY = resolution.y - 50 - (numberOfDialoguesToShow - 1 - dialogueIndex) * 50;
-				TextDB::DrawText(entityDialoguesToPrint[dialogueIndex].second, 16, { 255, 255, 255, 255 }, 25, drawPositionY);
-			}
-
-			if (currScene->GetPlayerEntity() != nullptr)
-			{
-				// score
-				std::string scoreText = "score : " + std::to_string(playerScore);
-				TextDB::DrawText(scoreText, 16, { 255, 255, 255, 255 }, 5, 5);
-
-			}
+				//entity->->RenderEntity(entity, &c//eraRect, pixelsPerUnit, entity->velocity != glm::vec2(0,0), debugShowCollisions);
+			}	
 
 			// possibly move to update?
 			if (pendingScene != "")

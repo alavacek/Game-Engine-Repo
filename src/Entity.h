@@ -3,22 +3,16 @@
 
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
 #include "Component.h"
 #include "glm/glm.hpp"
 #include "ImageDB.h"
+#include "lua.hpp"
+#include "LuaBridge.h"
 #include "SDLHelper.h"
-
-enum DialogueType
-{
-	NONE,
-	HEALTHDOWN,
-	SCOREUP,
-	YOUWIN,
-	GAMEOVER,
-};
 
 class Transform;
 class SpriteRenderer;
@@ -31,44 +25,33 @@ class Entity
 public:
 	static bool CompareEntities(const Entity* a, const Entity* b);
 
+	std::unordered_map<std::string, std::shared_ptr<luabridge::LuaRef>> components;
+	std::vector<std::string> componentsKeysAlphabeticalOrder;
+
 	std::string entityName;
-	
-	Transform* transform;
-	SpriteRenderer* spriteRenderer;
-	Collider* collider;
-	TriggerCollider* triggerCollider;
-
-	std::string nearbyDialogue;
-	std::string contactDialogue;
-	std::string nearbySceneToLoad; // will be set to "" if not relevant
-	std::string contactSceneToLoad; // will be set to "" if not relevant
-
-	glm::vec2 velocity;
-
-	DialogueType nearbyDialogueType = NONE;
-	DialogueType contactDialogueType = NONE;
-
 	int entityID;
-	int framesLeftOfDamageIndicator = 0;
-	int framesLeftOfAttackIndicator = 0;
-
-	bool hasIncreasedScore = false;
-	bool hasTriggeredNearbyDialogue = false;
 
 
-	Entity(std::string entityName, glm::vec2 initialVelocity,
-		std::string nearbyDialogue, std::string contactDialogue,
-		Transform* transformIn, SpriteRenderer* spriteIn, 
-		Collider* colliderIn, TriggerCollider* triggerColliderIn)
-		: entityName(entityName), transform(transformIn),
-		spriteRenderer(spriteIn), collider(colliderIn), triggerCollider(triggerColliderIn),
-		velocity(initialVelocity), nearbyDialogue(nearbyDialogue), contactDialogue(contactDialogue) {}
+	Entity(const std::string& entityName, const std::unordered_map<std::string, std::shared_ptr<luabridge::LuaRef>>& components)
+		: entityName(entityName), components(components) 
+	{
+		for (const auto& pair : components) 
+		{
+			componentsKeysAlphabeticalOrder.push_back(pair.first);
+		}
+
+		// Step 2: Sort the keys
+		std::sort(componentsKeysAlphabeticalOrder.begin(), componentsKeysAlphabeticalOrder.end());
+	}
 
 	Entity() {}
 
+	void Start();
+	void Update();
+
 	~Entity();
 private:
-	
+	std::vector<luabridge::LuaRef*> componentsRequiringOnUpdate;
 };
 
 class Transform
@@ -152,7 +135,7 @@ public:
 
 	void ChangeSprite(const std::string& viewImageName_in = "", glm::dvec2 pivot = { -1, -1 });
 
-	void RenderEntity(Entity* entity, SDL_Rect* cameraRect, int pixelsPerUnit, bool bounce = false, bool drawCollision = false);
+	void RenderEntity(Entity* entity, SDL_Rect* cameraRect, int pixelsPerUnit, bool drawCollision);
 
 	static bool IsEntityInView(SDL_Rect* entityDestinationRect);
 };

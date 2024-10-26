@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "AudioDB.h"
+#include "ComponentDB.h"
 #include "EngineUtils.h"
 #include "Entity.h"
 #include "glm/glm.hpp"
@@ -18,6 +19,7 @@
 #include "Input.h"
 #include "lua.hpp"
 #include "LuaBridge.h"
+#include "LuaStateManager.h"
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/document.h"
 #include "Renderer.h"
@@ -47,8 +49,6 @@ public:
 	void Input();
 
 	void Update();
-	void DetermineDialoguesToPrint();
-	void HandleDialogueCommands(DialogueType type, Entity* speakingEntity);
 
 	void Render();
 
@@ -67,9 +67,6 @@ private:
 
 	SceneDB* currScene;
 	SDL_Renderer* renderer;
-
-	int playerHealth;
-	int playerScore;
 
 	static int pixelsPerUnit;
 	int frameSinceDamageTaken;

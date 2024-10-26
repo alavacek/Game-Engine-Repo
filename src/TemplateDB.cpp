@@ -10,6 +10,8 @@ Template* TemplateDB::FindEntity(std::string templateName)
 
 void TemplateDB::LoadTemplates()
 {
+    lua_State* luaState = LuaStateManager::GetLuaState();
+
     // template config
     rapidjson::Document templateDocument;
     std::string templatesPath = "resources/actor_templates/";
@@ -23,71 +25,52 @@ void TemplateDB::LoadTemplates()
 
                 // Extract values from the JSON
                 std::string name = templateDocument.HasMember("name") ? templateDocument["name"].GetString() : "";
-                int vel_x = templateDocument.HasMember("vel_x") ? templateDocument["vel_x"].GetFloat() : 0;
-                int vel_y = templateDocument.HasMember("vel_y") ? templateDocument["vel_y"].GetFloat() : 0;
-                std::string nearbyDialogue = templateDocument.HasMember("nearby_dialogue") ? templateDocument["nearby_dialogue"].GetString() : "";
-                std::string contactDialogue = templateDocument.HasMember("contact_dialogue") ? templateDocument["contact_dialogue"].GetString() : "";
-
                 std::string templateName = entry.path().stem().string();
 
-                // Transform
-                int transformPositionX = templateDocument.HasMember("transform_position_x") ? templateDocument["transform_position_x"].GetInt() : 0;
-                int transformPositionY = templateDocument.HasMember("transform_position_y") ? templateDocument["transform_position_y"].GetInt() : 0;
+                std::unordered_map<std::string, std::shared_ptr<luabridge::LuaRef>> componentMap;
 
-                int transformScaleX = templateDocument.HasMember("transform_scale_x") ? templateDocument["transform_scale_x"].GetFloat() : 1.0;
-                int transformScaleY = templateDocument.HasMember("transform_scale_y") ? templateDocument["transform_scale_y"].GetFloat() : 1.0;
-
-                int transformRotationDegrees = templateDocument.HasMember("transform_rotation_degrees") ? templateDocument["transform_rotation_degrees"].GetDouble() : 0.0;
-
-                Transform* transform = new Transform(glm::ivec2(transformPositionX, transformPositionY), glm::vec2(transformScaleX, transformScaleY), transformRotationDegrees);
-
-                // Sprite Renderer
-                std::string viewImageName = templateDocument.HasMember("view_image") ? templateDocument["view_image"].GetString() : "";
-                std::string viewImageBackName = templateDocument.HasMember("view_image_back") ? templateDocument["view_image_back"].GetString() : "";
-                std::string viewImageDamageName = templateDocument.HasMember("view_image_damage") ? templateDocument["view_image_damage"].GetString() : "";
-                std::string viewImageAttackName = templateDocument.HasMember("view_image_attack") ? templateDocument["view_image_attack"].GetString() : "";
-
-                double viewPivotOffsetX = templateDocument.HasMember("view_pivot_offset_x") ? templateDocument["view_pivot_offset_x"].GetDouble() : -1.0;
-                double viewPivotOffsetY = templateDocument.HasMember("view_pivot_offset_y") ? templateDocument["view_pivot_offset_y"].GetDouble() : -1.0;
-
-                std::optional<int> renderOrder;
-                if (templateDocument.HasMember("render_order")) 
+                // Loop through each component in the JSON array
+                if (templateDocument.HasMember("components"))
                 {
-                    renderOrder = templateDocument["render_order"].GetInt();
-                }
-                else 
-                {
-                    renderOrder = std::nullopt;
-                }
+                    const rapidjson::Value& components = templateDocument["components"];
 
-                bool movementBounce = templateDocument.HasMember("movement_bounce_enabled") ? templateDocument["movement_bounce_enabled"].GetBool() : false;
+                    // Loop through each component in the JSON array
+                    for (rapidjson::Value::ConstMemberIterator itr = components.MemberBegin(); itr != components.MemberEnd(); ++itr) {
+                        // Extract the component's name (e.g., "first_component", "second_component")
+                        std::string componentName = itr->name.GetString();
 
-                SpriteRenderer* spriteRenderer = new SpriteRenderer(viewImageName, glm::dvec2(viewPivotOffsetX, viewPivotOffsetY), renderOrder, viewImageBackName, 
-                    movementBounce, viewImageDamageName, viewImageAttackName);
+                        // Extract the component's type (e.g., the object containing the "type" field)
+                        const rapidjson::Value& component = itr->value;
 
-                // Collider
-                Collider* collider = nullptr;
-                float colliderWidth = templateDocument.HasMember("box_collider_width") ? templateDocument["box_collider_width"].GetFloat() : 0;
-                float colliderHeight = templateDocument.HasMember("box_collider_height") ? templateDocument["box_collider_height"].GetFloat() : 0;
-                         
-                if (colliderWidth != 0 && colliderHeight != 0)
-                {
-                    collider = new Collider(colliderWidth, colliderHeight);
-                }
+                        // Check if the component has a "type" field and extract it
+                        if (component.HasMember("type")) {
+                            std::string componentType = component["type"].GetString();
 
-                // Trigger Collider
-                TriggerCollider* triggerCollider = nullptr;
-                float triggerColliderWidth = templateDocument.HasMember("box_trigger_width") ? templateDocument["box_trigger_width"].GetFloat() : 0;
-                float triggerColliderHeight = templateDocument.HasMember("box_trigger_height") ? templateDocument["box_trigger_height"].GetFloat() : 0;
+                            if (ComponentDB::componentFiles.find(componentType) != ComponentDB::componentFiles.end())
+                            {
+                                luabridge::LuaRef instanceTable = luabridge::newTable(luaState);
+                                luabridge::LuaRef parentTable = *(ComponentDB::componentFiles[componentType]);
+                                ComponentDB::EstablishInheritance(instanceTable, parentTable);
 
-                if (triggerColliderWidth != 0 && triggerColliderHeight != 0)
-                {
-                    triggerCollider = new TriggerCollider(triggerColliderWidth, triggerColliderHeight);
+                                std::shared_ptr<luabridge::LuaRef> instanceTablePtr = std::make_shared<luabridge::LuaRef>(instanceTable);
+                                componentMap[componentType] = instanceTablePtr;
+                            }
+                            else
+                            {
+                                std::cout << "error: failed to locate component " << componentName;
+                                exit(0);
+                            }
+                        }
+                        else {
+                            std::cout << "error: component " << componentName << " is missing a type" << std::endl;
+                            exit(0);
+                        }
+                    }
                 }
 
                 // Create the Entity object
                 Template* newEntityTemplate = new Template(
-                    templateName, name, glm::vec2(vel_x, vel_y), nearbyDialogue, contactDialogue, transform, spriteRenderer, collider, triggerCollider
+                    templateName, name, componentMap
                 );
 
                 templates[templateName] = newEntityTemplate;
