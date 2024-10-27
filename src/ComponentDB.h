@@ -18,7 +18,7 @@ public:
 	static void CppDebugLog(const std::string& message);
 	static void CppDebugLogError(const std::string& message);
 
-	static std::unordered_map<std::string, std::shared_ptr<luabridge::LuaRef>> componentFiles;
+	static std::unordered_map<std::string, std::shared_ptr<luabridge::LuaRef>> components;
 };
 
 #endif

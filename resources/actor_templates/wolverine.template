@@ -1,11 +1,12 @@
 {
   "name": "debug_actor",
   "components": {
-    "first_component": {
+    "1": {
       "type": "OutputMessage"
     },
-    "second_component": {
-      "type": "OutputMessage"
+    "2_special": {
+      "type": "OutputMessage",
+      "message":  "tai shi"
     }
   }
 }

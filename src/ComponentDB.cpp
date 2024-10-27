@@ -1,6 +1,6 @@
 #include "ComponentDB.h"
 
-std::unordered_map<std::string, std::shared_ptr<luabridge::LuaRef>> ComponentDB::componentFiles;
+std::unordered_map<std::string, std::shared_ptr<luabridge::LuaRef>> ComponentDB::components;
 
 void ComponentDB::LoadComponents()
 {
@@ -26,7 +26,7 @@ void ComponentDB::LoadComponents()
 				luabridge::LuaRef luaRef = luabridge::getGlobal(luaState, fileNameWithoutExtension.c_str());
 				std::shared_ptr<luabridge::LuaRef> luaRefPtr = std::make_shared<luabridge::LuaRef>(luaRef);
 
-				componentFiles[fileNameWithoutExtension] = luaRefPtr;
+				components[fileNameWithoutExtension] = luaRefPtr;
 			}
 		}
 	}

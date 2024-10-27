@@ -16,9 +16,12 @@ void TemplateDB::LoadTemplates()
     rapidjson::Document templateDocument;
     std::string templatesPath = "resources/actor_templates/";
 
-    if (std::filesystem::exists(templatesPath) && std::filesystem::is_directory(templatesPath)) {
-        for (const auto& entry : std::filesystem::directory_iterator(templatesPath)) {
-            if (entry.is_regular_file() && entry.path().extension() == ".template") {
+    if (std::filesystem::exists(templatesPath) && std::filesystem::is_directory(templatesPath)) 
+    {
+        for (const auto& entry : std::filesystem::directory_iterator(templatesPath)) 
+        {
+            if (entry.is_regular_file() && entry.path().extension() == ".template") 
+            {
                 // Pass the full path to the ReadJsonFile function
                 std::string fullPath = entry.path().string();
                 EngineUtils::ReadJsonFile(fullPath, templateDocument);
@@ -35,7 +38,8 @@ void TemplateDB::LoadTemplates()
                     const rapidjson::Value& components = templateDocument["components"];
 
                     // Loop through each component in the JSON array
-                    for (rapidjson::Value::ConstMemberIterator itr = components.MemberBegin(); itr != components.MemberEnd(); ++itr) {
+                    for (rapidjson::Value::ConstMemberIterator itr = components.MemberBegin(); itr != components.MemberEnd(); ++itr) 
+                    {
                         // Extract the component's name (e.g., "first_component", "second_component")
                         std::string componentName = itr->name.GetString();
 
@@ -46,14 +50,75 @@ void TemplateDB::LoadTemplates()
                         if (component.HasMember("type")) {
                             std::string componentType = component["type"].GetString();
 
-                            if (ComponentDB::componentFiles.find(componentType) != ComponentDB::componentFiles.end())
+                            if (ComponentDB::components.find(componentType) != ComponentDB::components.end())
                             {
                                 luabridge::LuaRef instanceTable = luabridge::newTable(luaState);
-                                luabridge::LuaRef parentTable = *(ComponentDB::componentFiles[componentType]);
+                                instanceTable["key"] = componentName;
+
+                                luabridge::LuaRef parentTable = *(ComponentDB::components[componentType]);
                                 ComponentDB::EstablishInheritance(instanceTable, parentTable);
 
+                                // inject property ovverrides
+                                for (auto propItr = component.MemberBegin(); propItr != component.MemberEnd(); ++propItr) {
+                                    std::string propName = propItr->name.GetString();
+
+                                    if (propName != "type")
+                                    { // Exclude "type" field itself
+                                        if (propItr->value.IsString())
+                                        {
+                                            instanceTable[propName] = propItr->value.GetString();
+                                        }
+                                        else if (propItr->value.IsInt())
+                                        {
+                                            instanceTable[propName] = propItr->value.GetInt();
+                                        }
+                                        else if (propItr->value.IsDouble())
+                                        {
+                                            instanceTable[propName] = propItr->value.GetDouble();
+                                        }
+                                        else if (propItr->value.IsBool())
+                                        {
+                                            instanceTable[propName] = propItr->value.GetBool();
+                                        }
+                                        else if (propItr->value.IsArray())
+                                        {
+                                            // Create a Lua table for arrays
+                                            luabridge::LuaRef luaArray = luabridge::newTable(luaState);
+                                            int index = 1; // Lua uses 1-based indexing
+
+                                            // Iterate over array elements
+                                            for (auto& arrayElem : propItr->value.GetArray())
+                                            {
+                                                if (arrayElem.IsString())
+                                                {
+                                                    luaArray[index++] = arrayElem.GetString();
+                                                }
+                                                else if (arrayElem.IsInt())
+                                                {
+                                                    luaArray[index++] = arrayElem.GetInt();
+                                                }
+                                                else if (arrayElem.IsDouble())
+                                                {
+                                                    luaArray[index++] = arrayElem.GetDouble();
+                                                }
+                                                else if (arrayElem.IsBool())
+                                                {
+                                                    luaArray[index++] = arrayElem.GetBool();
+                                                }
+                                            }
+
+                                            instanceTable[propName] = luaArray;
+                                        }
+                                        else
+                                        {
+                                            std::cout << "error: could not override " << propName << " because type is not supported!";
+                                            exit(0);
+                                        }
+                                    }
+                                }
+
                                 std::shared_ptr<luabridge::LuaRef> instanceTablePtr = std::make_shared<luabridge::LuaRef>(instanceTable);
-                                componentMap[componentType] = instanceTablePtr;
+                                componentMap[componentName] = instanceTablePtr;
                             }
                             else
                             {
