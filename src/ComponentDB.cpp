@@ -62,3 +62,14 @@ void ComponentDB::CppDebugLogError(const std::string& message)
 {
 	std::cerr << message << std::endl;
 }
+
+void ComponentDB::ReportError(const std::string& entityName, const luabridge::LuaException& e)
+{
+	std::string errorMessage = e.what();
+
+	// Normalize file paths across platforms
+	std::replace(errorMessage.begin(), errorMessage.end(), '\\', '/');
+
+	// Display (with color codes)
+	std::cout << "\033[31m" << entityName << " : " << errorMessage << "\033[0m" << "\n";
+}

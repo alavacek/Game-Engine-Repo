@@ -1,5 +1,7 @@
 #include "SceneDB.h"
 
+std::vector<Entity*> SceneDB::entities;
+
 SceneDB::~SceneDB()
 {
     for (int i = 0; i < entities.size(); i++)
@@ -20,6 +22,7 @@ void SceneDB::LoadScene(const std::string& sceneName)
 	}
 
     LoadEntitiesInScene(sceneName);
+
 }
 
 void SceneDB::LoadEntitiesInScene(const std::string& sceneName)
@@ -51,7 +54,7 @@ void SceneDB::LoadEntitiesInScene(const std::string& sceneName)
 
         // Set base values
         std::string name = "";
-        std::unordered_map<std::string, std::shared_ptr<luabridge::LuaRef>> componentMap;
+        std::unordered_map<std::string, Component*> componentMap;
 
         if (actor.HasMember("template"))
         {
@@ -92,7 +95,8 @@ void SceneDB::LoadEntitiesInScene(const std::string& sceneName)
                 const rapidjson::Value& component = itr->value;
 
                 // Check if the component has a "type" field and extract it
-                if (component.HasMember("type")) {
+                if (component.HasMember("type")) 
+                {
                     std::string componentType = component["type"].GetString();
 
                     if (ComponentDB::components.find(componentType) != ComponentDB::components.end())
@@ -104,7 +108,7 @@ void SceneDB::LoadEntitiesInScene(const std::string& sceneName)
                         luabridge::LuaRef parentTable = *(ComponentDB::components[componentType]);
                         ComponentDB::EstablishInheritance(instanceTable, parentTable);
                           
-                        // inject property ovverrides
+                        // inject property overrides
                         for (auto propItr = component.MemberBegin(); propItr != component.MemberEnd(); ++propItr) {
                             std::string propName = propItr->name.GetString();
 
@@ -164,7 +168,7 @@ void SceneDB::LoadEntitiesInScene(const std::string& sceneName)
                         }
 
                         std::shared_ptr<luabridge::LuaRef> instanceTablePtr = std::make_shared<luabridge::LuaRef>(instanceTable);
-                        componentMap[componentName] = instanceTablePtr;
+                        componentMap[componentName] = new Component(instanceTablePtr, componentType);
                     }
                     else
                     {
@@ -190,7 +194,6 @@ void SceneDB::LoadEntitiesInScene(const std::string& sceneName)
 
         entity->entityID = totalEntities;
         totalEntities++;
-
     }
 }
 
@@ -204,7 +207,47 @@ void SceneDB::Start()
 
 void SceneDB::Update()
 {
+    for (Entity* entity : entities)
+    {
+        entity->Update();
+    }
+}
 
+void SceneDB::LateUpdate()
+{
+    for (Entity* entity : entities)
+    {
+        entity->LateUpdate();
+    }
+}
+
+Entity* SceneDB::Find(const std::string& name)
+{
+    for (auto entity : entities)
+    {
+        if (entity->entityName == name)
+        {   
+            return entity;
+        }
+    }
+    return luabridge::LuaRef(LuaStateManager::GetLuaState());
+}
+
+luabridge::LuaRef SceneDB::FindAll(const std::string& name)
+{
+    luabridge::LuaRef entityTable = luabridge::newTable(LuaStateManager::GetLuaState());
+    int index = 1;
+
+    for(auto entity : entities)
+    {
+        if (entity->entityName == name)
+        {
+            entityTable[index] = entity;
+            index++;
+        }
+    }
+
+    return entityTable;
 }
 
 uint64_t SceneDB::GetNumberOfEntitiesInScene()

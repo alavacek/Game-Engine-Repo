@@ -38,6 +38,23 @@ void Engine::ReadResources()
 	// rendering config
 	std::string renderingConfig = "resources/rendering.config";
 
+	// Entities class inside of Lua
+	luabridge::getGlobalNamespace(LuaStateManager::GetLuaState())
+		.beginClass<Entity>("Entity")
+		.addFunction("GetName", &Entity::GetName)
+		.addFunction("GetID", &Entity::GetID)
+		.addFunction("GetComponentByKey", &Entity::GetComponentByKey)
+		.addFunction("GetComponent", &Entity::GetComponent)
+		.addFunction("GetComponents", &Entity::GetComponents)
+		.endClass();
+
+	// Entities that exist
+	luabridge::getGlobalNamespace(LuaStateManager::GetLuaState())
+		.beginNamespace("Entity")
+		.addFunction("Find", &SceneDB::Find)
+		.addFunction("FindAll", &SceneDB::FindAll)
+		.endNamespace();
+
 	// Determine what components exist in resources/component_types
 	ComponentDB::LoadComponents();
 
@@ -159,26 +176,14 @@ void Engine::Update()
 {
 	if (isRunning)
 	{
-		if (state != INPROGRESS)
-		{
-			return;
-		}
-
-		// sort based on y positon or based on render order
-		std::sort(currScene->entityRenderOrder.begin(), currScene->entityRenderOrder.end(), Entity::CompareEntities);
-		
-		//runs once 
-		if (state == WON)
-		{
-
-		}
-		else if (state == LOST)
-		{
-
-		}
+		currScene->Update();
 
 		// Late Update
 		Input::LateUpdate();
+		currScene->LateUpdate();
+
+		// sort based on y positon or based on render order
+		std::sort(currScene->entityRenderOrder.begin(), currScene->entityRenderOrder.end(), Entity::CompareEntities);
 	}
 }
 

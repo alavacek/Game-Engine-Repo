@@ -32,12 +32,16 @@ public:
 
 	void Start();
 	void Update();
+	void LateUpdate();
+
+	static Entity* Find(const std::string& name);
+	static luabridge::LuaRef FindAll(const std::string& name);
 
 	std::vector<Entity*> entityRenderOrder;
 
 private:
 	std::string currSceneName;
-	std::vector<Entity*> entities;
+	static std::vector<Entity*> entities;
 
 	int totalEntities = 0;
 	int maxHeight = 0;

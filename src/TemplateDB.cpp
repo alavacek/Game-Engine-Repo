@@ -30,7 +30,7 @@ void TemplateDB::LoadTemplates()
                 std::string name = templateDocument.HasMember("name") ? templateDocument["name"].GetString() : "";
                 std::string templateName = entry.path().stem().string();
 
-                std::unordered_map<std::string, std::shared_ptr<luabridge::LuaRef>> componentMap;
+                std::unordered_map<std::string, Component*> componentMap;
 
                 // Loop through each component in the JSON array
                 if (templateDocument.HasMember("components"))
@@ -118,7 +118,7 @@ void TemplateDB::LoadTemplates()
                                 }
 
                                 std::shared_ptr<luabridge::LuaRef> instanceTablePtr = std::make_shared<luabridge::LuaRef>(instanceTable);
-                                componentMap[componentName] = instanceTablePtr;
+                                componentMap[componentName] = new Component(instanceTablePtr, componentType);
                             }
                             else
                             {

@@ -9,11 +9,9 @@
 class Template : public Entity  // Make the inheritance public
 {
 public:
-    Template(const std::string& templateName, const std::string& entityName, const std::unordered_map<std::string, std::shared_ptr<luabridge::LuaRef>>& components)
+    Template(const std::string& templateName, const std::string& entityName, const std::unordered_map<std::string, Component*>& components)
         : Entity(entityName, components),
         templateName(templateName) {}
-
-    Template() {}
 
     std::string templateName;
 };

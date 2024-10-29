@@ -8,36 +8,135 @@ bool Entity::CompareEntities(const Entity* a, const Entity* b)
 
 void Entity::Start()
 {
-	for (const auto& componentType : componentsKeysAlphabeticalOrder)
+	for (const auto& componentKey : componentsKeysAlphabeticalOrder)
 	{
-		std::shared_ptr<luabridge::LuaRef> luaRefPtr = components[componentType]; // Get the LuaRef pointer
+		std::shared_ptr<luabridge::LuaRef> luaRefPtr = components[componentKey]->luaRef; // Get the LuaRef pointer
 		luabridge::LuaRef luaRef = *luaRefPtr;
 
-		if (luaRefPtr && luaRefPtr->isTable()) 
+		if (luaRefPtr && luaRefPtr->isTable())
 		{
-			luabridge::LuaRef onStartFunc = (luaRef)["OnStart"];
-			if (onStartFunc.isFunction())
+			try
 			{
-				onStartFunc(luaRef);
+				luabridge::LuaRef onStartFunc = (luaRef)["OnStart"];
+				if (onStartFunc.isFunction())
+				{
+					onStartFunc(luaRef);
+				}
 			}
+			catch (const luabridge::LuaException& e)
+			{
+				ComponentDB::ReportError(entityName, e);
+			}
+
 		}
 	}
 }
 
 void Entity::Update()
 {
+	for (const auto& componentKey : componentsKeysAlphabeticalOrder)
+	{
+		std::shared_ptr<luabridge::LuaRef> luaRefPtr = components[componentKey]->luaRef; // Get the LuaRef pointer
+		luabridge::LuaRef luaRef = *luaRefPtr;
 
+		if (luaRefPtr && luaRefPtr->isTable())
+		{
+			try
+			{
+				luabridge::LuaRef onStartFunc = (luaRef)["OnUpdate"];
+				if (onStartFunc.isFunction())
+				{
+					onStartFunc(luaRef);
+				}
+			}
+			catch (const luabridge::LuaException& e)
+			{
+				ComponentDB::ReportError(entityName, e);
+			}
+		}
+	}
+
+}
+
+void Entity::LateUpdate()
+{
+	for (const auto& componentKey : componentsKeysAlphabeticalOrder)
+	{
+		std::shared_ptr<luabridge::LuaRef> luaRefPtr = components[componentKey]->luaRef; // Get the LuaRef pointer
+		luabridge::LuaRef luaRef = *luaRefPtr;
+
+		if (luaRefPtr && luaRefPtr->isTable())
+		{
+			try
+			{
+				luabridge::LuaRef onStartFunc = (luaRef)["OnLateUpdate"];
+				if (onStartFunc.isFunction())
+				{
+					onStartFunc(luaRef);
+				}
+			}
+			catch (const luabridge::LuaException& e)
+			{
+				ComponentDB::ReportError(entityName, e);
+			}
+		}
+	}
+}
+
+luabridge::LuaRef Entity::GetComponentByKey(const std::string& key)
+{
+	if (components.find(key) != components.end())
+	{
+		return *(components[key]->luaRef);
+	}
+	else
+	{
+		return luabridge::LuaRef(LuaStateManager::GetLuaState());
+	}
+}
+
+luabridge::LuaRef Entity::GetComponent(const std::string& typeName)
+{
+	for (const auto& componentKey : componentsKeysAlphabeticalOrder)
+	{
+		Component* component = components[componentKey];
+		if (component->type == typeName)
+		{
+			return *(component->luaRef);
+		}
+	}
+
+	return luabridge::LuaRef(LuaStateManager::GetLuaState());
+}
+
+luabridge::LuaRef Entity::GetComponents(const std::string& typeName)
+{
+	luabridge::LuaRef componentsTable = luabridge::newTable(LuaStateManager::GetLuaState());
+	int index = 1;
+
+	for (const auto& componentKey : componentsKeysAlphabeticalOrder)
+	{
+		Component* component = components[componentKey];
+		if (component->type == typeName)
+		{
+			componentsTable[index] = (*(component->luaRef));
+			index++;
+		}
+	}
+
+	return componentsTable;
 }
 
 Entity::~Entity()
 {
-	//for (const auto& pair : components) 
-	//{
-	//	std::shared_ptr<luabridge::LuaRef> luaRefPtr = pair.second;
-
-	//	delete luaRefPtr;
-	//}
+	for (const auto& pair : components) 
+	{
+		delete pair.second;
+	}
 }
+
+
+// OLD C++ HARD CODED COMPONENTS
 
 void SpriteRenderer::ChangeSprite(const std::string& viewImageName_in, glm::dvec2 pivot)
 {

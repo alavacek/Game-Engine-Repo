@@ -8,10 +8,12 @@
 #include <vector>
 
 #include "Component.h"
+#include "ComponentDB.h"
 #include "glm/glm.hpp"
 #include "ImageDB.h"
 #include "lua.hpp"
 #include "LuaBridge.h"
+#include "LuaStateManager.h"
 #include "SDLHelper.h"
 
 class Transform;
@@ -25,29 +27,37 @@ class Entity
 public:
 	static bool CompareEntities(const Entity* a, const Entity* b);
 
-	std::unordered_map<std::string, std::shared_ptr<luabridge::LuaRef>> components;
+	std::unordered_map<std::string, Component*> components;
 	std::vector<std::string> componentsKeysAlphabeticalOrder;
 
 	std::string entityName;
 	int entityID;
 
 
-	Entity(const std::string& entityName, const std::unordered_map<std::string, std::shared_ptr<luabridge::LuaRef>>& components)
+	Entity(const std::string& entityName, const std::unordered_map<std::string, Component*>& components)
 		: entityName(entityName), components(components) 
 	{
 		for (const auto& pair : components) 
 		{
 			componentsKeysAlphabeticalOrder.push_back(pair.first);
+
+			(*pair.second->luaRef)["entity"] = this;
 		}
 
 		// Step 2: Sort the keys
 		std::sort(componentsKeysAlphabeticalOrder.begin(), componentsKeysAlphabeticalOrder.end());
 	}
 
-	Entity() {}
-
 	void Start();
 	void Update();
+	void LateUpdate();
+
+	std::string GetName() const { return entityName; }
+	int GetID() const { return entityID;  }
+	luabridge::LuaRef GetComponentByKey(const std::string& key);
+	luabridge::LuaRef GetComponent(const std::string& typeName);
+	luabridge::LuaRef GetComponents(const std::string& typeName);
+
 
 	~Entity();
 private:

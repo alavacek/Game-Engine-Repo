@@ -18,6 +18,8 @@ public:
 	static void CppDebugLog(const std::string& message);
 	static void CppDebugLogError(const std::string& message);
 
+	static void ReportError(const std::string& entityName, const luabridge::LuaException& e);
+
 	static std::unordered_map<std::string, std::shared_ptr<luabridge::LuaRef>> components;
 };
 
