@@ -55,6 +55,15 @@ void Engine::ReadResources()
 		.addFunction("FindAll", &SceneDB::FindAll)
 		.endNamespace();
 
+	// Application Namespace
+	luabridge::getGlobalNamespace(LuaStateManager::GetLuaState())
+		.beginNamespace("Application")
+		.addFunction("GetFrame", &Helper::GetFrameNumber)
+		.addFunction("Quit", &Engine::Quit)
+		.addFunction("Sleep", &Engine::Sleep)
+		.addFunction("OpenURL", &Engine::OpenURL)
+		.endNamespace();
+
 	// Determine what components exist in resources/component_types
 	ComponentDB::LoadComponents();
 
@@ -191,7 +200,7 @@ void Engine::Render()
 {
 	if (isRunning)
 	{
-		// TODO: May need to move this to begining of game loop
+		// TODO: May need to move this to beginning of game loop
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
 		SDL_RenderClear(renderer);
 
@@ -230,14 +239,6 @@ void Engine::Render()
 				Render();
 			}
 		}
-		else if (state == WON)
-		{
-
-		}
-		else if (state == LOST)
-		{
-
-		}
 
 		Helper::SDL_RenderPresent498(renderer);
 	}
@@ -246,6 +247,37 @@ void Engine::Render()
 void Engine::EndGame()
 {
 	delete currScene;
+}
+
+// Lua Functions
+void Engine::Quit()
+{
+	exit(0);
+}
+
+void Engine::Sleep(int milliseconds)
+{
+	std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+}
+
+void Engine::OpenURL(std::string url)
+{
+#if defined(_WIN32) || defined(_WIN64) // Windows
+	std::string command = "start " + url;
+
+#elif defined(__APPLE__) // OSX
+	std::string command = "open " + url;
+
+#elif defined(__linux__) // Linus
+	std::string command = "xdg-open " + url;
+
+#else
+	std::cout << "Platform not supported\n";
+	exit(0);
+
+#endif
+	std::system(command.c_str());
+	
 }
 
 Engine::~Engine()

@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <iostream>
 #include <sstream>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 
@@ -29,12 +30,9 @@
 #include "TemplateDB.h"
 #include "TextDB.h"
 
-
 enum GameState
 {
 	INTRO,
-	WON,
-	LOST,
 	INPROGRESS
 };
 
@@ -53,6 +51,10 @@ public:
 	void Render();
 
 	void EndGame();
+
+	static void Quit();
+	static void Sleep(int milliseconds);
+	static void OpenURL(std::string url);
 
 	~Engine();
 
