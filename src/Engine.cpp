@@ -18,7 +18,55 @@ void Engine::GameLoop()
 	}
 }
 
-void Engine::ReadResources() 
+void Engine::Start()
+{
+	// Lua Loading
+	LuaStateManager::Initialize();
+	lua_State* luaState = LuaStateManager::GetLuaState();
+
+	// set up renderer
+	Renderer::RendererInit();
+	renderer = Renderer::GetRenderer();
+
+	// set up Input
+	Input::Init();
+
+	LuaClassAndNamespaceSetup();
+
+	ReadResources();
+
+	// set up audio
+	AudioDB::InitAudio();
+
+	// set up text database
+	if (configDocument.HasMember("font") && configDocument["font"].IsString())
+	{
+		TextDB::TextDB_Init(configDocument["font"].GetString());
+	}
+	else
+	{
+		std::cout << "error: text render failed. No font configured";
+		exit(0);
+	}
+
+	// set up camera
+	glm::ivec2 resolution = Renderer::GetResolution();
+	double zoomFactor = Renderer::GetZoomFactor();
+
+	cameraRect.w = static_cast<int>(std::round(resolution.x / zoomFactor));
+	cameraRect.h = static_cast<int>(std::round(resolution.y / zoomFactor));
+
+	glm::vec2 centerPos = glm::vec2(0,0)/* = currScene->GetPlayerEntity() != nullptr ? currScene->GetPlayerEntity()->transform->position : glm::vec2(0, 0)*/;
+
+	cameraRect.x = static_cast<int>(std::round((centerPos.x * pixelsPerUnit) - (cameraRect.w / 2)));
+	cameraRect.y = static_cast<int>(std::round((centerPos.y * pixelsPerUnit) - (cameraRect.h / 2)));
+
+
+	// Entity Start
+	currScene->Start();
+}
+
+void Engine::ReadResources()
 {
 	// check for resource folder
 	if (!std::filesystem::exists("resources"))
@@ -37,32 +85,6 @@ void Engine::ReadResources()
 
 	// rendering config
 	std::string renderingConfig = "resources/rendering.config";
-
-	// Entities class inside of Lua
-	luabridge::getGlobalNamespace(LuaStateManager::GetLuaState())
-		.beginClass<Entity>("Entity")
-		.addFunction("GetName", &Entity::GetName)
-		.addFunction("GetID", &Entity::GetID)
-		.addFunction("GetComponentByKey", &Entity::GetComponentByKey)
-		.addFunction("GetComponent", &Entity::GetComponent)
-		.addFunction("GetComponents", &Entity::GetComponents)
-		.endClass();
-
-	// Entities that exist
-	luabridge::getGlobalNamespace(LuaStateManager::GetLuaState())
-		.beginNamespace("Entity")
-		.addFunction("Find", &SceneDB::Find)
-		.addFunction("FindAll", &SceneDB::FindAll)
-		.endNamespace();
-
-	// Application Namespace
-	luabridge::getGlobalNamespace(LuaStateManager::GetLuaState())
-		.beginNamespace("Application")
-		.addFunction("GetFrame", &Helper::GetFrameNumber)
-		.addFunction("Quit", &Engine::Quit)
-		.addFunction("Sleep", &Engine::Sleep)
-		.addFunction("OpenURL", &Engine::OpenURL)
-		.endNamespace();
 
 	// Determine what components exist in resources/component_types
 	ComponentDB::LoadComponents();
@@ -86,63 +108,56 @@ void Engine::ReadResources()
 	}
 }
 
-void Engine::Start()
+void Engine::LuaClassAndNamespaceSetup()
 {
-	// Lua Loading
-	LuaStateManager::Initialize();
 	lua_State* luaState = LuaStateManager::GetLuaState();
+	// Entities Class inside of Lua
+	luabridge::getGlobalNamespace(luaState)
+		.beginClass<Entity>("Entity")
+		.addFunction("GetName", &Entity::GetName)
+		.addFunction("GetID", &Entity::GetID)
+		.addFunction("GetComponentByKey", &Entity::GetComponentByKey)
+		.addFunction("GetComponent", &Entity::GetComponent)
+		.addFunction("GetComponents", &Entity::GetComponents)
+		.endClass();
 
-	// set up renderer
-	Renderer::RendererInit();
-	renderer = Renderer::GetRenderer();
+	// Entities Namespace inside of Lua
+	luabridge::getGlobalNamespace(luaState)
+		.beginNamespace("Entity")
+		.addFunction("Find", &SceneDB::Find)
+		.addFunction("FindAll", &SceneDB::FindAll)
+		.endNamespace();
 
-	ReadResources();
+	// Application Namespace inside of Lua
+	luabridge::getGlobalNamespace(luaState)
+		.beginNamespace("Application")
+		.addFunction("GetFrame", &Helper::GetFrameNumber)
+		.addFunction("Quit", &Engine::Quit)
+		.addFunction("Sleep", &Engine::Sleep)
+		.addFunction("OpenURL", &Engine::OpenURL)
+		.endNamespace();
 
-	std::string game_start_message = configDocument["game_start_message"].GetString();
+	// Vec2 Class
+	luabridge::getGlobalNamespace(luaState)
+		.beginClass<glm::vec2>("vec2")
+		.addProperty("x", &glm::vec2::x)
+		.addProperty("y", &glm::vec2::y)
+		.endClass();
 
-	// set up audio
-	AudioDB::InitAudio();
-
-	// load intro screen images
-	bool hasIntroImages = ImageDB::LoadIntroImages(configDocument);
-
-	if (hasIntroImages)
-	{
-		// set up text database
-		if (configDocument.HasMember("font") && configDocument["font"].IsString())
-		{
-			TextDB::TextDB_Init(configDocument["font"].GetString());
-		}
-		else
-		{
-			std::cout << "error: text render failed. No font configured";
-			exit(0);
-		}
-
-		TextDB::LoadIntroText(configDocument);
-		AudioDB::LoadIntroAudio(configDocument);
-	}
-	else
-	{
-		state == INPROGRESS;
-	}
-
-	// set up camera
-	glm::ivec2 resolution = Renderer::GetResolution();
-	double zoomFactor = Renderer::GetZoomFactor();
-
-	cameraRect.w = static_cast<int>(std::round(resolution.x / zoomFactor));
-	cameraRect.h = static_cast<int>(std::round(resolution.y / zoomFactor));
-
-	glm::vec2 centerPos = glm::vec2(0,0)/* = currScene->GetPlayerEntity() != nullptr ? currScene->GetPlayerEntity()->transform->position : glm::vec2(0, 0)*/;
-
-	cameraRect.x = static_cast<int>(std::round((centerPos.x * pixelsPerUnit) - (cameraRect.w / 2)));
-	cameraRect.y = static_cast<int>(std::round((centerPos.y * pixelsPerUnit) - (cameraRect.h / 2)));
-
-
-	// Entity Start
-	currScene->Start();
+	// Input Name Space inside of Lua
+	luabridge::getGlobalNamespace(luaState)
+		.beginNamespace("Input")
+		.addFunction("GetKey", &Input::GetKey)
+		.addFunction("GetKeyDown", &Input::GetKeyDown)
+		.addFunction("GetKeyUp", &Input::GetKeyUp)
+		.addFunction("GetMousePosition", &Input::GetMousePosition)
+		.addFunction("GetMouseButton", &Input::GetMouseButton)
+		.addFunction("GetMouseButtonDown", &Input::GetMouseButtonDown)
+		.addFunction("GetMouseButtonUp", &Input::GetMouseButtonUp)
+		.addFunction("GetMouseScrollDelta", &Input::GetMouseScrollDelta)
+		.endNamespace();
 }
+
 
 void Engine::Input()
 {
@@ -154,29 +169,7 @@ void Engine::Input()
 			exit(1);
 		}
 
-		if (state == INTRO)
-		{
-			if ((e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_LEFT) ||
-				(e.type == SDL_KEYDOWN && (e.key.keysym.scancode == SDL_SCANCODE_SPACE || e.key.keysym.scancode == SDL_SCANCODE_RETURN)))
-			{
-				// Left-click to advance the image
-				ImageDB::ProgressToNextIntroImage();
-				TextDB::ProgressToNextIntroText();
-
-				if (ImageDB::FinishedWithIntro() && TextDB::FinishedWithIntro())
-				{
-					state = INPROGRESS;
-					AudioDB::EndIntroAudio();
-
-					AudioDB::LoadGameplayAudio(configDocument);
-				}
-			}
-		}
-		else
-		{
-			Input::ProcessEvent(e);
-
-		}
+		Input::ProcessEvent(e);
 
 	}
 }
@@ -188,10 +181,10 @@ void Engine::Update()
 		currScene->Update();
 
 		// Late Update
-		Input::LateUpdate();
 		currScene->LateUpdate();
+		Input::LateUpdate();
 
-		// sort based on y positon or based on render order
+		// sort based on y position or based on render order
 		std::sort(currScene->entityRenderOrder.begin(), currScene->entityRenderOrder.end(), Entity::CompareEntities);
 	}
 }
@@ -204,40 +197,32 @@ void Engine::Render()
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
 		SDL_RenderClear(renderer);
 
-		if (state == INTRO)
+		glm::vec2 centerPos = glm::vec2(0, 0)/* = currScene->GetPlayerEntity() != nullptr ? currScene->GetPlayerEntity()->transform->position : glm::vec2(0, 0)*/;
+		glm::ivec2 resolution = Renderer::GetResolution();
+
+		double zoomFactor = Renderer::GetZoomFactor();
+
+		cameraRect.x = glm::mix(cameraRect.x, static_cast<int>(std::round((centerPos.x * pixelsPerUnit) - (cameraRect.w / 2))), Renderer::GetCameraEaseFactor());
+		cameraRect.y = glm::mix(cameraRect.y, static_cast<int>(std::round((centerPos.y * pixelsPerUnit) - (cameraRect.h / 2))), Renderer::GetCameraEaseFactor());
+
+		// render visible map
+		SDL_RenderSetScale(renderer, zoomFactor, zoomFactor);
+
+		for (Entity* entity : currScene->entityRenderOrder)
 		{
-			ImageDB::RenderCurrentIntroImage();
-			TextDB::DrawCurrentIntroText(Renderer::GetResolution().y);
+			//entity->->RenderEntity(entity, &c//eraRect, pixelsPerUnit, entity->velocity != glm::vec2(0,0), debugShowCollisions);
 		}
-		else if (state == INPROGRESS)
+
+		// possibly move to update?
+		if (pendingScene != "")
 		{
-			glm::vec2 centerPos = glm::vec2(0,0)/* = currScene->GetPlayerEntity() != nullptr ? currScene->GetPlayerEntity()->transform->position : glm::vec2(0, 0)*/;
-			glm::ivec2 resolution = Renderer::GetResolution();
-			
-			double zoomFactor = Renderer::GetZoomFactor();
+			delete currScene; // TODO: iss this appropriate or should I just load new scene?
 
-			cameraRect.x = glm::mix(cameraRect.x, static_cast<int>(std::round((centerPos.x * pixelsPerUnit) - (cameraRect.w / 2))), Renderer::GetCameraEaseFactor());
-			cameraRect.y = glm::mix(cameraRect.y, static_cast<int>(std::round((centerPos.y * pixelsPerUnit) - (cameraRect.h / 2))), Renderer::GetCameraEaseFactor());
+			currScene = new SceneDB();
+			currScene->LoadScene(pendingScene);
+			pendingScene = "";
 
-			// render visible map
-			SDL_RenderSetScale(renderer, zoomFactor, zoomFactor);
-			
-			for (Entity* entity : currScene->entityRenderOrder)
-			{
-				//entity->->RenderEntity(entity, &c//eraRect, pixelsPerUnit, entity->velocity != glm::vec2(0,0), debugShowCollisions);
-			}	
-
-			// possibly move to update?
-			if (pendingScene != "")
-			{
-				delete currScene; // TODO: iss this appropriate or should I just load new scene?
-
-				currScene = new SceneDB();
-				currScene->LoadScene(pendingScene);
-				pendingScene = "";
-
-				Render();
-			}
+			Render();
 		}
 
 		Helper::SDL_RenderPresent498(renderer);

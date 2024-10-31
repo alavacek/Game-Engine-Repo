@@ -2,13 +2,9 @@
   "actors": [
     {
       "name": "debug_actor",
-      "template": "wolverine",
       "components": {
         "first_component": {
           "type": "OutputMessage"
-        },
-        "second_component": {
-          "type": "OutputMessage2"
         }
       }
     }

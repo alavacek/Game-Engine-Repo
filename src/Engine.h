@@ -30,17 +30,12 @@
 #include "TemplateDB.h"
 #include "TextDB.h"
 
-enum GameState
-{
-	INTRO,
-	INPROGRESS
-};
-
 class Engine
 {
 public:
 	void GameLoop();
 	void ReadResources();
+	void LuaClassAndNamespaceSetup();
 
 	void Start();
 
@@ -72,7 +67,6 @@ private:
 
 	static int pixelsPerUnit;
 	int frameSinceDamageTaken;
-	GameState state = INTRO;
 
 	int framesOfDamageIndicator = 30;
 	int framesOfAttackIndicator = 30;
