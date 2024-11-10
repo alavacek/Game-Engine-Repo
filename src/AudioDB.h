@@ -12,13 +12,12 @@ class AudioDB
 {
 public:
 	static void InitAudio();
-	static void LoadIntroAudio(const rapidjson::Document& configDocument);
-	static void EndIntroAudio();
 	static void LoadGameplayAudio(const rapidjson::Document& configDocument);
 
 	static void PlayBGM(const std::string& audioClipName);
 	static void PlayChannel(int channel, const std::string& audioClipName, bool doesLoop);
 	static void HaltChannel(int channel);
+	static void SetVolume(int channel, float volume);
 
 private:
 	static bool hasIntroAudio;

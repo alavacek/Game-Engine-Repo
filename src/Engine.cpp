@@ -161,10 +161,18 @@ void Engine::LuaClassAndNamespaceSetup()
 		.addFunction("GetMouseScrollDelta", &Input::GetMouseScrollDelta)
 		.endNamespace();
 
-	// Input Name Space inside of Lua
+	// Text Scripting Name Space inside of Lua
 	luabridge::getGlobalNamespace(luaState)
 		.beginNamespace("Text")
 		.addFunction("Draw", &TextDB::DrawText)
+		.endNamespace();
+
+	// Audio Scripting Name Space inside of Lua
+	luabridge::getGlobalNamespace(luaState)
+		.beginNamespace("Audio")
+		.addFunction("Play", &AudioDB::PlayChannel)
+		.addFunction("Halt", &AudioDB::HaltChannel)
+		.addFunction("SetVolume", &AudioDB::SetVolume)
 		.endNamespace();
 }
 

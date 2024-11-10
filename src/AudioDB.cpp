@@ -1,6 +1,5 @@
 #include "AudioDB.h"
 
-bool AudioDB::hasIntroAudio;
 std::unordered_map<std::string, Mix_Chunk*> AudioDB::cachedAudio;
 
 void AudioDB::InitAudio()
@@ -18,27 +17,6 @@ void AudioDB::InitAudio()
 	AudioHelper::Mix_AllocateChannels498(50);
 }
 
-void AudioDB::LoadIntroAudio(const rapidjson::Document& configDocument)
-{
-	if (configDocument.HasMember("intro_bgm") && configDocument["intro_bgm"].IsString())
-	{
-		hasIntroAudio = true;
-
-		AudioDB::PlayBGM(configDocument["intro_bgm"].GetString());
-	}
-	else
-	{
-		hasIntroAudio = false;
-	}
-}
-
-void AudioDB::EndIntroAudio()
-{
-	if (hasIntroAudio)
-	{
-		AudioHelper::Mix_HaltChannel498(0);
-	}
-}
 
 void AudioDB::LoadGameplayAudio(const rapidjson::Document& configDocument)
 {
@@ -108,4 +86,9 @@ void AudioDB::PlayChannel(int channel, const std::string& audioClipName, bool do
 void AudioDB::HaltChannel(int channel)
 {
 	AudioHelper::Mix_HaltChannel498(channel);
+}
+
+void AudioDB::SetVolume(int channel, float volume)
+{
+	AudioHelper::Mix_Volume498(channel, static_cast<int>(volume));
 }
