@@ -33,6 +33,8 @@ public:
 	std::string entityName;
 	int entityID;
 
+	bool wasDestroyed;
+
 
 	Entity(const std::string& entityName, const std::unordered_map<std::string, Component*>& components)
 		: entityName(entityName), components(components) 
@@ -42,10 +44,15 @@ public:
 			componentsKeysAlphabeticalOrder.push_back(pair.first);
 
 			(*pair.second->luaRef)["entity"] = this;
+			
+			// override to be true for now since logic in componentdb.h didnt seem to be doing anything
+			(*pair.second->luaRef)["enabled"] = true;
 		}
 
-		// Step 2: Sort the keys
+		// Sort the keys
 		std::sort(componentsKeysAlphabeticalOrder.begin(), componentsKeysAlphabeticalOrder.end());
+
+		wasDestroyed = false;
 	}
 
 	void Start();
@@ -58,10 +65,17 @@ public:
 	luabridge::LuaRef GetComponent(const std::string& typeName);
 	luabridge::LuaRef GetComponents(const std::string& typeName);
 
+	luabridge::LuaRef AddComponent(const std::string& typeName);
+	void RemoveComponent(const std::string& typeName);
 
 	~Entity();
 private:
-	std::vector<luabridge::LuaRef*> componentsRequiringOnUpdate;
+	int IndexOfComponentInAlphabeticalVector(const std::string& key);
+	void PreLifeCycleFunctionComponentCleanUp();
+	void PostLifeCycleFunctionComponentCleanUp();
+
+	std::vector<std::string> keysOfComponentsToRemove;
+	std::vector<std::string> keysOfNewlyAddedComponents;
 };
 
 class Transform

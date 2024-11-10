@@ -36,14 +36,18 @@ public:
 
 	static Entity* Find(const std::string& name);
 	static luabridge::LuaRef FindAll(const std::string& name);
+	static Entity* Instantiate(const std::string& entityTemplateName);
+	static void Destroy(Entity* entity);
 
-	std::vector<Entity*> entityRenderOrder;
+	static std::vector<Entity*> entityRenderOrder;
 
 private:
 	std::string currSceneName;
 	static std::vector<Entity*> entities;
-
-	int totalEntities = 0;
+	static std::vector<Entity*> entitiesToInstantiate;
+	static std::vector<Entity*> entitiesToDestroy;
+	 
+	int totalEntities = 0; // NOTE: this is total enemies to exist, not total in scene
 	int maxHeight = 0;
 	int maxWidth = 0;
 	int collisionsSpatialMapSize;

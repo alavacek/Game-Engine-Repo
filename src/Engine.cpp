@@ -119,6 +119,8 @@ void Engine::LuaClassAndNamespaceSetup()
 		.addFunction("GetComponentByKey", &Entity::GetComponentByKey)
 		.addFunction("GetComponent", &Entity::GetComponent)
 		.addFunction("GetComponents", &Entity::GetComponents)
+		.addFunction("AddComponent", &Entity::AddComponent)
+		.addFunction("RemoveComponent", &Entity::RemoveComponent)
 		.endClass();
 
 	// Entities Namespace inside of Lua
@@ -126,6 +128,8 @@ void Engine::LuaClassAndNamespaceSetup()
 		.beginNamespace("Entity")
 		.addFunction("Find", &SceneDB::Find)
 		.addFunction("FindAll", &SceneDB::FindAll)
+		.addFunction("Instantiate", &SceneDB::Instantiate)
+		.addFunction("Destroy", &SceneDB::Destroy)
 		.endNamespace();
 
 	// Application Namespace inside of Lua
@@ -155,6 +159,12 @@ void Engine::LuaClassAndNamespaceSetup()
 		.addFunction("GetMouseButtonDown", &Input::GetMouseButtonDown)
 		.addFunction("GetMouseButtonUp", &Input::GetMouseButtonUp)
 		.addFunction("GetMouseScrollDelta", &Input::GetMouseScrollDelta)
+		.endNamespace();
+
+	// Input Name Space inside of Lua
+	luabridge::getGlobalNamespace(luaState)
+		.beginNamespace("Text")
+		.addFunction("Draw", &TextDB::DrawText)
 		.endNamespace();
 }
 
@@ -208,10 +218,12 @@ void Engine::Render()
 		// render visible map
 		SDL_RenderSetScale(renderer, zoomFactor, zoomFactor);
 
-		for (Entity* entity : currScene->entityRenderOrder)
-		{
-			//entity->->RenderEntity(entity, &c//eraRect, pixelsPerUnit, entity->velocity != glm::vec2(0,0), debugShowCollisions);
-		}
+		Renderer::RenderRequests();
+
+		//for (Entity* entity : currScene->entityRenderOrder)
+		//{
+		//	//entity->->RenderEntity(entity, &c//eraRect, pixelsPerUnit, entity->velocity != glm::vec2(0,0), debugShowCollisions);
+		//}
 
 		// possibly move to update?
 		if (pendingScene != "")
@@ -226,6 +238,8 @@ void Engine::Render()
 		}
 
 		Helper::SDL_RenderPresent498(renderer);
+
+
 	}
 }
 

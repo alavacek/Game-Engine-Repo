@@ -29,20 +29,13 @@ class TextDB
 {
 public:
 	static void TextDB_Init(const std::string& fontName);
-	static void LoadIntroText(const rapidjson::Document& configDocument);
-	static void ProgressToNextIntroText();
-	static void DrawCurrentIntroText(uint32_t windowHeight);
-	static bool FinishedWithIntro() { return finishedIntro; }
 	
-	static void DrawText(const std::string& textContent, uint32_t fontSize, SDL_Color fontColor, uint32_t x, uint32_t y);
+	static void DrawText(const std::string& textContent, float x, float y, 
+		const std::string& fontName, float fontSize, float r, float g, float b, float a);
 private:
+	static TTF_Font* FindFont(const std::string& fontName, int fontSize);
 	static std::unordered_map<TextKey, SDL_Texture*, TextKeyHash> cachedTextures;
-	static std::vector<std::string> introTexts;
-	static TTF_Font* font;
-	static SDL_Color white;
-
-	static uint16_t currIntroText;
-	static bool finishedIntro;
+	static std::unordered_map<std::string, std::unordered_map<int, TTF_Font*>> cachedFonts;
 };
 
 #endif

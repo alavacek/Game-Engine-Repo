@@ -21,6 +21,8 @@ public:
 	static void ReportError(const std::string& entityName, const luabridge::LuaException& e);
 
 	static std::unordered_map<std::string, std::shared_ptr<luabridge::LuaRef>> components;
+
+	static int numRuntimeAddedComponents;
 };
 
 #endif

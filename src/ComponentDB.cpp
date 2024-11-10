@@ -1,6 +1,7 @@
 #include "ComponentDB.h"
 
 std::unordered_map<std::string, std::shared_ptr<luabridge::LuaRef>> ComponentDB::components;
+int ComponentDB::numRuntimeAddedComponents = 0;
 
 void ComponentDB::LoadComponents()
 {
@@ -24,8 +25,14 @@ void ComponentDB::LoadComponents()
 				}
 
 				luabridge::LuaRef luaRef = luabridge::getGlobal(luaState, fileNameWithoutExtension.c_str());
-				std::shared_ptr<luabridge::LuaRef> luaRefPtr = std::make_shared<luabridge::LuaRef>(luaRef);
 
+				// all components should start as enabled, since these are templates for instances of components
+				// we can just set these ones to enabled
+				// NOTE: not sure this is actually doing something, had to try something else in instantiate function
+				luaRef["enabled"] = true;
+
+				std::shared_ptr<luabridge::LuaRef> luaRefPtr = std::make_shared<luabridge::LuaRef>(luaRef);
+				
 				components[fileNameWithoutExtension] = luaRefPtr;
 			}
 		}

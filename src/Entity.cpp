@@ -10,6 +10,11 @@ void Entity::Start()
 {
 	for (const auto& componentKey : componentsKeysAlphabeticalOrder)
 	{
+		if (wasDestroyed)
+		{
+			return;
+		}
+
 		std::shared_ptr<luabridge::LuaRef> luaRefPtr = components[componentKey]->luaRef; // Get the LuaRef pointer
 		luabridge::LuaRef luaRef = *luaRefPtr;
 
@@ -17,11 +22,19 @@ void Entity::Start()
 		{
 			try
 			{
-				luabridge::LuaRef onStartFunc = (luaRef)["OnStart"];
-				if (onStartFunc.isFunction())
+				// Run if enabled
+				// Note, The OnStart function does not run again if a component is re-enabled. 
+				// A component will only ever try and run its OnStart function once (upon creation)
+				luabridge::LuaRef isEnabled = (luaRef)["enabled"];
+				if (isEnabled.isBool() && isEnabled)
 				{
-					onStartFunc(luaRef);
+					luabridge::LuaRef onStartFunc = (luaRef)["OnStart"];
+					if (onStartFunc.isFunction())
+					{
+						onStartFunc(luaRef);
+					}
 				}
+
 			}
 			catch (const luabridge::LuaException& e)
 			{
@@ -29,11 +42,18 @@ void Entity::Start()
 			}
 
 		}
+
+		components[componentKey]->wasInstantiated = true;
 	}
+
+	// PostLifeCycleFunctionComponentCleanUp();
+
 }
 
 void Entity::Update()
 {
+	PreLifeCycleFunctionComponentCleanUp();
+
 	for (const auto& componentKey : componentsKeysAlphabeticalOrder)
 	{
 		std::shared_ptr<luabridge::LuaRef> luaRefPtr = components[componentKey]->luaRef; // Get the LuaRef pointer
@@ -43,10 +63,15 @@ void Entity::Update()
 		{
 			try
 			{
-				luabridge::LuaRef onStartFunc = (luaRef)["OnUpdate"];
-				if (onStartFunc.isFunction())
+				// Run if enabled
+				luabridge::LuaRef isEnabled = (luaRef)["enabled"];
+				if (isEnabled.isBool() && isEnabled)
 				{
-					onStartFunc(luaRef);
+					luabridge::LuaRef onStartFunc = (luaRef)["OnUpdate"];
+					if (onStartFunc.isFunction())
+					{
+						onStartFunc(luaRef);
+					}
 				}
 			}
 			catch (const luabridge::LuaException& e)
@@ -62,6 +87,11 @@ void Entity::LateUpdate()
 {
 	for (const auto& componentKey : componentsKeysAlphabeticalOrder)
 	{
+		if (wasDestroyed)
+		{
+			return;
+		}
+
 		std::shared_ptr<luabridge::LuaRef> luaRefPtr = components[componentKey]->luaRef; // Get the LuaRef pointer
 		luabridge::LuaRef luaRef = *luaRefPtr;
 
@@ -69,10 +99,15 @@ void Entity::LateUpdate()
 		{
 			try
 			{
-				luabridge::LuaRef onStartFunc = (luaRef)["OnLateUpdate"];
-				if (onStartFunc.isFunction())
+				// Run if enabled
+				luabridge::LuaRef isEnabled = (luaRef)["enabled"];
+				if (isEnabled.isBool() && isEnabled)
 				{
-					onStartFunc(luaRef);
+					luabridge::LuaRef onStartFunc = (luaRef)["OnLateUpdate"];
+					if (onStartFunc.isFunction())
+					{
+						onStartFunc(luaRef);
+					}
 				}
 			}
 			catch (const luabridge::LuaException& e)
@@ -81,11 +116,14 @@ void Entity::LateUpdate()
 			}
 		}
 	}
+
+	// added components get added to componentsKeysAlphabeticalOrder and removed components get removed
+	PostLifeCycleFunctionComponentCleanUp();
 }
 
 luabridge::LuaRef Entity::GetComponentByKey(const std::string& key)
 {
-	if (components.find(key) != components.end())
+	if (components.find(key) != components.end() && !components.find(key)->second->wasRemoved)
 	{
 		return *(components[key]->luaRef);
 	}
@@ -100,7 +138,7 @@ luabridge::LuaRef Entity::GetComponent(const std::string& typeName)
 	for (const auto& componentKey : componentsKeysAlphabeticalOrder)
 	{
 		Component* component = components[componentKey];
-		if (component->type == typeName)
+		if (component->type == typeName && !component->wasRemoved)
 		{
 			return *(component->luaRef);
 		}
@@ -117,7 +155,7 @@ luabridge::LuaRef Entity::GetComponents(const std::string& typeName)
 	for (const auto& componentKey : componentsKeysAlphabeticalOrder)
 	{
 		Component* component = components[componentKey];
-		if (component->type == typeName)
+		if (component->type == typeName && !component->wasRemoved)
 		{
 			componentsTable[index] = (*(component->luaRef));
 			index++;
@@ -127,12 +165,220 @@ luabridge::LuaRef Entity::GetComponents(const std::string& typeName)
 	return componentsTable;
 }
 
+luabridge::LuaRef Entity::AddComponent(const std::string& typeName)
+{
+	if (ComponentDB::components.find(typeName) != ComponentDB::components.end())
+	{
+		luabridge::LuaRef instanceTable = luabridge::newTable(LuaStateManager::GetLuaState());
+
+		std::string componentKey = "r" + std::to_string(ComponentDB::numRuntimeAddedComponents);
+		ComponentDB::numRuntimeAddedComponents++;
+
+		instanceTable["key"] = componentKey;
+
+		// establish inheritance from default component type
+		luabridge::LuaRef parentTable = *(ComponentDB::components[typeName]);
+		ComponentDB::EstablishInheritance(instanceTable, parentTable);
+
+		std::shared_ptr<luabridge::LuaRef> instanceTablePtr = std::make_shared<luabridge::LuaRef>(instanceTable);
+		Component* addedComponent = new Component(instanceTablePtr, typeName);
+
+		 // add ref for components table
+		 components[componentKey] = addedComponent;
+		 keysOfNewlyAddedComponents.push_back(componentKey);
+
+		 return instanceTable;
+	}
+	else
+	{
+		std::cout << "error: failed to add component of type " << typeName;
+		exit(0);
+	}
+}
+
+void Entity::RemoveComponent(const std::string& typeName)
+{
+	// Set to nil by default
+	luabridge::LuaRef componentLuaRef = luabridge::LuaRef(LuaStateManager::GetLuaState());
+
+	for (const auto& componentKey : componentsKeysAlphabeticalOrder)
+	{
+		Component* component = components[componentKey];
+		// found component of type, no need to run logic if already planned to be removed
+		if (component->type == typeName && !component->wasRemoved)
+		{
+			// NOTE: this logic will remove all components of type
+			componentLuaRef = *(component->luaRef);
+			
+			// Set isEnabled to false
+			luabridge::LuaRef isEnabled = (componentLuaRef)["enabled"];
+			if (isEnabled.isBool() && isEnabled)
+			{
+				(componentLuaRef)["enabled"] = false;
+
+				component->wasRemoved = true;
+
+				keysOfComponentsToRemove.push_back(componentKey);
+			}
+		}
+	}
+
+	// incase added to keysOfNewlyAddComponents, should now remove
+	for (const auto& componentKey : keysOfNewlyAddedComponents)
+	{
+		Component* component = components[componentKey];
+		// found component of type, no need to run logic if already planned to be removed
+		if (component->type == typeName && !component->wasRemoved)
+		{
+			// NOTE: this logic will remove all components of type
+			componentLuaRef = *(component->luaRef);
+
+			// Set isEnabled to false
+			luabridge::LuaRef isEnabled = (componentLuaRef)["enabled"];
+			if (isEnabled.isBool() && isEnabled)
+			{
+				(componentLuaRef)["enabled"] = false;
+
+				component->wasRemoved = true;
+
+				keysOfComponentsToRemove.push_back(componentKey);
+			}
+		}
+	}
+}
+
+int Entity::IndexOfComponentInAlphabeticalVector(const std::string& key)
+{
+	// Binary search hurraw
+	int l = 0;
+	int r = componentsKeysAlphabeticalOrder.size() - 1;
+
+	// Loop to implement Binary Search 
+	while (l <= r) {
+
+		// Calculatiing mid 
+		int m = l + (r - l) / 2;
+
+		// Some random value assigned 
+		// as 0 belongs to index 
+		int res = -1000;
+
+		if (key == (componentsKeysAlphabeticalOrder[m]))
+			res = 0;
+
+		// Check if key is present at mid 
+		if (res == 0)
+			return m;
+
+		// If key greater, ignore left half 
+		if (key > (componentsKeysAlphabeticalOrder[m]))
+			l = m + 1;
+
+		// If key is smaller, ignore right half 
+		else
+			r = m - 1;
+	}
+
+	return -1;
+}
+
+void Entity::PreLifeCycleFunctionComponentCleanUp()
+{
+	if (keysOfNewlyAddedComponents.size() > 0)
+	{
+		// make copy of keysOfNewlyAddedComponents and clear incase start functions add more components
+		std::vector<std::string> keysAddedComponents = keysOfNewlyAddedComponents;
+
+		keysOfNewlyAddedComponents.clear();
+
+		// sort for starts to be ran in correct order
+		std::sort(keysAddedComponents.begin(), keysAddedComponents.end());
+
+		// Add Components
+		for (const auto& keyOfComponent : keysAddedComponents)
+		{
+			// only if added component hasnt already been removed
+			if (components.find(keyOfComponent) != components.end())
+			{
+				componentsKeysAlphabeticalOrder.push_back(keyOfComponent);
+
+				(*components[keyOfComponent]->luaRef)["entity"] = this;
+
+				std::shared_ptr<luabridge::LuaRef> luaRefPtr = components[keyOfComponent]->luaRef; // Get the LuaRef pointer
+				luabridge::LuaRef luaRef = *luaRefPtr;
+
+				if (luaRefPtr && luaRefPtr->isTable())
+				{
+					try
+					{
+						// Run if enabled
+						// Note, The OnStart function does not run again if a component is re-enabled. 
+						// A component will only ever try and run its OnStart function once (upon creation)
+						luabridge::LuaRef isEnabled = (luaRef)["enabled"];
+						if (isEnabled.isBool() && isEnabled)
+						{
+							luabridge::LuaRef onStartFunc = (luaRef)["OnStart"];
+							if (onStartFunc.isFunction())
+							{
+								onStartFunc(luaRef);
+							}
+						}
+
+					}
+					catch (const luabridge::LuaException& e)
+					{
+						ComponentDB::ReportError(entityName, e);
+					}
+				}
+
+				components[keyOfComponent]->wasInstantiated = true;
+			}
+		}
+
+		// TODO: explore if this is too expensive, should maybe insert at specific point instead
+		std::sort(componentsKeysAlphabeticalOrder.begin(), componentsKeysAlphabeticalOrder.end());
+	}
+}
+
+void Entity::PostLifeCycleFunctionComponentCleanUp()
+{
+	// Remove components
+	for (const auto& keyOfComponent : keysOfComponentsToRemove)
+	{
+		Component* componentToRemove = components[keyOfComponent];
+
+		if (components[keyOfComponent]->wasInstantiated)
+		{
+			// remove from alphabetical order vector
+			int indexToRemove = IndexOfComponentInAlphabeticalVector(keyOfComponent);
+
+			// If binary search failed and returned -1
+			if (indexToRemove < 0)
+			{
+				std::cout << "ERROR: Trying to remove a key that does not exist!";
+				exit(0);
+			}
+
+			componentsKeysAlphabeticalOrder.erase(componentsKeysAlphabeticalOrder.begin() + indexToRemove);
+		}
+
+		// remove from components map
+		components.erase(keyOfComponent);
+		
+		// remove component from existence
+		delete(componentToRemove);
+	}
+
+	keysOfComponentsToRemove.clear();
+
+}
+
 Entity::~Entity()
 {
-	for (const auto& pair : components) 
-	{
-		delete pair.second;
-	}
+	//for (const auto& pair : components) 
+	//{
+	//	delete pair.second;
+	//}
 }
 
 

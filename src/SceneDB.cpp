@@ -1,6 +1,9 @@
 #include "SceneDB.h"
 
 std::vector<Entity*> SceneDB::entities;
+std::vector<Entity*> SceneDB::entityRenderOrder;
+std::vector<Entity*> SceneDB::entitiesToInstantiate;
+std::vector<Entity*> SceneDB::entitiesToDestroy;
 
 SceneDB::~SceneDB()
 {
@@ -207,9 +210,29 @@ void SceneDB::Start()
 
 void SceneDB::Update()
 {
+    std::vector<Entity*> newEntities = entitiesToInstantiate;
+
+    // clear array of new entities since we may want to instantiate more entities in these start functions
+    entitiesToInstantiate.clear();
+
+    // add new entities
+    for (Entity* entity : newEntities)
+    {
+        entityRenderOrder.push_back(entity);
+        entities.push_back(entity);
+
+        entity->entityID = totalEntities;
+        totalEntities++;
+
+        entity->Start();
+    }
+
     for (Entity* entity : entities)
     {
-        entity->Update();
+        if (!entity->wasDestroyed)
+        {
+            entity->Update();
+        }
     }
 }
 
@@ -217,19 +240,55 @@ void SceneDB::LateUpdate()
 {
     for (Entity* entity : entities)
     {
-        entity->LateUpdate();
+        if (!entity->wasDestroyed)
+        {
+            entity->LateUpdate();
+        }
     }
+
+    // handle clean up for entities we want to destroy
+    for (auto& entity : entitiesToDestroy)
+    {
+        int indexOfEntityInList = -1;
+        // remove from entities vector
+        for (int i = 0; i < entities.size(); i++)
+        {
+            if (entity == entities[i])
+            {
+                indexOfEntityInList = i;
+            }
+        }
+
+        if (indexOfEntityInList != -1)
+        {
+            entities.erase(entities.begin() + indexOfEntityInList);
+        }
+
+        delete(entity);
+    }
+
+    entitiesToDestroy.clear();
 }
 
 Entity* SceneDB::Find(const std::string& name)
 {
     for (auto entity : entities)
     {
-        if (entity->entityName == name)
+        if (!entity->wasDestroyed && entity->entityName == name)
         {   
             return entity;
         }
     }
+
+    // entities that are planned to be added but not yet to entities list
+    for (auto entity : entitiesToInstantiate)
+    {
+        if (!entity->wasDestroyed && entity->entityName == name)
+        {
+            return entity;
+        }
+    }
+
     return luabridge::LuaRef(LuaStateManager::GetLuaState());
 }
 
@@ -240,7 +299,17 @@ luabridge::LuaRef SceneDB::FindAll(const std::string& name)
 
     for(auto entity : entities)
     {
-        if (entity->entityName == name)
+        if (!entity->wasDestroyed && entity->entityName == name)
+        {
+            entityTable[index] = entity;
+            index++;
+        }
+    }
+
+    // entities that are planned to be added but not yet to entities list
+    for (auto entity : entitiesToInstantiate)
+    {
+        if (!entity->wasDestroyed && entity->entityName == name)
         {
             entityTable[index] = entity;
             index++;
@@ -248,6 +317,92 @@ luabridge::LuaRef SceneDB::FindAll(const std::string& name)
     }
 
     return entityTable;
+}
+
+Entity* SceneDB::Instantiate(const std::string& entityTemplateName)
+{
+    std::string entityName = "";
+    std::unordered_map<std::string, Component*> componentMap;
+
+    Template* entityTemplate = TemplateDB::FindEntity(entityTemplateName);
+    if (entityTemplate != nullptr)
+    {
+        // Extract values from the JSON
+        entityName = entityTemplate->entityName;
+    }
+    else
+    {
+        std::cout << "error: template " << entityTemplateName << " is missing";
+        exit(0);
+    }
+
+    for (auto component : entityTemplate->components)
+    {
+        componentMap[component.first] = component.second;
+    }
+
+    // Create the Entity object
+    Entity* entity = new Entity(
+        entityName, componentMap
+    );
+
+    entitiesToInstantiate.push_back(entity);
+    return entity;
+}
+
+void SceneDB::Destroy(Entity* entity)
+{
+    if (entity != luabridge::LuaRef(LuaStateManager::GetLuaState()))
+    {
+        if (entity->wasDestroyed)
+        {
+            std::cout << "\033[31m" << "error: attempting to destroy an entity that does not exist" << "\033[0m" << "\n";
+            return;
+        }
+
+        entitiesToDestroy.push_back(entity);
+        entity->wasDestroyed = true;
+
+        // turn off all components
+        // NOTE: may not be necessary bc of wasDestroyed variable
+        for (auto component : entity->components)
+        {
+            (*component.second->luaRef)["enabled"] = false; 
+        }
+
+        // remove from rendering vector
+        int indexOfEntityInList = -1;
+        // remove from entities vector
+        for (int i = 0; i < entityRenderOrder.size(); i++)
+        {
+            if (entity == entityRenderOrder[i])
+            {
+                indexOfEntityInList = i;
+            }
+        }
+
+        if (indexOfEntityInList != -1)
+        {
+            entityRenderOrder.erase(entityRenderOrder.begin() + indexOfEntityInList);
+        }
+
+        // remove from added entities vector (if applicable)
+        indexOfEntityInList = -1;
+        // remove from entities vector
+        for (int i = 0; i < entitiesToInstantiate.size(); i++)
+        {
+            if (entity == entitiesToInstantiate[i])
+            {
+                indexOfEntityInList = i;
+            }
+        }
+
+        if (indexOfEntityInList != -1)
+        {
+            entitiesToInstantiate.erase(entitiesToInstantiate.begin() + indexOfEntityInList);
+        }
+    }
+
 }
 
 uint64_t SceneDB::GetNumberOfEntitiesInScene()

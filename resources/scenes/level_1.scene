@@ -1,7 +1,7 @@
 {
   "actors": [
     {
-      "name": "debug_actor",
+      "name": "original_entity",
       "components": {
         "first_component": {
           "type": "OutputMessage"

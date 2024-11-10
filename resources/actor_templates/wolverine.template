@@ -1,12 +1,8 @@
 {
-  "name": "debug_actor",
+  "name": "wolverine",
   "components": {
     "1": {
-      "type": "OutputMessage"
-    },
-    "2_special": {
-      "type": "OutputMessage",
-      "message":  "tai shi"
+      "type": "OutputMessage2"
     }
   }
 }
