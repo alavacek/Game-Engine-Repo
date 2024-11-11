@@ -184,6 +184,15 @@ void Engine::LuaClassAndNamespaceSetup()
 		.addFunction("DrawUIEx", &ImageDB::DrawUIEx)
 		.addFunction("DrawPixel", &ImageDB::DrawPixel)
 		.endNamespace();
+
+	luabridge::getGlobalNamespace(luaState)
+		.beginNamespace("Camera")
+		.addFunction("SetPosition", &Renderer::SetCameraPosition)
+		.addFunction("GetPositionX", &Renderer::GetCameraPositionX)
+		.addFunction("GetPositionY", &Renderer::GetCameraPositionY)
+		.addFunction("SetZoom", &Renderer::SetZoomFactor)
+		.addFunction("GetZoom", &Renderer::GetZoomFactor)
+		.endNamespace();
 }
 
 

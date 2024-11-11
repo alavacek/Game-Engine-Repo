@@ -3,8 +3,9 @@
 SDL_Window* Renderer::window;
 SDL_Renderer* Renderer::renderer;
 glm::ivec2 Renderer::resolution;
-double Renderer::zoomFactor = 1;
+float Renderer::zoomFactor = 1;
 float Renderer::cameraEaseFactor = 1;
+glm::vec2 Renderer::cameraPosition = glm::vec2(0, 0);
 
 void Renderer::RendererInit()
 {

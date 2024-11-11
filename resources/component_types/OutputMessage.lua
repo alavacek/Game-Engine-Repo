@@ -9,9 +9,8 @@ OutputMessage = {
 
     OnUpdate = function(self)
         print(self.entity:GetName() .. " OutputMessage Update " .. " : Update On Frame " .. Application.GetFrame())  
-        -- self.entity:AddComponent("OutputMessage2")     
-        -- Entity.Destroy(self.entityRef) 
-        --self.enabled = false
+        -- Camera.SetPosition(Camera.GetPositionX() - 0.1, Camera.GetPositionY() + 0.1)
+        -- Camera.SetZoom(Camera.GetZoom() - 0.01)
     end,
 
     OnLateUpdate = function(self)

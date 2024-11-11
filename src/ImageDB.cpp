@@ -30,7 +30,8 @@ void ImageDB::RenderImages()
     // Regular Render Requests
     std::stable_sort(renderRequests.begin(), renderRequests.end(), CompareImageRequests);
 
-    double zoomFactor = Renderer::GetZoomFactor();
+    float zoomFactor = Renderer::GetZoomFactor();
+
     SDL_RenderSetScale(Renderer::GetRenderer(), zoomFactor, zoomFactor);
 
     for (auto& request : renderRequests)
@@ -67,6 +68,15 @@ void ImageDB::RenderImages()
 
         textureRect.x = static_cast<int>(finalRenderingPosition.x * pixelsPerUnit + camDimensions.x * 0.5f * (1.0f / zoomFactor) - pivotPoint.x);
         textureRect.y = static_cast<int>(finalRenderingPosition.y * pixelsPerUnit + camDimensions.y * 0.5f * (1.0f / zoomFactor) - pivotPoint.y);
+
+        // culling
+        if ((textureRect.x + textureRect.w < 0) ||
+            (textureRect.y + textureRect.h < 0) ||
+            (textureRect.x > (camDimensions.x / zoomFactor)) ||
+            (textureRect.y > (camDimensions.y / zoomFactor)))
+        {
+            continue;
+        }
 
         SDL_SetTextureColorMod(texture, request.r, request.g, request.b);
         SDL_SetTextureAlphaMod(texture, request.a);
@@ -123,8 +133,7 @@ void ImageDB::RenderPixels()
     for (auto& request : renderPixelRequests)
     {
         const int pixelsPerUnit = 100;
-
-        
+   
         SDL_SetRenderDrawColor(renderer, request.r, request.g, request.b, request.a);
 
         SDL_RenderDrawPoint(Renderer::GetRenderer(), request.x, request.y);

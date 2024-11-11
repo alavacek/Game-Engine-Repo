@@ -21,18 +21,22 @@ public:
 
 	static SDL_Renderer* GetRenderer() { return renderer;  }
 	static glm::ivec2 GetResolution() { return resolution; }
-	static double GetZoomFactor() { return zoomFactor; }
-	static float GetCameraEaseFactor() { return cameraEaseFactor; }
 
-	static glm::vec2 GetCameraPosition() { return glm::vec2(0, 0); }
-	static glm::vec2 GetCameraDimensions() { return glm::vec2(100, 100); }
+	static float GetZoomFactor() { return zoomFactor; }
+	static void SetZoomFactor(float zoomFactorIn) { zoomFactor = zoomFactorIn; }
+
+	static glm::vec2 GetCameraPosition() { return cameraPosition; }
+	static void SetCameraPosition(float x, float y) { cameraPosition = glm::vec2(x, y); }
+	static float GetCameraPositionX() { return cameraPosition.x; }
+	static float GetCameraPositionY() { return cameraPosition.y; }
 
 private:
 	static SDL_Window* window;
 	static SDL_Renderer* renderer;
 	static glm::ivec2 resolution;
-	static double zoomFactor;
+	static float zoomFactor;
 	static float cameraEaseFactor;
+	static glm::vec2 cameraPosition;
 };
 #endif
 
