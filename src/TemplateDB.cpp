@@ -55,7 +55,8 @@ void TemplateDB::LoadTemplates()
                                 luabridge::LuaRef instanceTable = luabridge::newTable(luaState);
                                 instanceTable["key"] = componentName;
 
-                                luabridge::LuaRef parentTable = *(ComponentDB::components[componentType]);
+                                Component* parentComponent = ComponentDB::components[componentType];
+                                luabridge::LuaRef parentTable = *(parentComponent->luaRef);
                                 ComponentDB::EstablishInheritance(instanceTable, parentTable);
 
                                 // inject property ovverrides
@@ -118,7 +119,7 @@ void TemplateDB::LoadTemplates()
                                 }
 
                                 std::shared_ptr<luabridge::LuaRef> instanceTablePtr = std::make_shared<luabridge::LuaRef>(instanceTable);
-                                componentMap[componentName] = new Component(instanceTablePtr, componentType);
+                                componentMap[componentName] = new Component(instanceTablePtr, componentType, parentComponent->hasStart, parentComponent->hasUpdate, parentComponent->hasLateUpdate);
                             }
                             else
                             {

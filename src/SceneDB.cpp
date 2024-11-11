@@ -104,7 +104,8 @@ void SceneDB::LoadEntitiesInScene(const std::string& sceneName)
                         instanceTable["key"] = componentName;
 
                         // establish inheritance from default component type
-                        luabridge::LuaRef parentTable = *(ComponentDB::components[componentType]);
+                        Component* parentComponent = ComponentDB::components[componentType];
+                        luabridge::LuaRef parentTable = *(parentComponent->luaRef);
                         ComponentDB::EstablishInheritance(instanceTable, parentTable);
                           
                         // inject property overrides
@@ -167,7 +168,7 @@ void SceneDB::LoadEntitiesInScene(const std::string& sceneName)
                         }
 
                         std::shared_ptr<luabridge::LuaRef> instanceTablePtr = std::make_shared<luabridge::LuaRef>(instanceTable);
-                        componentMap[componentName] = new Component(instanceTablePtr, componentType);
+                        componentMap[componentName] = new Component(instanceTablePtr, componentType, parentComponent->hasStart, parentComponent->hasUpdate, parentComponent->hasLateUpdate);
                     }
                     else
                     {

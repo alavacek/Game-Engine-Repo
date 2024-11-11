@@ -11,11 +11,16 @@ public:
 	std::shared_ptr<luabridge::LuaRef> luaRef;
 	std::string type;
 
+	bool hasStart;
+	bool hasUpdate;
+	bool hasLateUpdate;
+
 	bool wasRemoved = false;
 	bool wasInstantiated = false;
 
-	Component(const std::shared_ptr<luabridge::LuaRef>& luaRef, const std::string type)
-		: luaRef(luaRef), type(type) {}
+	Component(const std::shared_ptr<luabridge::LuaRef>& luaRef, const std::string type,
+		bool hasStart, bool hasUpdate, bool hasLateUpdate)
+		: luaRef(luaRef), type(type), hasStart(hasStart), hasUpdate(hasUpdate), hasLateUpdate(hasLateUpdate) {}
 
 	// TODO: Deconstructor??
 };

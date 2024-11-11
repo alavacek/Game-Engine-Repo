@@ -9,10 +9,11 @@ void Entity::Start()
 			return;
 		}
 
-		std::shared_ptr<luabridge::LuaRef> luaRefPtr = components[componentKey]->luaRef; // Get the LuaRef pointer
+		Component* component = components[componentKey];
+		std::shared_ptr<luabridge::LuaRef> luaRefPtr = component->luaRef; // Get the LuaRef pointer
 		luabridge::LuaRef luaRef = *luaRefPtr;
 
-		if (luaRefPtr && luaRefPtr->isTable())
+		if (component->hasStart && luaRefPtr && luaRefPtr->isTable())
 		{
 			try
 			{
@@ -50,10 +51,11 @@ void Entity::Update()
 
 	for (const auto& componentKey : componentsKeysAlphabeticalOrder)
 	{
-		std::shared_ptr<luabridge::LuaRef> luaRefPtr = components[componentKey]->luaRef; // Get the LuaRef pointer
+		Component* component = components[componentKey];
+		std::shared_ptr<luabridge::LuaRef> luaRefPtr = component->luaRef; // Get the LuaRef pointer
 		luabridge::LuaRef luaRef = *luaRefPtr;
 
-		if (luaRefPtr && luaRefPtr->isTable())
+		if (component->hasUpdate && luaRefPtr && luaRefPtr->isTable())
 		{
 			try
 			{
@@ -61,10 +63,10 @@ void Entity::Update()
 				luabridge::LuaRef isEnabled = (luaRef)["enabled"];
 				if (isEnabled.isBool() && isEnabled)
 				{
-					luabridge::LuaRef onStartFunc = (luaRef)["OnUpdate"];
-					if (onStartFunc.isFunction())
+					luabridge::LuaRef onUpdateFunc = (luaRef)["OnUpdate"];
+					if (onUpdateFunc.isFunction())
 					{
-						onStartFunc(luaRef);
+						onUpdateFunc(luaRef);
 					}
 				}
 			}
@@ -86,10 +88,11 @@ void Entity::LateUpdate()
 			return;
 		}
 
-		std::shared_ptr<luabridge::LuaRef> luaRefPtr = components[componentKey]->luaRef; // Get the LuaRef pointer
+		Component* component = components[componentKey];
+		std::shared_ptr<luabridge::LuaRef> luaRefPtr = component->luaRef; // Get the LuaRef pointer
 		luabridge::LuaRef luaRef = *luaRefPtr;
 
-		if (luaRefPtr && luaRefPtr->isTable())
+		if (component->hasLateUpdate && luaRefPtr && luaRefPtr->isTable())
 		{
 			try
 			{
@@ -97,10 +100,10 @@ void Entity::LateUpdate()
 				luabridge::LuaRef isEnabled = (luaRef)["enabled"];
 				if (isEnabled.isBool() && isEnabled)
 				{
-					luabridge::LuaRef onStartFunc = (luaRef)["OnLateUpdate"];
-					if (onStartFunc.isFunction())
+					luabridge::LuaRef onLateUpdateFunc = (luaRef)["OnLateUpdate"];
+					if (onLateUpdateFunc.isFunction())
 					{
-						onStartFunc(luaRef);
+						onLateUpdateFunc(luaRef);
 					}
 				}
 			}
@@ -171,11 +174,12 @@ luabridge::LuaRef Entity::AddComponent(const std::string& typeName)
 		instanceTable["key"] = componentKey;
 
 		// establish inheritance from default component type
-		luabridge::LuaRef parentTable = *(ComponentDB::components[typeName]);
+		Component* parentComponent = ComponentDB::components[typeName];
+		luabridge::LuaRef parentTable = *(parentComponent->luaRef);
 		ComponentDB::EstablishInheritance(instanceTable, parentTable);
 
 		std::shared_ptr<luabridge::LuaRef> instanceTablePtr = std::make_shared<luabridge::LuaRef>(instanceTable);
-		Component* addedComponent = new Component(instanceTablePtr, typeName);
+		Component* addedComponent = new Component(instanceTablePtr, typeName, parentComponent->hasStart, parentComponent->hasUpdate, parentComponent->hasLateUpdate);
 
 		 // add ref for components table
 		 components[componentKey] = addedComponent;

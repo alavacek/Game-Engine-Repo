@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <string>
 
+#include "Component.h"
 #include "lua.hpp"
 #include "LuaBridge.h"
 #include "LuaStateManager.h"
@@ -20,9 +21,11 @@ public:
 
 	static void ReportError(const std::string& entityName, const luabridge::LuaException& e);
 
-	static std::unordered_map<std::string, std::shared_ptr<luabridge::LuaRef>> components;
+	static std::unordered_map<std::string, Component*> components;
 
 	static int numRuntimeAddedComponents;
+
+	~ComponentDB();
 };
 
 #endif
