@@ -174,6 +174,16 @@ void Engine::LuaClassAndNamespaceSetup()
 		.addFunction("Halt", &AudioDB::HaltChannel)
 		.addFunction("SetVolume", &AudioDB::SetVolume)
 		.endNamespace();
+
+	// Image Scripting Name Space inside of Lua
+	luabridge::getGlobalNamespace(luaState)
+		.beginNamespace("Image")
+		.addFunction("Draw", &ImageDB::Draw)
+		.addFunction("DrawEx", &ImageDB::DrawEx)
+		.addFunction("DrawUI", &ImageDB::DrawUI)
+		.addFunction("DrawUIEx", &ImageDB::DrawUIEx)
+		.addFunction("DrawPixel", &ImageDB::DrawPixel)
+		.endNamespace();
 }
 
 
@@ -200,10 +210,7 @@ void Engine::Update()
 
 		// Late Update
 		currScene->LateUpdate();
-		Input::LateUpdate();
-
-		// sort based on y position or based on render order
-		std::sort(currScene->entityRenderOrder.begin(), currScene->entityRenderOrder.end(), Entity::CompareEntities);
+		Input::LateUpdate();;
 	}
 }
 
@@ -211,43 +218,28 @@ void Engine::Render()
 {
 	if (isRunning)
 	{
-		// TODO: May need to move this to beginning of game loop
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
 		SDL_RenderClear(renderer);
 
-		glm::vec2 centerPos = glm::vec2(0, 0)/* = currScene->GetPlayerEntity() != nullptr ? currScene->GetPlayerEntity()->transform->position : glm::vec2(0, 0)*/;
-		glm::ivec2 resolution = Renderer::GetResolution();
+		ImageDB::RenderImages();
 
-		double zoomFactor = Renderer::GetZoomFactor();
+		ImageDB::RenderUIImages();
 
-		cameraRect.x = glm::mix(cameraRect.x, static_cast<int>(std::round((centerPos.x * pixelsPerUnit) - (cameraRect.w / 2))), Renderer::GetCameraEaseFactor());
-		cameraRect.y = glm::mix(cameraRect.y, static_cast<int>(std::round((centerPos.y * pixelsPerUnit) - (cameraRect.h / 2))), Renderer::GetCameraEaseFactor());
+		TextDB::RenderText();
 
-		// render visible map
-		SDL_RenderSetScale(renderer, zoomFactor, zoomFactor);
-
-		Renderer::RenderRequests();
-
-		//for (Entity* entity : currScene->entityRenderOrder)
-		//{
-		//	//entity->->RenderEntity(entity, &c//eraRect, pixelsPerUnit, entity->velocity != glm::vec2(0,0), debugShowCollisions);
-		//}
+		ImageDB::RenderPixels();
 
 		// possibly move to update?
-		if (pendingScene != "")
-		{
-			delete currScene; // TODO: iss this appropriate or should I just load new scene?
-
-			currScene = new SceneDB();
-			currScene->LoadScene(pendingScene);
-			pendingScene = "";
-
-			Render();
-		}
+		//if (pendingScene != "")
+		//{
+		//	delete currScene; // TODO: iss this appropriate or should I just load new scene?
+		//	currScene = new SceneDB();
+		//	currScene->LoadScene(pendingScene);
+		//	pendingScene = "";
+		//	Render();
+		//}
 
 		Helper::SDL_RenderPresent498(renderer);
-
-
 	}
 }
 

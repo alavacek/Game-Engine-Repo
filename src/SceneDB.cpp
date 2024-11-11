@@ -1,7 +1,6 @@
 #include "SceneDB.h"
 
 std::vector<Entity*> SceneDB::entities;
-std::vector<Entity*> SceneDB::entityRenderOrder;
 std::vector<Entity*> SceneDB::entitiesToInstantiate;
 std::vector<Entity*> SceneDB::entitiesToDestroy;
 
@@ -46,9 +45,6 @@ void SceneDB::LoadEntitiesInScene(const std::string& sceneName)
 
     // Get the actors array
     const rapidjson::Value& actors = configDocument["actors"];
-
-    // Clear the entities vector in case it's been used before
-    entityRenderOrder.clear();
 
     // Loop through each actor in the JSON array
     for (rapidjson::SizeType actorIndex = 0; actorIndex < actors.Size(); actorIndex++)
@@ -192,7 +188,6 @@ void SceneDB::LoadEntitiesInScene(const std::string& sceneName)
         );
 
         // Add the entity to the entities vector
-        entityRenderOrder.push_back(entity);
         entities.push_back(entity);
 
         entity->entityID = totalEntities;
@@ -218,7 +213,6 @@ void SceneDB::Update()
     // add new entities
     for (Entity* entity : newEntities)
     {
-        entityRenderOrder.push_back(entity);
         entities.push_back(entity);
 
         entity->entityID = totalEntities;
@@ -370,24 +364,8 @@ void SceneDB::Destroy(Entity* entity)
             (*component.second->luaRef)["enabled"] = false; 
         }
 
-        // remove from rendering vector
-        int indexOfEntityInList = -1;
-        // remove from entities vector
-        for (int i = 0; i < entityRenderOrder.size(); i++)
-        {
-            if (entity == entityRenderOrder[i])
-            {
-                indexOfEntityInList = i;
-            }
-        }
-
-        if (indexOfEntityInList != -1)
-        {
-            entityRenderOrder.erase(entityRenderOrder.begin() + indexOfEntityInList);
-        }
-
         // remove from added entities vector (if applicable)
-        indexOfEntityInList = -1;
+        int indexOfEntityInList = -1;
         // remove from entities vector
         for (int i = 0; i < entitiesToInstantiate.size(); i++)
         {
@@ -407,7 +385,7 @@ void SceneDB::Destroy(Entity* entity)
 
 uint64_t SceneDB::GetNumberOfEntitiesInScene()
 {
-    return entityRenderOrder.size();
+    return entities.size();
 }
 
 Entity* SceneDB::GetEntityAtIndex(int index)

@@ -1,11 +1,5 @@
 #include "Entity.h"
 
-bool Entity::CompareEntities(const Entity* a, const Entity* b)
-{
-	// As a last resort, compare by entityID (to maintain consistent order for equal y positions)
-	return a->entityID < b->entityID;
-}
-
 void Entity::Start()
 {
 	for (const auto& componentKey : componentsKeysAlphabeticalOrder)

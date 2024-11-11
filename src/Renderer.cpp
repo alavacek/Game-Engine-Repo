@@ -1,6 +1,5 @@
 #include "Renderer.h"
 
-std::queue<RenderRequest> Renderer::renderRequests;
 SDL_Window* Renderer::window;
 SDL_Renderer* Renderer::renderer;
 glm::ivec2 Renderer::resolution;
@@ -69,18 +68,7 @@ void Renderer::RendererInit()
 	renderer = Helper::SDL_CreateRenderer498(window, -1, 0);
 }
 
-void Renderer::RequestRender(SDL_Texture* drawTexture, SDL_Rect drawRect)
-{
-	RenderRequest request = RenderRequest(drawTexture, drawRect);
-	renderRequests.push(request);
-}
 
-void Renderer::RenderRequests()
-{
-	while (!renderRequests.empty()) 
-	{
-		Helper::SDL_RenderCopyEx498(0, "", renderer, renderRequests.front().drawTexture, NULL, &renderRequests.front().drawRect, 0, NULL, SDL_FLIP_NONE);
-		renderRequests.pop();
-	}
-}
+
+
 

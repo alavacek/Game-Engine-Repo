@@ -2,6 +2,7 @@
 
 std::unordered_map<TextKey, SDL_Texture*, TextKeyHash> TextDB::cachedTextures;
 std::unordered_map<std::string, std::unordered_map<int, TTF_Font*>> TextDB::cachedFonts;
+std::queue<TextRenderRequest> TextDB::renderRequests;
 
 // SDL Color equality operator for hash tuple key
 bool operator==(const SDL_Color& lhs, const SDL_Color& rhs) {
@@ -40,8 +41,20 @@ void TextDB::DrawText(const std::string& textContent, float x, float y, const st
     SDL_Rect textRect = { static_cast<int>(x), static_cast<int>(y), 0, 0 };
     SDL_QueryTexture(textTexture, nullptr, nullptr, &textRect.w, &textRect.h);
 
-    Renderer::RequestRender(textTexture, textRect);
-    //SDL_RenderCopy(Renderer::GetRenderer(), textTexture, NULL, &textRect);
+    TextRenderRequest request = TextRenderRequest(textTexture, textRect);
+    renderRequests.push(request);
+}
+
+void TextDB::RenderText()
+{
+    SDL_Renderer* renderer = Renderer::GetRenderer();
+
+    // Render Text
+    while (!renderRequests.empty())
+    {
+        Helper::SDL_RenderCopyEx498(0, "", renderer, renderRequests.front().drawTexture, NULL, &renderRequests.front().drawRect, 0, NULL, SDL_FLIP_NONE);
+        renderRequests.pop();
+    }
 }
 
 TTF_Font* TextDB::FindFont(const std::string& fontName, int fontSize)

@@ -2,6 +2,7 @@
 #define TEXTDB_H
 
 #include <iostream>
+#include <queue>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -11,6 +12,18 @@
 #include "Renderer.h"
 #include "SDL.h"
 #include "SDL_ttf.h"
+
+struct TextRenderRequest
+{
+	TextRenderRequest(SDL_Texture* drawTextureIn, SDL_Rect drawRectIn)
+	{
+		drawTexture = drawTextureIn;
+		drawRect = drawRectIn;
+	}
+
+	SDL_Texture* drawTexture;
+	SDL_Rect drawRect;
+};
 
 using TextKey = std::tuple<std::string, uint32_t, SDL_Color>;
 
@@ -32,10 +45,12 @@ public:
 	
 	static void DrawText(const std::string& textContent, float x, float y, 
 		const std::string& fontName, float fontSize, float r, float g, float b, float a);
+	static void RenderText();
 private:
 	static TTF_Font* FindFont(const std::string& fontName, int fontSize);
 	static std::unordered_map<TextKey, SDL_Texture*, TextKeyHash> cachedTextures;
 	static std::unordered_map<std::string, std::unordered_map<int, TTF_Font*>> cachedFonts;
+	static std::queue<TextRenderRequest> renderRequests;
 };
 
 #endif

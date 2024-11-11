@@ -39,8 +39,6 @@ public:
 	static Entity* Instantiate(const std::string& entityTemplateName);
 	static void Destroy(Entity* entity);
 
-	static std::vector<Entity*> entityRenderOrder;
-
 private:
 	std::string currSceneName;
 	static std::vector<Entity*> entities;

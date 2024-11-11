@@ -25,8 +25,6 @@ class TriggerCollider;
 class Entity
 {
 public:
-	static bool CompareEntities(const Entity* a, const Entity* b);
-
 	std::unordered_map<std::string, Component*> components;
 	std::vector<std::string> componentsKeysAlphabeticalOrder;
 

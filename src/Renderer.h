@@ -13,18 +13,6 @@
 #include "SDL2/SDL.h"
 #include "SDLHelper.h"
 
-struct RenderRequest
-{
-	RenderRequest(SDL_Texture* drawTextureIn, SDL_Rect drawRectIn)
-	{
-		drawTexture = drawTextureIn;
-		drawRect = drawRectIn;
-	}
-
-	SDL_Texture* drawTexture;
-	SDL_Rect drawRect;
-
-};
 
 class Renderer
 {
@@ -36,11 +24,10 @@ public:
 	static double GetZoomFactor() { return zoomFactor; }
 	static float GetCameraEaseFactor() { return cameraEaseFactor; }
 
-	static void RequestRender(SDL_Texture* drawTexture, SDL_Rect drawRect);
-	static void RenderRequests();
+	static glm::vec2 GetCameraPosition() { return glm::vec2(0, 0); }
+	static glm::vec2 GetCameraDimensions() { return glm::vec2(100, 100); }
 
 private:
-	static std::queue<RenderRequest> renderRequests;
 	static SDL_Window* window;
 	static SDL_Renderer* renderer;
 	static glm::ivec2 resolution;
