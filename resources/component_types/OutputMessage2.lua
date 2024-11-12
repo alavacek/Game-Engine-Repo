@@ -4,7 +4,7 @@ OutputMessage2 = {
     OnStart = function(self)
         print(self.entity:GetName() .. " OutputMessage2 Start" .. " : " .. self.message)
         -- Audio.Play(0, "title_music", true)
-        -- self.timer = 1000
+        -- self.count = 0
     end,
 
     OnUpdate = function(self)
@@ -13,6 +13,9 @@ OutputMessage2 = {
         -- Image.DrawUI("dog", 25, 90)
         Image.Draw("cat", 1, 1)
         Image.DrawEx("cat", -5, -5, 0, 1, 1, 0, 0, 255, 255, 255, 120, 0)
+          
+        print(self.entity:GetName() .. " Count " .. self.count)
+        self.count = self.count + 1
         -- Image.DrawPixel(400, 400, 255, 255, 255, 120)
         -- Image.DrawPixel(400, 405, 255, 0, 0, 255)
     end

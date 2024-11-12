@@ -21,35 +21,39 @@ class SceneDB
 public:
 	~SceneDB();
 
-	void LoadScene(const std::string& sceneName);
-	void LoadEntitiesInScene(const std::string& sceneName);
+	static void RequestLoadNewScene(const std::string& sceneName);
+	static void LoadPendingScene();
 
-	uint64_t GetNumberOfEntitiesInScene();
-	Entity* GetEntityAtIndex(int index);
+	static void LoadScene(const std::string& sceneName);
+	static void LoadEntitiesInScene(const std::string& sceneName);
+	static std::string GetCurrentSceneName() { return currSceneName; }
 
-	uint64_t GetSceneMaxHeight();
-	uint64_t GetSceneMaxWidth();
+	static uint64_t GetNumberOfEntitiesInScene();
+	static Entity* GetEntityAtIndex(int index);
 
-	void Start();
-	void Update();
-	void LateUpdate();
+	static void Start();
+	static void Update();
+	static void LateUpdate();
 
 	static Entity* Find(const std::string& name);
 	static luabridge::LuaRef FindAll(const std::string& name);
 	static Entity* Instantiate(const std::string& entityTemplateName);
 	static void Destroy(Entity* entity);
 
+	static void DontDestroy(Entity* entity);
+
+	static bool pendingScene;
+
 private:
-	std::string currSceneName;
+	static std::string currSceneName;
+	
+	static std::string pendingSceneName;
+
 	static std::vector<Entity*> entities;
 	static std::vector<Entity*> entitiesToInstantiate;
 	static std::vector<Entity*> entitiesToDestroy;
 	 
-	int totalEntities = 0; // NOTE: this is total enemies to exist, not total in scene
-	int maxHeight = 0;
-	int maxWidth = 0;
-	int collisionsSpatialMapSize;
-	int triggersSpatialMapSize;
+	static int totalEntities; // NOTE: this is total enemies to exist, not total in scene
 };
 
 #endif

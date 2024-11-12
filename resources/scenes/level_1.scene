@@ -4,7 +4,8 @@
       "name": "original_entity",
       "components": {
         "first_component": {
-          "type": "OutputMessage"
+          "type": "OutputMessage",
+          "message": "this worked"
         }
       }
     }

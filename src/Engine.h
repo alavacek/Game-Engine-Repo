@@ -54,7 +54,6 @@ public:
 	~Engine();
 
 private:
-	SDL_Rect cameraRect;
 	std::vector<std::pair<uint64_t, std::string>> entityDialoguesToPrint;
 
 	std::string pendingScene;
@@ -62,7 +61,6 @@ private:
 	std::string configPath;
 	rapidjson::Document configDocument;
 
-	SceneDB* currScene;
 	SDL_Renderer* renderer;
 
 	static int pixelsPerUnit;

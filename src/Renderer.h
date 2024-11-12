@@ -18,6 +18,7 @@ class Renderer
 {
 public:
 	static void RendererInit();
+	static void RendererResetDefaults();
 
 	static SDL_Renderer* GetRenderer() { return renderer;  }
 	static glm::ivec2 GetResolution() { return resolution; }
@@ -34,8 +35,8 @@ private:
 	static SDL_Window* window;
 	static SDL_Renderer* renderer;
 	static glm::ivec2 resolution;
+	static float originalZoomFactor;
 	static float zoomFactor;
-	static float cameraEaseFactor;
 	static glm::vec2 cameraPosition;
 };
 #endif

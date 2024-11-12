@@ -3,9 +3,9 @@
 SDL_Window* Renderer::window;
 SDL_Renderer* Renderer::renderer;
 glm::ivec2 Renderer::resolution;
-float Renderer::zoomFactor = 1;
-float Renderer::cameraEaseFactor = 1;
-glm::vec2 Renderer::cameraPosition = glm::vec2(0, 0);
+float Renderer::zoomFactor;
+float Renderer::originalZoomFactor;
+glm::vec2 Renderer::cameraPosition;
 
 void Renderer::RendererInit()
 {
@@ -31,6 +31,11 @@ void Renderer::RendererInit()
 	std::string renderingConfig = "resources/rendering.config";
 	uint32_t xResolution = 640;
 	uint32_t yResolution = 360;
+
+	// set default values
+	zoomFactor = 1;
+	cameraPosition = glm::vec2(0, 0);
+
 	if (std::filesystem::exists(renderingConfig))
 	{
 		rapidjson::Document renderingConfigDoc;
@@ -50,16 +55,8 @@ void Renderer::RendererInit()
 		{
 			zoomFactor = renderingConfigDoc["zoom_factor"].GetDouble();
 		}
-
-		if (renderingConfigDoc.HasMember("zoom_factor") && renderingConfigDoc["zoom_factor"].IsDouble())
-		{
-			zoomFactor = renderingConfigDoc["zoom_factor"].GetDouble();
-		}
-
-		if (renderingConfigDoc.HasMember("cam_ease_factor") && renderingConfigDoc["cam_ease_factor"].IsFloat())
-		{
-			cameraEaseFactor = renderingConfigDoc["cam_ease_factor"].GetFloat();
-		}
+		
+		originalZoomFactor = zoomFactor;
 	}
 
 	window = Helper::SDL_CreateWindow498(windowName.c_str(), 100, 100, xResolution, yResolution, SDL_WINDOW_SHOWN);
@@ -67,6 +64,12 @@ void Renderer::RendererInit()
 	resolution = glm::ivec2(xResolution, yResolution);
 
 	renderer = Helper::SDL_CreateRenderer498(window, -1, 0);
+}
+
+void Renderer::RendererResetDefaults()
+{
+	zoomFactor = originalZoomFactor;
+	cameraPosition = glm::vec2(0, 0);
 }
 
 

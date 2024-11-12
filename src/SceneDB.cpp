@@ -3,6 +3,10 @@
 std::vector<Entity*> SceneDB::entities;
 std::vector<Entity*> SceneDB::entitiesToInstantiate;
 std::vector<Entity*> SceneDB::entitiesToDestroy;
+std::string SceneDB::currSceneName;
+std::string SceneDB::pendingSceneName;
+bool SceneDB::pendingScene = false;
+int SceneDB::totalEntities = 0;
 
 SceneDB::~SceneDB()
 {
@@ -12,14 +16,61 @@ SceneDB::~SceneDB()
     }
 }
 
+void SceneDB::RequestLoadNewScene(const std::string& sceneName)
+{
+    pendingScene = true;
+    pendingSceneName = sceneName;
+}
+
+void SceneDB::LoadPendingScene()
+{
+    pendingScene = false;
+
+    // reset camera and zoom if applicable                                                                         
+    Renderer::RendererResetDefaults();
+
+    std::vector<Entity*> dontDestroy;
+    // delete entities that arent dontDestroy
+    for (int i = 0; i < entities.size(); i++)
+    {
+        if (entities[i]->destroyOnLoad)
+        {
+            delete entities[i];
+        }
+        else
+        {
+            dontDestroy.push_back(entities[i]);
+        }
+    }
+
+    entities.clear();
+    entitiesToInstantiate.clear(); // NOTE: if a do not destroy entity is instantiate and scene is reloaded same frame, itll be destroyed
+    entitiesToDestroy.clear();
+
+    // add dont destroy entities back into entities list
+    for (Entity* entity : dontDestroy)
+    {
+        entities.push_back(entity);
+    }
+
+    LoadScene(pendingSceneName);
+    
+    // run start on entities that werent in dontDestroy vector
+    for (int i = dontDestroy.size(); i < entities.size(); i++)
+    {
+        entities[i]->Start();
+    }
+}
+
 void SceneDB::LoadScene(const std::string& sceneName)
 {
-	currSceneName = sceneName + ".scene";
+    // load scene
+    currSceneName = sceneName;
 
 	std::string scenePath = "resources/scenes/" + sceneName + ".scene";
 	if (!std::filesystem::exists(scenePath))
 	{
-		std::cout << "error: scene " << sceneName << " is missing";
+		std::cout << "error: scene " << sceneName << ".scene is missing";
 		exit(0);
 	}
 
@@ -72,7 +123,14 @@ void SceneDB::LoadEntitiesInScene(const std::string& sceneName)
 
             for (auto component : entityTemplate->components)
             {
-                componentMap[component.first] = component.second;
+                luabridge::LuaRef instanceTable = luabridge::newTable(luaState);
+                instanceTable["key"] = component.first;
+
+                luabridge::LuaRef parentTable = *(component.second->luaRef);
+                ComponentDB::EstablishInheritance(instanceTable, parentTable);
+
+                std::shared_ptr<luabridge::LuaRef> instanceTablePtr = std::make_shared<luabridge::LuaRef>(instanceTable);
+                componentMap[component.first] = new Component(instanceTablePtr, component.second->type, component.second->hasStart, component.second->hasUpdate, component.second->hasLateUpdate);
             }
         }
 
@@ -316,6 +374,7 @@ luabridge::LuaRef SceneDB::FindAll(const std::string& name)
 
 Entity* SceneDB::Instantiate(const std::string& entityTemplateName)
 {
+    lua_State* luaState = LuaStateManager::GetLuaState();
     std::string entityName = "";
     std::unordered_map<std::string, Component*> componentMap;
 
@@ -333,8 +392,16 @@ Entity* SceneDB::Instantiate(const std::string& entityTemplateName)
 
     for (auto component : entityTemplate->components)
     {
-        componentMap[component.first] = component.second;
+        luabridge::LuaRef instanceTable = luabridge::newTable(luaState);
+        instanceTable["key"] = component.first;
+
+        luabridge::LuaRef parentTable = *(component.second->luaRef);
+        ComponentDB::EstablishInheritance(instanceTable, parentTable);
+
+        std::shared_ptr<luabridge::LuaRef> instanceTablePtr = std::make_shared<luabridge::LuaRef>(instanceTable);
+        componentMap[component.first] = new Component(instanceTablePtr, component.second->type, component.second->hasStart, component.second->hasUpdate, component.second->hasLateUpdate);
     }
+
 
     // Create the Entity object
     Entity* entity = new Entity(
@@ -384,6 +451,11 @@ void SceneDB::Destroy(Entity* entity)
 
 }
 
+void SceneDB::DontDestroy(Entity* entity)
+{
+    entity->destroyOnLoad = false;
+}
+
 uint64_t SceneDB::GetNumberOfEntitiesInScene()
 {
     return entities.size();
@@ -399,15 +471,6 @@ Entity* SceneDB::GetEntityAtIndex(int index)
     return entities[index];
 }
 
-uint64_t SceneDB::GetSceneMaxHeight()
-{
-    return maxHeight;
-}
-
-uint64_t SceneDB::GetSceneMaxWidth()
-{
-    return maxWidth;
-}
 
 
 

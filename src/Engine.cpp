@@ -49,21 +49,8 @@ void Engine::Start()
 		exit(0);
 	}
 
-	// set up camera
-	glm::ivec2 resolution = Renderer::GetResolution();
-	double zoomFactor = Renderer::GetZoomFactor();
-
-	cameraRect.w = static_cast<int>(std::round(resolution.x / zoomFactor));
-	cameraRect.h = static_cast<int>(std::round(resolution.y / zoomFactor));
-
-	glm::vec2 centerPos = glm::vec2(0,0)/* = currScene->GetPlayerEntity() != nullptr ? currScene->GetPlayerEntity()->transform->position : glm::vec2(0, 0)*/;
-
-	cameraRect.x = static_cast<int>(std::round((centerPos.x * pixelsPerUnit) - (cameraRect.w / 2)));
-	cameraRect.y = static_cast<int>(std::round((centerPos.y * pixelsPerUnit) - (cameraRect.h / 2)));
-
-
 	// Entity Start
-	currScene->Start();
+	SceneDB::Start();
 }
 
 void Engine::ReadResources()
@@ -97,8 +84,7 @@ void Engine::ReadResources()
 	{
 		std::string sceneName = configDocument["initial_scene"].GetString();
 
-		currScene = new SceneDB();
-		currScene->LoadScene(sceneName);
+		SceneDB::LoadScene(sceneName);
 	}
 	else
 	{
@@ -193,6 +179,13 @@ void Engine::LuaClassAndNamespaceSetup()
 		.addFunction("SetZoom", &Renderer::SetZoomFactor)
 		.addFunction("GetZoom", &Renderer::GetZoomFactor)
 		.endNamespace();
+
+	luabridge::getGlobalNamespace(luaState)
+		.beginNamespace("Scene")
+		.addFunction("Load", &SceneDB::RequestLoadNewScene)
+		.addFunction("GetCurrent", &SceneDB::GetCurrentSceneName)
+		.addFunction("DontDestroy", &SceneDB::DontDestroy)
+		.endNamespace();
 }
 
 
@@ -215,10 +208,16 @@ void Engine::Update()
 {
 	if (isRunning)
 	{
-		currScene->Update();
+		// Load Pending scene if requested
+		if (SceneDB::pendingScene)
+		{
+			SceneDB::LoadPendingScene();
+		}
+
+		SceneDB::Update();
 
 		// Late Update
-		currScene->LateUpdate();
+		SceneDB::LateUpdate();
 		Input::LateUpdate();;
 	}
 }
@@ -238,23 +237,13 @@ void Engine::Render()
 
 		ImageDB::RenderPixels();
 
-		// possibly move to update?
-		//if (pendingScene != "")
-		//{
-		//	delete currScene; // TODO: iss this appropriate or should I just load new scene?
-		//	currScene = new SceneDB();
-		//	currScene->LoadScene(pendingScene);
-		//	pendingScene = "";
-		//	Render();
-		//}
-
 		Helper::SDL_RenderPresent498(renderer);
 	}
 }
 
 void Engine::EndGame()
 {
-	delete currScene;
+	
 }
 
 // Lua Functions
@@ -290,9 +279,6 @@ void Engine::OpenURL(std::string url)
 
 Engine::~Engine()
 {
-	if (currScene != nullptr)
-	{
-		delete currScene;
-	}
+
 }
 

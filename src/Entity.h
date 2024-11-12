@@ -32,6 +32,7 @@ public:
 	int entityID;
 
 	bool wasDestroyed;
+	bool destroyOnLoad;
 
 
 	Entity(const std::string& entityName, const std::unordered_map<std::string, Component*>& components)
@@ -51,6 +52,7 @@ public:
 		std::sort(componentsKeysAlphabeticalOrder.begin(), componentsKeysAlphabeticalOrder.end());
 
 		wasDestroyed = false;
+		destroyOnLoad = true;
 	}
 
 	void Start();
