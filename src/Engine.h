@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "AudioDB.h"
+#include "box2d/box2d.h"
 #include "ComponentDB.h"
 #include "EngineUtils.h"
 #include "Entity.h"

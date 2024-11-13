@@ -171,6 +171,7 @@ void Engine::LuaClassAndNamespaceSetup()
 		.addFunction("DrawPixel", &ImageDB::DrawPixel)
 		.endNamespace();
 
+	// Camera Scripting
 	luabridge::getGlobalNamespace(luaState)
 		.beginNamespace("Camera")
 		.addFunction("SetPosition", &Renderer::SetCameraPosition)
@@ -180,12 +181,30 @@ void Engine::LuaClassAndNamespaceSetup()
 		.addFunction("GetZoom", &Renderer::GetZoomFactor)
 		.endNamespace();
 
+	// Scene Scripting
 	luabridge::getGlobalNamespace(luaState)
 		.beginNamespace("Scene")
 		.addFunction("Load", &SceneDB::RequestLoadNewScene)
 		.addFunction("GetCurrent", &SceneDB::GetCurrentSceneName)
 		.addFunction("DontDestroy", &SceneDB::DontDestroy)
 		.endNamespace();
+
+	// Vector Namespace
+	// TODO: 2 different vec2 and Vector2, this is gross, fix it
+	luabridge::getGlobalNamespace(luaState)
+		.beginClass<b2Vec2>("Vector2")
+		.addConstructor<void(*) (float, float)>()
+		.addProperty("x", &b2Vec2::x)
+		.addProperty("y", &b2Vec2::y)
+		.addFunction("Normalize", &b2Vec2::Normalize)
+		.addFunction("Length", &b2Vec2::Length)
+		.addFunction("__add", &b2Vec2::operator_add)
+		.addFunction("__sub", &b2Vec2::operator_sub)
+		.addFunction("__mul", &b2Vec2::operator_mul)
+		.addStaticFunction("Distance", static_cast<float (*)(const b2Vec2&, const b2Vec2&)>(&b2Distance))
+		.addStaticFunction("Dot", static_cast<float (*)(const b2Vec2&, const b2Vec2&)>(&b2Dot))
+		.addStaticFunction("Cross", static_cast<float (*)(const b2Vec2&, const b2Vec2&)>(&b2Cross))
+		.endClass();
 }
 
 
