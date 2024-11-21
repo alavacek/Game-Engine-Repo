@@ -1,11 +1,10 @@
 {
-  "actors": [
+  "entities": [
     {
       "name": "original_entity",
       "components": {
         "first_component": {
-          "type": "OutputMessage",
-          "message": "this worked"
+          "type": "OutputMessage"
         }
       }
     }

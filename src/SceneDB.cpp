@@ -3,9 +3,11 @@
 std::vector<Entity*> SceneDB::entities;
 std::vector<Entity*> SceneDB::entitiesToInstantiate;
 std::vector<Entity*> SceneDB::entitiesToDestroy;
+
 std::string SceneDB::currSceneName;
 std::string SceneDB::pendingSceneName;
 bool SceneDB::pendingScene = false;
+
 int SceneDB::totalEntities = 0;
 
 SceneDB::~SceneDB()
@@ -81,6 +83,7 @@ void SceneDB::LoadScene(const std::string& sceneName)
 void SceneDB::LoadEntitiesInScene(const std::string& sceneName)
 {
     lua_State* luaState = LuaStateManager::GetLuaState();
+    bool rigidBodyInScene = false;
 
     std::string scenePath = "resources/scenes/" + sceneName + ".scene";
 
@@ -88,27 +91,27 @@ void SceneDB::LoadEntitiesInScene(const std::string& sceneName)
     EngineUtils::ReadJsonFile(scenePath, configDocument);
 
     // Ensure the document contains an array named "actors"
-    if (!configDocument.HasMember("actors") || !configDocument["actors"].IsArray())
+    if (!configDocument.HasMember("entities") || !configDocument["entities"].IsArray())
     {
         std::cout << "error: no actors found in scene " << sceneName;
         exit(0);
     }
 
     // Get the actors array
-    const rapidjson::Value& actors = configDocument["actors"];
+    const rapidjson::Value& entitiesJson = configDocument["entities"];
 
     // Loop through each actor in the JSON array
-    for (rapidjson::SizeType actorIndex = 0; actorIndex < actors.Size(); actorIndex++)
+    for (rapidjson::SizeType entityIndex = 0; entityIndex < entitiesJson.Size(); entityIndex++)
     {
-        const rapidjson::Value& actor = actors[actorIndex];
+        const rapidjson::Value& entityJson = entitiesJson[entityIndex];
 
         // Set base values
         std::string name = "";
         std::unordered_map<std::string, Component*> componentMap;
 
-        if (actor.HasMember("template"))
+        if (entityJson.HasMember("template"))
         {
-            std::string templateName = actor["template"].GetString();
+            std::string templateName = entityJson["template"].GetString();
             Template* entityTemplate = TemplateDB::FindEntity(templateName);
             if (entityTemplate != nullptr)
             {
@@ -123,25 +126,33 @@ void SceneDB::LoadEntitiesInScene(const std::string& sceneName)
 
             for (auto component : entityTemplate->components)
             {
-                luabridge::LuaRef instanceTable = luabridge::newTable(luaState);
-                instanceTable["key"] = component.first;
+                luabridge::LuaRef instanceTable = ComponentDB::CreateInstanceTableFromTemplate(component.first, component.second->type, *(component.second->luaRef));
 
-                luabridge::LuaRef parentTable = *(component.second->luaRef);
-                ComponentDB::EstablishInheritance(instanceTable, parentTable);
+                //luabridge::LuaRef instanceTable = luabridge::newTable(luaState);
+                //instanceTable["key"] = component.first;
+
+                //luabridge::LuaRef parentTable = *(component.second->luaRef);
+
+                //ComponentDB::EstablishInheritance(instanceTable, parentTable);
 
                 std::shared_ptr<luabridge::LuaRef> instanceTablePtr = std::make_shared<luabridge::LuaRef>(instanceTable);
                 componentMap[component.first] = new Component(instanceTablePtr, component.second->type, component.second->hasStart, component.second->hasUpdate, component.second->hasLateUpdate);
+
+                if (component.second->type == "Rigidbody")
+                {
+                    rigidBodyInScene = true;
+                }
             }
         }
 
         // Extract values from the JSON
         // Override template if applicable
-        name = actor.HasMember("name") ? actor["name"].GetString() : name;
+        name = entityJson.HasMember("name") ? entityJson["name"].GetString() : name;
 
         // Loop through each component in the JSON array
-        if (actor.HasMember("components"))
+        if (entityJson.HasMember("components"))
         {
-            const rapidjson::Value& components = actor["components"];
+            const rapidjson::Value& components = entityJson["components"];
 
             // Loop through each component in the JSON array
             for (rapidjson::Value::ConstMemberIterator itr = components.MemberBegin(); itr != components.MemberEnd(); ++itr) {
@@ -151,92 +162,11 @@ void SceneDB::LoadEntitiesInScene(const std::string& sceneName)
                 // Extract the component's type (e.g., the object containing the "type" field)
                 const rapidjson::Value& component = itr->value;
 
-                // Check if the component has a "type" field and extract it
-                if (component.HasMember("type")) 
+                componentMap[componentName] = ComponentDB::LoadComponentInstance(component, componentName);
+
+                if (componentMap[componentName]->type == "Rigidbody")
                 {
-                    std::string componentType = component["type"].GetString();
-
-                    if (ComponentDB::components.find(componentType) != ComponentDB::components.end())
-                    {
-                        luabridge::LuaRef instanceTable = luabridge::newTable(luaState);
-                        instanceTable["key"] = componentName;
-
-                        // establish inheritance from default component type
-                        Component* parentComponent = ComponentDB::components[componentType];
-                        luabridge::LuaRef parentTable = *(parentComponent->luaRef);
-                        ComponentDB::EstablishInheritance(instanceTable, parentTable);
-                          
-                        // inject property overrides
-                        for (auto propItr = component.MemberBegin(); propItr != component.MemberEnd(); ++propItr) {
-                            std::string propName = propItr->name.GetString();
-
-                            if (propName != "type") 
-                            { // Exclude "type" field itself
-                                if (propItr->value.IsString()) 
-                                {
-                                    instanceTable[propName] = propItr->value.GetString();
-                                }
-                                else if (propItr->value.IsInt())
-                                {
-                                    instanceTable[propName] = propItr->value.GetInt();
-                                }
-                                else if (propItr->value.IsDouble()) 
-                                {
-                                    instanceTable[propName] = propItr->value.GetDouble();
-                                }
-                                else if (propItr->value.IsBool()) 
-                                {
-                                    instanceTable[propName] = propItr->value.GetBool();
-                                }
-                                else if (propItr->value.IsArray()) 
-                                {
-                                    // Create a Lua table for arrays
-                                    luabridge::LuaRef luaArray = luabridge::newTable(luaState);
-                                    int index = 1; // Lua uses 1-based indexing
-
-                                    // Iterate over array elements
-                                    for (auto& arrayElem : propItr->value.GetArray()) 
-                                    {
-                                        if (arrayElem.IsString()) 
-                                        {
-                                            luaArray[index++] = arrayElem.GetString();
-                                        }
-                                        else if (arrayElem.IsInt()) 
-                                        {
-                                            luaArray[index++] = arrayElem.GetInt();
-                                        }
-                                        else if (arrayElem.IsDouble()) 
-                                        {
-                                            luaArray[index++] = arrayElem.GetDouble();
-                                        }
-                                        else if (arrayElem.IsBool()) 
-                                        {
-                                            luaArray[index++] = arrayElem.GetBool();
-                                        }
-                                    }
-
-                                    instanceTable[propName] = luaArray;
-                                }
-                                else
-                                {
-                                    std::cout << "error: could not override " << propName << " because type is not supported!";
-                                    exit(0);
-                                }
-                            }
-                        }
-
-                        std::shared_ptr<luabridge::LuaRef> instanceTablePtr = std::make_shared<luabridge::LuaRef>(instanceTable);
-                        componentMap[componentName] = new Component(instanceTablePtr, componentType, parentComponent->hasStart, parentComponent->hasUpdate, parentComponent->hasLateUpdate);
-                    }
-                    else
-                    {
-                        std::cout << "error: failed to locate component " << componentName;
-                        exit(0);
-                    }
-                }
-                else {
-                    std::cout << "error: component " << componentName << " is missing a type" << std::endl;
-                    exit(0);
+                    rigidBodyInScene = true;
                 }
             }
         }
@@ -251,6 +181,12 @@ void SceneDB::LoadEntitiesInScene(const std::string& sceneName)
 
         entity->entityID = totalEntities;
         totalEntities++;
+    }
+
+    // if rigidBody in scene and b2WorldInstance doesnt exist, make one
+    if (rigidBodyInScene && b2WorldDB::b2WorldInstance == nullptr)
+    {
+        b2WorldDB::b2WorldInstance = new b2World(b2Vec2(0.0f, 9.8f));
     }
 }
 
@@ -321,6 +257,12 @@ void SceneDB::LateUpdate()
     }
 
     entitiesToDestroy.clear();
+
+    // step through physics if b2WorldInstance exists
+    if (b2WorldDB::b2WorldInstance != nullptr)
+    {
+        b2WorldDB::b2WorldInstance->Step(1.0f / 60.0f, 8, 3);
+    }
 }
 
 Entity* SceneDB::Find(const std::string& name)
@@ -392,16 +334,17 @@ Entity* SceneDB::Instantiate(const std::string& entityTemplateName)
 
     for (auto component : entityTemplate->components)
     {
-        luabridge::LuaRef instanceTable = luabridge::newTable(luaState);
-        instanceTable["key"] = component.first;
-
-        luabridge::LuaRef parentTable = *(component.second->luaRef);
-        ComponentDB::EstablishInheritance(instanceTable, parentTable);
+        luabridge::LuaRef instanceTable = ComponentDB::CreateInstanceTableFromTemplate(component.first, component.second->type, *(component.second->luaRef));
 
         std::shared_ptr<luabridge::LuaRef> instanceTablePtr = std::make_shared<luabridge::LuaRef>(instanceTable);
         componentMap[component.first] = new Component(instanceTablePtr, component.second->type, component.second->hasStart, component.second->hasUpdate, component.second->hasLateUpdate);
-    }
 
+        // first rigid body added to scene
+        if (component.second->type == "Rigidbody")
+        {
+            b2WorldDB::b2WorldInstance = new b2World(b2Vec2(0.0f, 9.8f));
+        }
+    }
 
     // Create the Entity object
     Entity* entity = new Entity(

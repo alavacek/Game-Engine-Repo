@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "b2WorldDB.h"
+#include "box2d/box2d.h"
 #include "ComponentDB.h"
 #include "EngineUtils.h"
 #include "Entity.h"
@@ -52,6 +54,8 @@ private:
 	static std::vector<Entity*> entities;
 	static std::vector<Entity*> entitiesToInstantiate;
 	static std::vector<Entity*> entitiesToDestroy;
+
+
 	 
 	static int totalEntities; // NOTE: this is total enemies to exist, not total in scene
 };

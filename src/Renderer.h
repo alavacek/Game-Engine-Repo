@@ -31,13 +31,20 @@ public:
 	static float GetCameraPositionX() { return cameraPosition.x; }
 	static float GetCameraPositionY() { return cameraPosition.y; }
 
+	static int GetPixelsPerUnit() { return pixelsPerUnit; }
+
 private:
 	static SDL_Window* window;
 	static SDL_Renderer* renderer;
+
 	static glm::ivec2 resolution;
+	static glm::vec2 cameraPosition;
+
 	static float originalZoomFactor;
 	static float zoomFactor;
-	static glm::vec2 cameraPosition;
+
+	static int pixelsPerUnit;
+
 };
 #endif
 

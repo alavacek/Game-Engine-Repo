@@ -2,10 +2,15 @@
 
 SDL_Window* Renderer::window;
 SDL_Renderer* Renderer::renderer;
+
 glm::ivec2 Renderer::resolution;
+glm::vec2 Renderer::cameraPosition;
+
 float Renderer::zoomFactor;
 float Renderer::originalZoomFactor;
-glm::vec2 Renderer::cameraPosition;
+
+
+int Renderer::pixelsPerUnit = 100;
 
 void Renderer::RendererInit()
 {

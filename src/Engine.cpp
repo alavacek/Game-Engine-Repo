@@ -1,7 +1,5 @@
 #include "Engine.h"
 
-int Engine::pixelsPerUnit = 100;
-
 void Engine::GameLoop()
 {
 	Start();

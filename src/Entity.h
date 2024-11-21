@@ -43,6 +43,7 @@ public:
 			componentsKeysAlphabeticalOrder.push_back(pair.first);
 
 			(*pair.second->luaRef)["entity"] = this;
+			pair.second->owningEntityName = entityName;
 			
 			// override to be true for now since logic in componentdb.h didnt seem to be doing anything
 			(*pair.second->luaRef)["enabled"] = true;

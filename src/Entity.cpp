@@ -10,32 +10,10 @@ void Entity::Start()
 		}
 
 		Component* component = components[componentKey];
-		std::shared_ptr<luabridge::LuaRef> luaRefPtr = component->luaRef; // Get the LuaRef pointer
-		luabridge::LuaRef luaRef = *luaRefPtr;
 
-		if (component->hasStart && luaRefPtr && luaRefPtr->isTable())
+		if (component->hasStart)
 		{
-			try
-			{
-				// Run if enabled
-				// Note, The OnStart function does not run again if a component is re-enabled. 
-				// A component will only ever try and run its OnStart function once (upon creation)
-				luabridge::LuaRef isEnabled = (luaRef)["enabled"];
-				if (isEnabled.isBool() && isEnabled)
-				{
-					luabridge::LuaRef onStartFunc = (luaRef)["OnStart"];
-					if (onStartFunc.isFunction())
-					{
-						onStartFunc(luaRef);
-					}
-				}
-
-			}
-			catch (const luabridge::LuaException& e)
-			{
-				ComponentDB::ReportError(entityName, e);
-			}
-
+			component->Start();
 		}
 
 		components[componentKey]->wasInstantiated = true;
@@ -52,28 +30,10 @@ void Entity::Update()
 	for (const auto& componentKey : componentsKeysAlphabeticalOrder)
 	{
 		Component* component = components[componentKey];
-		std::shared_ptr<luabridge::LuaRef> luaRefPtr = component->luaRef; // Get the LuaRef pointer
-		luabridge::LuaRef luaRef = *luaRefPtr;
-
-		if (component->hasUpdate && luaRefPtr && luaRefPtr->isTable())
+		
+		if (component->hasUpdate)
 		{
-			try
-			{
-				// Run if enabled
-				luabridge::LuaRef isEnabled = (luaRef)["enabled"];
-				if (isEnabled.isBool() && isEnabled)
-				{
-					luabridge::LuaRef onUpdateFunc = (luaRef)["OnUpdate"];
-					if (onUpdateFunc.isFunction())
-					{
-						onUpdateFunc(luaRef);
-					}
-				}
-			}
-			catch (const luabridge::LuaException& e)
-			{
-				ComponentDB::ReportError(entityName, e);
-			}
+			component->Update();
 		}
 	}
 
@@ -89,28 +49,10 @@ void Entity::LateUpdate()
 		}
 
 		Component* component = components[componentKey];
-		std::shared_ptr<luabridge::LuaRef> luaRefPtr = component->luaRef; // Get the LuaRef pointer
-		luabridge::LuaRef luaRef = *luaRefPtr;
-
-		if (component->hasLateUpdate && luaRefPtr && luaRefPtr->isTable())
+		
+		if (component->hasLateUpdate)
 		{
-			try
-			{
-				// Run if enabled
-				luabridge::LuaRef isEnabled = (luaRef)["enabled"];
-				if (isEnabled.isBool() && isEnabled)
-				{
-					luabridge::LuaRef onLateUpdateFunc = (luaRef)["OnLateUpdate"];
-					if (onLateUpdateFunc.isFunction())
-					{
-						onLateUpdateFunc(luaRef);
-					}
-				}
-			}
-			catch (const luabridge::LuaException& e)
-			{
-				ComponentDB::ReportError(entityName, e);
-			}
+			component->LateUpdate();
 		}
 	}
 
@@ -166,17 +108,10 @@ luabridge::LuaRef Entity::AddComponent(const std::string& typeName)
 {
 	if (ComponentDB::components.find(typeName) != ComponentDB::components.end())
 	{
-		luabridge::LuaRef instanceTable = luabridge::newTable(LuaStateManager::GetLuaState());
-
 		std::string componentKey = "r" + std::to_string(ComponentDB::numRuntimeAddedComponents);
-		ComponentDB::numRuntimeAddedComponents++;
 
-		instanceTable["key"] = componentKey;
-
-		// establish inheritance from default component type
+		luabridge::LuaRef instanceTable = ComponentDB::CreateInstanceTable(componentKey, typeName);
 		Component* parentComponent = ComponentDB::components[typeName];
-		luabridge::LuaRef parentTable = *(parentComponent->luaRef);
-		ComponentDB::EstablishInheritance(instanceTable, parentTable);
 
 		std::shared_ptr<luabridge::LuaRef> instanceTablePtr = std::make_shared<luabridge::LuaRef>(instanceTable);
 		Component* addedComponent = new Component(instanceTablePtr, typeName, parentComponent->hasStart, parentComponent->hasUpdate, parentComponent->hasLateUpdate);
@@ -302,31 +237,9 @@ void Entity::PreLifeCycleFunctionComponentCleanUp()
 
 				(*components[keyOfComponent]->luaRef)["entity"] = this;
 
-				std::shared_ptr<luabridge::LuaRef> luaRefPtr = components[keyOfComponent]->luaRef; // Get the LuaRef pointer
-				luabridge::LuaRef luaRef = *luaRefPtr;
-
-				if (luaRefPtr && luaRefPtr->isTable())
+				if (components[keyOfComponent]->hasStart)
 				{
-					try
-					{
-						// Run if enabled
-						// Note, The OnStart function does not run again if a component is re-enabled. 
-						// A component will only ever try and run its OnStart function once (upon creation)
-						luabridge::LuaRef isEnabled = (luaRef)["enabled"];
-						if (isEnabled.isBool() && isEnabled)
-						{
-							luabridge::LuaRef onStartFunc = (luaRef)["OnStart"];
-							if (onStartFunc.isFunction())
-							{
-								onStartFunc(luaRef);
-							}
-						}
-
-					}
-					catch (const luabridge::LuaException& e)
-					{
-						ComponentDB::ReportError(entityName, e);
-					}
+					components[keyOfComponent]->Start();
 				}
 
 				components[keyOfComponent]->wasInstantiated = true;

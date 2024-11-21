@@ -64,7 +64,6 @@ private:
 
 	SDL_Renderer* renderer;
 
-	static int pixelsPerUnit;
 	int frameSinceDamageTaken;
 
 	int framesOfDamageIndicator = 30;

@@ -31,13 +31,12 @@ void ImageDB::RenderImages()
     std::stable_sort(renderRequests.begin(), renderRequests.end(), CompareImageRequests);
 
     float zoomFactor = Renderer::GetZoomFactor();
+    int pixelsPerUnit = Renderer::GetPixelsPerUnit();
 
     SDL_RenderSetScale(Renderer::GetRenderer(), zoomFactor, zoomFactor);
 
     for (auto& request : renderRequests)
     {
-        const int pixelsPerUnit = 100;
-
         glm::vec2 finalRenderingPosition = glm::vec2(request.x, request.y) - Renderer::GetCameraPosition();
 
         SDL_Texture* texture = LoadImage(request.imageName);
@@ -99,11 +98,10 @@ void ImageDB::RenderUIImages()
 {
     // UI Render Requests
     std::stable_sort(renderUIRequests.begin(), renderUIRequests.end(), CompareUIImageRequests);
+    int pixelsPerUnit = Renderer::GetPixelsPerUnit();
 
     for (auto& request : renderUIRequests)
     {
-        const int pixelsPerUnit = 100;
-
         SDL_Texture* texture = LoadImage(request.imageName);
         SDL_Rect textureRect;
 
@@ -131,9 +129,7 @@ void ImageDB::RenderPixels()
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
     for (auto& request : renderPixelRequests)
-    {
-        const int pixelsPerUnit = 100;
-   
+    {   
         SDL_SetRenderDrawColor(renderer, request.r, request.g, request.b, request.a);
 
         SDL_RenderDrawPoint(Renderer::GetRenderer(), request.x, request.y);

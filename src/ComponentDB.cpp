@@ -2,11 +2,12 @@
 
 std::unordered_map<std::string, Component*> ComponentDB::components;
 int ComponentDB::numRuntimeAddedComponents = 0;
+lua_State* ComponentDB::luaState;
 
 void ComponentDB::LoadComponents()
 {
 	std::string componentDirectoryPath = "resources/component_types";
-	lua_State* luaState = LuaStateManager::GetLuaState();
+	luaState = LuaStateManager::GetLuaState();
 
 	if (std::filesystem::exists(componentDirectoryPath))
 	{
@@ -65,6 +66,38 @@ void ComponentDB::LoadComponents()
 		}
 	}
 
+    // C++ Components
+    // For now just called Rigidbody since this is a 2D engine
+    luabridge::getGlobalNamespace(luaState)
+        .beginClass<Rigidbody2DLuaRef>("Rigidbody")
+        .addFunction("OnStart", &Rigidbody2DLuaRef::Start)
+        .addFunction("OnUpdate", &Rigidbody2DLuaRef::Update)
+        .addFunction("OnLateUpdate", &Rigidbody2DLuaRef::LateUpdate)
+        .addProperty("entity", &Rigidbody2DLuaRef::owningEntity)
+        .addProperty("enabled", &Rigidbody2DLuaRef::isEnabled)
+        .addFunction("GetRotation", &Rigidbody2DLuaRef::GetRotation)
+        .addFunction("GetPosition", &Rigidbody2DLuaRef::GetPosition)
+        .addProperty("x", &Rigidbody2DLuaRef::x)
+        .addProperty("y", &Rigidbody2DLuaRef::y)
+        .addProperty("body_type", &Rigidbody2DLuaRef::bodyType)
+        .addProperty("precise", &Rigidbody2DLuaRef::precise)
+        .addProperty("gravity_scale", &Rigidbody2DLuaRef::gravityScale)
+        .addProperty("density", &Rigidbody2DLuaRef::density)
+        .addProperty("angular_friction", &Rigidbody2DLuaRef::angularFriction)
+        .addProperty("rotation", &Rigidbody2DLuaRef::rotation)
+        .addProperty("has_collider", &Rigidbody2DLuaRef::hasCollider)
+        .addProperty("has_trigger", &Rigidbody2DLuaRef::hasTrigger)
+        .endClass();
+
+    Rigidbody2DLuaRef* RB = new Rigidbody2DLuaRef();
+    luabridge::push(luaState, RB);
+
+    luabridge::LuaRef luaRef = luabridge::LuaRef::fromStack(luaState, -1); // top of stack
+    std::shared_ptr<luabridge::LuaRef> luaRefPtr = std::make_shared<luabridge::LuaRef>(luaRef);
+
+    components["Rigidbody"] = new Component(luaRefPtr, "Rigidbody", true, true, true);
+
+    // Debug Namesapce
 	luabridge::getGlobalNamespace(luaState)
 		.beginNamespace("Debug")
 		.addFunction("Log", &ComponentDB::CppDebugLog)
@@ -72,7 +105,7 @@ void ComponentDB::LoadComponents()
 		.endNamespace();
 }
 
-void ComponentDB::EstablishInheritance(luabridge::LuaRef& instanceTable, luabridge::LuaRef& parentTable)
+void ComponentDB::EstablishLuaInheritance(luabridge::LuaRef& instanceTable, luabridge::LuaRef& parentTable)
 {
 	lua_State* luaState = LuaStateManager::GetLuaState();
 
@@ -97,15 +130,132 @@ void ComponentDB::CppDebugLogError(const std::string& message)
 	std::cerr << message << std::endl;
 }
 
-void ComponentDB::ReportError(const std::string& entityName, const luabridge::LuaException& e)
+luabridge::LuaRef ComponentDB::CreateInstanceTable(const std::string& componentName, const std::string& componentType)
 {
-	std::string errorMessage = e.what();
+    luabridge::LuaRef instanceTable = luabridge::newTable(luaState);
+    instanceTable["key"] = componentName;
 
-	// Normalize file paths across platforms
-	std::replace(errorMessage.begin(), errorMessage.end(), '\\', '/');
+    Component* parentComponent = ComponentDB::components[componentType];
+    luabridge::LuaRef parentTable = *(parentComponent->luaRef);
 
-	// Display (with color codes)
-	std::cout << "\033[31m" << entityName << " : " << errorMessage << "\033[0m" << "\n";
+    if (componentType == "Rigidbody")
+    {
+        Rigidbody2DLuaRef* RB = new Rigidbody2DLuaRef(parentTable.cast<Rigidbody2DLuaRef>());
+        luabridge::push(luaState, RB);
+
+        instanceTable = luabridge::LuaRef::fromStack(luaState, -1); // top of stack
+    }
+    else // this is gross, consider having C++Component Base class instead
+    {
+        ComponentDB::EstablishLuaInheritance(instanceTable, parentTable);
+    }
+
+    return instanceTable;
+}
+
+luabridge::LuaRef ComponentDB::CreateInstanceTableFromTemplate(const std::string& componentName, const std::string& componentType, luabridge::LuaRef templateTable)
+{
+    luabridge::LuaRef instanceTable = luabridge::newTable(luaState);
+    instanceTable["key"] = componentName;
+
+    if (componentType == "Rigidbody")
+    {
+        Rigidbody2DLuaRef* RB = new Rigidbody2DLuaRef(templateTable.cast<Rigidbody2DLuaRef>());
+        luabridge::push(luaState, RB);
+
+        instanceTable = luabridge::LuaRef::fromStack(luaState, -1); // top of stack
+    }
+    else // this is gross, consider having C++Component Base class instead
+    {
+        ComponentDB::EstablishLuaInheritance(instanceTable, templateTable);
+    }
+
+    return instanceTable;
+}
+
+Component* ComponentDB::LoadComponentInstance(const rapidjson::Value& component, const std::string& componentName)
+{
+    // Check if the component has a "type" field and extract it
+    if (component.HasMember("type")) {
+        std::string componentType = component["type"].GetString();
+
+        if (ComponentDB::components.find(componentType) != ComponentDB::components.end())
+        {
+            luabridge::LuaRef instanceTable = CreateInstanceTable(componentName, componentType);
+            Component* parentComponent = ComponentDB::components[componentType];
+
+            // inject property overrides
+            for (auto propItr = component.MemberBegin(); propItr != component.MemberEnd(); ++propItr) {
+                std::string propName = propItr->name.GetString();
+
+                if (propName != "type")
+                { // Exclude "type" field itself
+                    if (propItr->value.IsString())
+                    {
+                        instanceTable[propName] = propItr->value.GetString();
+                    }
+                    else if (propItr->value.IsInt())
+                    {
+                        instanceTable[propName] = propItr->value.GetInt();
+                    }
+                    else if (propItr->value.IsDouble())
+                    {
+                        instanceTable[propName] = propItr->value.GetDouble();
+                    }
+                    else if (propItr->value.IsBool())
+                    {
+                        instanceTable[propName] = propItr->value.GetBool();
+                    }
+                    else if (propItr->value.IsArray())
+                    {
+                        // Create a Lua table for arrays
+                        luabridge::LuaRef luaArray = luabridge::newTable(luaState);
+                        int index = 1; // Lua uses 1-based indexing
+
+                        // Iterate over array elements
+                        for (auto& arrayElem : propItr->value.GetArray())
+                        {
+                            if (arrayElem.IsString())
+                            {
+                                luaArray[index++] = arrayElem.GetString();
+                            }
+                            else if (arrayElem.IsInt())
+                            {
+                                luaArray[index++] = arrayElem.GetInt();
+                            }
+                            else if (arrayElem.IsDouble())
+                            {
+                                luaArray[index++] = arrayElem.GetDouble();
+                            }
+                            else if (arrayElem.IsBool())
+                            {
+                                luaArray[index++] = arrayElem.GetBool();
+                            }
+                        }
+
+                        instanceTable[propName] = luaArray;
+                    }
+                    else
+                    {
+                        std::cout << "error: could not override " << propName << " because type is not supported!";
+                        exit(0);
+                    }
+                }
+            }
+
+            std::shared_ptr<luabridge::LuaRef> instanceTablePtr = std::make_shared<luabridge::LuaRef>(instanceTable);
+            return new Component(instanceTablePtr, componentType, parentComponent->hasStart, parentComponent->hasUpdate, parentComponent->hasLateUpdate);
+        }
+        else
+        {
+            std::cout << "error: failed to locate component " << componentName;
+            exit(0);
+        }
+    }
+    else {
+        std::cout << "error: component " << componentName << " is missing a type" << std::endl;
+        exit(0);
+    }
 }
 
 ComponentDB::~ComponentDB()

@@ -1,0 +1,12 @@
+{
+  "name": "player",
+  "components": {
+    "1": {
+      "type": "Controller"
+    },
+    "RB": {
+      "type": "Rigidbody",
+      "body_type": "static"
+    }
+  }
+}

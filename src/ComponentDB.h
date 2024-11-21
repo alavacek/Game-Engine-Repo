@@ -9,23 +9,31 @@
 #include "lua.hpp"
 #include "LuaBridge.h"
 #include "LuaStateManager.h"
+#include "rapidjson/document.h"
+#include "rapidjson/filereadstream.h"
+#include "Rigidbody.h"
 
 class ComponentDB
 {
 public:
 	static void LoadComponents();
-	static void EstablishInheritance(luabridge::LuaRef& instanceTable, luabridge::LuaRef& parentTable);
+	static void EstablishLuaInheritance(luabridge::LuaRef& instanceTable, luabridge::LuaRef& parentTable);
 
 	static void CppDebugLog(const std::string& message);
 	static void CppDebugLogError(const std::string& message);
 
-	static void ReportError(const std::string& entityName, const luabridge::LuaException& e);
+	static luabridge::LuaRef CreateInstanceTable(const std::string& componentName, const std::string& componentType);
+	static luabridge::LuaRef CreateInstanceTableFromTemplate(const std::string& componentName, const std::string& componentType, luabridge::LuaRef templateTable);
+	static Component* LoadComponentInstance(const rapidjson::Value& component, const std::string& componentName); // TODO: assess if passing string is expensive and necessary
 
 	static std::unordered_map<std::string, Component*> components;
 
 	static int numRuntimeAddedComponents;
 
 	~ComponentDB();
+
+private:
+	static lua_State* luaState; // cache off
 };
 
 #endif
