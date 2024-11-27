@@ -184,7 +184,7 @@ void Rigidbody2DLuaRef::OnCollisionEnter(Collision2D collision)
 					luabridge::LuaRef onCollisionEnterFunc = (luaRef)["OnCollisionEnter"];
 					if (onCollisionEnterFunc.isFunction())
 					{
-						onCollisionEnterFunc(luaRef);
+						onCollisionEnterFunc(luaRef, collision);
 					}
 				}
 			}
@@ -223,7 +223,7 @@ void Rigidbody2DLuaRef::OnCollisionExit(Collision2D collision)
 					luabridge::LuaRef onCollisionExitFunc = (luaRef)["OnCollisionExit"];
 					if (onCollisionExitFunc.isFunction())
 					{
-						onCollisionExitFunc(luaRef);
+						onCollisionExitFunc(luaRef, collision);
 					}
 				}
 			}
@@ -358,8 +358,8 @@ void ContactListener::EndContact(b2Contact* contact)
 	b2Vec2 relativeVelocityB = fixtureB->GetBody()->GetLinearVelocity() - fixtureA->GetBody()->GetLinearVelocity();
 
 	Collision2D collisionA(entityB, invalid, relativeVelocityA, invalid);
-	rbA->OnCollisionEnter(collisionA);
+	rbA->OnCollisionExit(collisionA);
 
 	Collision2D collisionB(entityA, invalid, relativeVelocityB, invalid);
-	rbB->OnCollisionEnter(collisionB);
+	rbB->OnCollisionExit(collisionB);
 }

@@ -7,6 +7,7 @@
 #include "lua.hpp"
 #include "LuaBridge.h"
 
+
 class Component
 {
 public:

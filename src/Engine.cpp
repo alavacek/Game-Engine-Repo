@@ -207,7 +207,7 @@ void Engine::LuaClassAndNamespaceSetup()
 
 	// Collision Class inside of Lua
 	luabridge::getGlobalNamespace(luaState)
-		.beginClass<Collision2D>("Collision")
+		.beginClass<Collision2D>("collision")
 		.addProperty("other", &Collision2D::other)
 		.addProperty("point", &Collision2D::point)
 		.addProperty("relative_velocity", &Collision2D::relativeVelocity)
