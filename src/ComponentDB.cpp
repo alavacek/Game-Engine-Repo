@@ -109,6 +109,11 @@ void ComponentDB::LoadComponents()
         .addProperty("radius", &Rigidbody2DLuaRef::colliderRadius)
         .addProperty("friction", &Rigidbody2DLuaRef::colliderFriction)
         .addProperty("bounciness", &Rigidbody2DLuaRef::colliderBounciness)
+        // Trigger properties
+        .addProperty("trigger_type", &Rigidbody2DLuaRef::triggerType)
+        .addProperty("trigger_width", &Rigidbody2DLuaRef::triggerWidth)
+        .addProperty("trigger_height", &Rigidbody2DLuaRef::triggerHeight)
+        .addProperty("trigger_radius", &Rigidbody2DLuaRef::triggerRadius)
         .endClass();
 
     Rigidbody2DLuaRef* RB = new Rigidbody2DLuaRef();

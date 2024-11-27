@@ -16,13 +16,13 @@ Controller = {
            Camera.SetPosition(Camera.GetPositionX(), Camera.GetPositionY() + 0.05)      
         elseif (Input.GetKey("a"))
         then
-             
+            self.rigidbody:AddForce(Vector2(-10, 0))
         elseif (Input.GetKey("s"))
         then
             Camera.SetPosition(Camera.GetPositionX(), Camera.GetPositionY() - 0.05)
         elseif (Input.GetKey("d"))
         then
-            
+            self.rigidbody:AddForce(Vector2(10, 0))
         elseif (Input.GetKey("space"))
         then
             self.rigidbody:AddForce(Vector2(0, -100))
@@ -45,5 +45,13 @@ Controller = {
 
     OnCollisionExit = function(self, collision)
         print("Collision Exit with " .. collision.other:GetName())
+    end,
+
+    OnTriggerEnter = function(self, collision)
+        print("Trigger Enter with " .. collision.other:GetName())
+    end, 
+
+    OnTriggerExit = function(self, collision)
+        print("Trigger Exit with " .. collision.other:GetName())
     end
 }

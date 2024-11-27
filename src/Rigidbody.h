@@ -32,6 +32,18 @@ public:
 		precise = other.precise;
 		hasCollider = other.hasCollider;
 		hasTrigger = other.hasTrigger;
+
+		colliderType = other.colliderType;
+		colliderWidth = other.colliderWidth;
+		colliderHeight = other.colliderHeight;
+		colliderRadius = other.colliderRadius;
+		colliderFriction = other.colliderFriction;
+		colliderBounciness = other.colliderBounciness;
+
+		triggerType = other.triggerType;
+		triggerWidth = other.triggerWidth;
+		triggerHeight = other.triggerHeight;
+		triggerRadius = other.triggerRadius;
 	}
 
 	void AddForce(b2Vec2 force);
@@ -59,6 +71,9 @@ public:
 	void OnCollisionEnter(Collision2D collision);
 	void OnCollisionExit(Collision2D collision);
 
+	void OnTriggerEnter(Collision2D collision);
+	void OnTriggerExit(Collision2D collision);
+
 	b2Body* b2Body;
 
 	// Basic Properties
@@ -83,6 +98,13 @@ public:
 	float colliderRadius = 0.5f;
 	float colliderFriction = 0.3f;
 	float colliderBounciness = 0.3f;
+
+	//Trigger Properties
+	std::string triggerType = "box";
+	float triggerWidth = 1.0f;
+	float triggerHeight = 1.0f;
+	float triggerRadius = 0.5f;
+
 
 	~Rigidbody2DLuaRef();
 };

@@ -115,7 +115,53 @@ void Rigidbody2DLuaRef::Start()
 
 		if (hasTrigger)
 		{
+			if (triggerType == "box")
+			{
+				b2PolygonShape myShape;
+				myShape.SetAsBox(triggerWidth * 0.5f, triggerHeight * 0.5f);
 
+				b2FixtureDef fixture;
+				fixture.shape = &myShape;
+				fixture.density = density;
+				fixture.isSensor = true;
+
+				// Reference to owning Entity, used in collision detection me thinks
+				fixture.userData.pointer = reinterpret_cast<uintptr_t>(this);
+
+				b2Body->CreateFixture(&fixture);
+			}
+			else if (triggerType == "circle")
+			{
+				b2CircleShape myShape;
+				myShape.m_radius = triggerRadius;
+
+				b2FixtureDef fixture;
+				fixture.shape = &myShape;
+				fixture.density = density;
+				fixture.isSensor = true;
+
+				// Reference to owning Entity, used in collision detection me thinks
+				fixture.userData.pointer = reinterpret_cast<uintptr_t>(this);
+
+				b2Body->CreateFixture(&fixture);
+			}
+			else
+			{
+				ErrorHandling::ReportString(owningEntity->entityName + ": Unknown type set for collider, defaulting to box type");
+
+				b2PolygonShape myShape;
+				myShape.SetAsBox(triggerWidth * 0.5f, triggerHeight * 0.5f);
+
+				b2FixtureDef fixture;
+				fixture.shape = &myShape;
+				fixture.density = density;
+				fixture.isSensor = true;
+
+				// Reference to owning Entity, used in collision detection me thinks
+				fixture.userData.pointer = reinterpret_cast<uintptr_t>(this);
+
+				b2Body->CreateFixture(&fixture);
+			}
 		}
 
 	}
@@ -156,6 +202,29 @@ void Rigidbody2DLuaRef::LateUpdate()
 		ImageDB::DrawLine(lowerRightCorner.x, lowerRightCorner.y, upperLeftCorner.x, lowerRightCorner.y, 255, 0, 0, 255);
 		ImageDB::DrawLine(upperLeftCorner.x, lowerRightCorner.y, upperLeftCorner.x, upperLeftCorner.y, 255, 0, 0, 255);
 	}
+
+	if (hasTrigger && triggerType == "box")
+	{
+		float triggerHalfWidth = (triggerWidth / 2);
+		float triggerHalfHeight = (triggerHeight / 2);
+
+		glm::vec2 upperLeftCorner = glm::vec2(
+			(x - triggerHalfWidth),
+			(y - triggerHalfHeight)
+		);
+
+		glm::vec2 lowerRightCorner = glm::vec2(
+			(x + triggerHalfWidth),
+			(y + triggerHalfHeight)
+		);
+
+
+		ImageDB::DrawLine(upperLeftCorner.x, upperLeftCorner.y, lowerRightCorner.x, upperLeftCorner.y, 0, 255, 0, 255);
+		ImageDB::DrawLine(lowerRightCorner.x, upperLeftCorner.y, lowerRightCorner.x, lowerRightCorner.y, 0, 255, 0, 255);
+		ImageDB::DrawLine(lowerRightCorner.x, lowerRightCorner.y, upperLeftCorner.x, lowerRightCorner.y, 0, 255, 0, 255);
+		ImageDB::DrawLine(upperLeftCorner.x, lowerRightCorner.y, upperLeftCorner.x, upperLeftCorner.y, 0, 255, 0, 255);
+	}
+
 #endif // DRAW_COLLISIONS
 }
 
@@ -224,6 +293,84 @@ void Rigidbody2DLuaRef::OnCollisionExit(Collision2D collision)
 					if (onCollisionExitFunc.isFunction())
 					{
 						onCollisionExitFunc(luaRef, collision);
+					}
+				}
+			}
+			catch (const luabridge::LuaException& e)
+			{
+				ErrorHandling::ReportError(component->owningEntityName, e);
+			}
+		}
+
+		owningEntity->components[componentKey]->wasInstantiated = true;
+	}
+}
+
+void Rigidbody2DLuaRef::OnTriggerEnter(Collision2D collision)
+{
+	for (const auto& componentKey : owningEntity->componentsKeysAlphabeticalOrder)
+	{
+		if (owningEntity->wasDestroyed)
+		{
+			return;
+		}
+
+		Component* component = owningEntity->components[componentKey];
+
+		std::shared_ptr<luabridge::LuaRef> luaRefPtr = component->luaRef; // Get the LuaRef pointer
+		luabridge::LuaRef luaRef = *luaRefPtr;
+
+		if (luaRefPtr && (luaRefPtr->isTable() || luaRefPtr->isUserdata()))
+		{
+			try
+			{
+				// Run if enabled
+				luabridge::LuaRef isEnabled = (luaRef)["enabled"];
+				if (isEnabled.isBool() && isEnabled)
+				{
+					luabridge::LuaRef onTriggerEnterFunc = (luaRef)["OnTriggerEnter"];
+					if (onTriggerEnterFunc.isFunction())
+					{
+						onTriggerEnterFunc(luaRef, collision);
+					}
+				}
+			}
+			catch (const luabridge::LuaException& e)
+			{
+				ErrorHandling::ReportError(component->owningEntityName, e);
+			}
+		}
+
+		owningEntity->components[componentKey]->wasInstantiated = true;
+	}
+}
+
+void Rigidbody2DLuaRef::OnTriggerExit(Collision2D collision)
+{
+	for (const auto& componentKey : owningEntity->componentsKeysAlphabeticalOrder)
+	{
+		if (owningEntity->wasDestroyed)
+		{
+			return;
+		}
+
+		Component* component = owningEntity->components[componentKey];
+
+		std::shared_ptr<luabridge::LuaRef> luaRefPtr = component->luaRef; // Get the LuaRef pointer
+		luabridge::LuaRef luaRef = *luaRefPtr;
+
+		if (luaRefPtr && (luaRefPtr->isTable() || luaRefPtr->isUserdata()))
+		{
+			try
+			{
+				// Run if enabled
+				luabridge::LuaRef isEnabled = (luaRef)["enabled"];
+				if (isEnabled.isBool() && isEnabled)
+				{
+					luabridge::LuaRef onTriggerExitFunc = (luaRef)["OnTriggerExit"];
+					if (onTriggerExitFunc.isFunction())
+					{
+						onTriggerExitFunc(luaRef, collision);
 					}
 				}
 			}
@@ -332,14 +479,30 @@ void ContactListener::BeginContact(b2Contact* contact)
 
 	b2Vec2 relativeVelocityA = fixtureA->GetBody()->GetLinearVelocity() - fixtureB->GetBody()->GetLinearVelocity();
 	b2Vec2 relativeVelocityB =  fixtureB->GetBody()->GetLinearVelocity() - fixtureA->GetBody()->GetLinearVelocity();
-	b2WorldManifold worldManifold;
-	contact->GetWorldManifold(&worldManifold);
 
-	Collision2D collisionA(entityB, worldManifold.points[0], relativeVelocityA, worldManifold.normal);
-	rbA->OnCollisionEnter(collisionA);
+	// Collider Collision
+	if (!fixtureA->IsSensor() && !fixtureB->IsSensor())
+	{
+		b2WorldManifold worldManifold;
+		contact->GetWorldManifold(&worldManifold);
 
-	Collision2D collisionB(entityA, worldManifold.points[1], relativeVelocityB, worldManifold.normal);
-	rbB->OnCollisionEnter(collisionB);
+		Collision2D collisionA(entityB, worldManifold.points[0], relativeVelocityA, worldManifold.normal);
+		rbA->OnCollisionEnter(collisionA);
+
+		Collision2D collisionB(entityA, worldManifold.points[1], relativeVelocityB, worldManifold.normal);
+		rbB->OnCollisionEnter(collisionB);
+	}
+	// Trigger Collision
+	else if (fixtureA->IsSensor() && fixtureB->IsSensor())
+	{
+		b2Vec2 invalid = b2Vec2(-999.0f, -999.0f);
+
+		Collision2D collisionA(entityB, invalid, relativeVelocityA, invalid);
+		rbA->OnTriggerEnter(collisionA);
+
+		Collision2D collisionB(entityA, invalid, relativeVelocityB, invalid);
+		rbB->OnTriggerEnter(collisionB);
+	}
 }
 
 void ContactListener::EndContact(b2Contact* contact)
@@ -358,8 +521,19 @@ void ContactListener::EndContact(b2Contact* contact)
 	b2Vec2 relativeVelocityB = fixtureB->GetBody()->GetLinearVelocity() - fixtureA->GetBody()->GetLinearVelocity();
 
 	Collision2D collisionA(entityB, invalid, relativeVelocityA, invalid);
-	rbA->OnCollisionExit(collisionA);
-
 	Collision2D collisionB(entityA, invalid, relativeVelocityB, invalid);
-	rbB->OnCollisionExit(collisionB);
+	
+
+	// Collider Collision
+	if (!fixtureA->IsSensor() && !fixtureB->IsSensor())
+	{
+		rbA->OnCollisionExit(collisionA);
+		rbB->OnCollisionExit(collisionB);
+	}
+	// Trigger Collision
+	else if (fixtureA->IsSensor() && fixtureB->IsSensor())
+	{
+		rbA->OnTriggerExit(collisionA);
+		rbB->OnTriggerExit(collisionB);
+	}
 }
