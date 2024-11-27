@@ -167,6 +167,7 @@ void Engine::LuaClassAndNamespaceSetup()
 		.addFunction("DrawUI", &ImageDB::DrawUI)
 		.addFunction("DrawUIEx", &ImageDB::DrawUIEx)
 		.addFunction("DrawPixel", &ImageDB::DrawPixel)
+		.addFunction("DrawLine", &ImageDB::DrawLine)
 		.endNamespace();
 
 	// Camera Scripting
@@ -202,6 +203,15 @@ void Engine::LuaClassAndNamespaceSetup()
 		.addStaticFunction("Distance", static_cast<float (*)(const b2Vec2&, const b2Vec2&)>(&b2Distance))
 		.addStaticFunction("Dot", static_cast<float (*)(const b2Vec2&, const b2Vec2&)>(&b2Dot))
 		.addStaticFunction("Cross", static_cast<float (*)(const b2Vec2&, const b2Vec2&)>(&b2Cross))
+		.endClass();
+
+	// Collision Class inside of Lua
+	luabridge::getGlobalNamespace(luaState)
+		.beginClass<Collision2D>("Collision")
+		.addProperty("other", &Collision2D::other)
+		.addProperty("point", &Collision2D::point)
+		.addProperty("relative_velocity", &Collision2D::relativeVelocity)
+		.addProperty("normal", &Collision2D::normal)
 		.endClass();
 }
 
@@ -253,6 +263,8 @@ void Engine::Render()
 		TextDB::RenderText();
 
 		ImageDB::RenderPixels();
+
+		ImageDB::RenderLines();
 
 		Helper::SDL_RenderPresent498(renderer);
 	}

@@ -6,7 +6,8 @@
     },
     "RB": {
       "type": "Rigidbody",
-      "body_type": "static"
+      "body_type": "dynamic",
+      "y": -3
     }
   }
 }

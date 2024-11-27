@@ -84,3 +84,57 @@ void Component::LateUpdate()
 		}
 	}
 }
+
+//void Component::OnCollisionEnter(Collision2D collision)
+//{
+//	std::shared_ptr<luabridge::LuaRef> luaRefPtr = luaRef; // Get the LuaRef pointer
+//	luabridge::LuaRef luaRef = *luaRefPtr;
+//
+//	if (luaRefPtr && (luaRefPtr->isTable() || luaRefPtr->isUserdata()))
+//	{
+//		try
+//		{
+//			// Run if enabled
+//			luabridge::LuaRef isEnabled = (luaRef)["enabled"];
+//			if (isEnabled.isBool() && isEnabled)
+//			{
+//				luabridge::LuaRef onCollisionEnterFunc = (luaRef)["OnCollisionEnter"];
+//				if (onCollisionEnterFunc.isFunction())
+//				{
+//					onCollisionEnterFunc(luaRef);
+//				}
+//			}
+//		}
+//		catch (const luabridge::LuaException& e)
+//		{
+//			ErrorHandling::ReportError(owningEntityName, e);
+//		}
+//	}
+//}
+//
+//void Component::OnCollisionExit(Collision2D collision)
+//{
+//	std::shared_ptr<luabridge::LuaRef> luaRefPtr = luaRef; // Get the LuaRef pointer
+//	luabridge::LuaRef luaRef = *luaRefPtr;
+//
+//	if (luaRefPtr && (luaRefPtr->isTable() || luaRefPtr->isUserdata()))
+//	{
+//		try
+//		{
+//			// Run if enabled
+//			luabridge::LuaRef isEnabled = (luaRef)["enabled"];
+//			if (isEnabled.isBool() && isEnabled)
+//			{
+//				luabridge::LuaRef onCollisionExitFunc = (luaRef)["OnCollisionExit"];
+//				if (onCollisionExitFunc.isFunction())
+//				{
+//					onCollisionExitFunc(luaRef);
+//				}
+//			}
+//		}
+//		catch (const luabridge::LuaException& e)
+//		{
+//			ErrorHandling::ReportError(owningEntityName, e);
+//		}
+//	}
+//}

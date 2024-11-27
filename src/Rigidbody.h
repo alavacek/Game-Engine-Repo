@@ -4,20 +4,13 @@
 #include "b2WorldDB.h"
 #include "box2d/box2d.h"
 #include "CComponent.h"
+#include "Component.h"
 #include "ErrorHandling.h"
 
-//class Rigidbody2D : public Component
-//{
-//public:
-//	Rigidbody2D(const std::shared_ptr<luabridge::LuaRef>& luaRef, const std::string type,
-//		bool hasStart, bool hasUpdate, bool hasLateUpdate) : Component(luaRef, type, hasStart, hasUpdate, hasLateUpdate) {};
-//
-//	void Start() override;
-//	void Update() override;
-//	void LateUpdate() override;
-//};
+#define DRAW_COLLISIONS
 
-
+class ContactListener;
+struct Collision2D;
 
 class Rigidbody2DLuaRef : public CComponent
 {
@@ -41,6 +34,21 @@ public:
 		hasTrigger = other.hasTrigger;
 	}
 
+	void AddForce(b2Vec2 force);
+	void SetVelocity(b2Vec2 velocity);
+	void SetPosition(b2Vec2 position);
+	void SetRotation(float degreesClockwise);
+	void SetAngularVelocity(float degreesClockwise);
+	void SetGravityScale(float scale);
+	void SetUpDirection(b2Vec2 direction);
+	void SetRightDirection(b2Vec2 direction);
+
+	b2Vec2 GetVelocity();
+	float GetAngularVelocity();
+	float GetGravityScale();
+	b2Vec2 GetUpDirection();
+	b2Vec2 GetRightDirection();
+
 	b2Vec2 GetPosition() { return b2Vec2(x, y); }
 	float GetRotation() { return rotation; }
 
@@ -48,9 +56,13 @@ public:
 	virtual void Update() override;
 	virtual void LateUpdate() override;
 
+	void OnCollisionEnter(Collision2D collision);
+	void OnCollisionExit(Collision2D collision);
+
 	b2Body* b2Body;
 
-	float x;
+	// Basic Properties
+	float x; // TODO: hide and only make available during setup
 	float y;
 
 	std::string bodyType = "dynamic";
@@ -64,7 +76,23 @@ public:
 	bool hasCollider = true;
 	bool hasTrigger = true;
 
+	// Collider Properties
+	std::string colliderType = "box";
+	float colliderWidth = 1.0f;
+	float colliderHeight = 1.0f;
+	float colliderRadius = 0.5f;
+	float colliderFriction = 0.3f;
+	float colliderBounciness = 0.3f;
+
 	~Rigidbody2DLuaRef();
 };
+
+class ContactListener : public b2ContactListener
+{
+	void BeginContact(b2Contact* contact) override;
+	void EndContact(b2Contact* contact) override;
+};
+
+
 
 #endif

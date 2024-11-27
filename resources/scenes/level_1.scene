@@ -1,12 +1,18 @@
 {
   "entities": [
     {
-      "name": "original_entity",
+      "name": "ground",
       "components": {
         "first_component": {
-          "type": "OutputMessage"
+          "type": "Rigidbody",
+          "body_type": "kinematic",
+          "y": 3,
+          "width": 10
         }
       }
+    },
+    {
+      "template": "PlayerController"
     }
   ]
 }

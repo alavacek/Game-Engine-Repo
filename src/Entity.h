@@ -16,12 +16,6 @@
 #include "LuaStateManager.h"
 #include "SDLHelper.h"
 
-class Transform;
-class SpriteRenderer;
-class Collider;
-class TriggerCollider;
-
-
 class Entity
 {
 public:
@@ -78,6 +72,10 @@ private:
 	std::vector<std::string> keysOfComponentsToRemove;
 	std::vector<std::string> keysOfNewlyAddedComponents;
 };
+
+
+
+
 
 class Transform
 {
@@ -163,28 +161,6 @@ public:
 	void RenderEntity(Entity* entity, SDL_Rect* cameraRect, int pixelsPerUnit, bool drawCollision);
 
 	static bool IsEntityInView(SDL_Rect* entityDestinationRect);
-};
-
-class Collider
-{
-public:
-	std::unordered_set<Entity*> collidingEntitiesThisFrame;
-	float colliderWidth;
-	float colliderHeight;
-
-	Collider(float width, float height)
-		: colliderWidth(width), colliderHeight(height) {}
-};
-
-class TriggerCollider
-{
-public:
-	std::unordered_set<Entity*> triggeringEntitiesThisFrame;
-	float colliderWidth;
-	float colliderHeight;
-
-	TriggerCollider(float width, float height)
-		: colliderWidth(width), colliderHeight(height) {}
 };
 
 #endif

@@ -83,7 +83,6 @@ void SceneDB::LoadScene(const std::string& sceneName)
 void SceneDB::LoadEntitiesInScene(const std::string& sceneName)
 {
     lua_State* luaState = LuaStateManager::GetLuaState();
-    bool rigidBodyInScene = false;
 
     std::string scenePath = "resources/scenes/" + sceneName + ".scene";
 
@@ -128,20 +127,8 @@ void SceneDB::LoadEntitiesInScene(const std::string& sceneName)
             {
                 luabridge::LuaRef instanceTable = ComponentDB::CreateInstanceTableFromTemplate(component.first, component.second->type, *(component.second->luaRef));
 
-                //luabridge::LuaRef instanceTable = luabridge::newTable(luaState);
-                //instanceTable["key"] = component.first;
-
-                //luabridge::LuaRef parentTable = *(component.second->luaRef);
-
-                //ComponentDB::EstablishInheritance(instanceTable, parentTable);
-
                 std::shared_ptr<luabridge::LuaRef> instanceTablePtr = std::make_shared<luabridge::LuaRef>(instanceTable);
                 componentMap[component.first] = new Component(instanceTablePtr, component.second->type, component.second->hasStart, component.second->hasUpdate, component.second->hasLateUpdate);
-
-                if (component.second->type == "Rigidbody")
-                {
-                    rigidBodyInScene = true;
-                }
             }
         }
 
@@ -163,11 +150,6 @@ void SceneDB::LoadEntitiesInScene(const std::string& sceneName)
                 const rapidjson::Value& component = itr->value;
 
                 componentMap[componentName] = ComponentDB::LoadComponentInstance(component, componentName);
-
-                if (componentMap[componentName]->type == "Rigidbody")
-                {
-                    rigidBodyInScene = true;
-                }
             }
         }
 
@@ -181,12 +163,6 @@ void SceneDB::LoadEntitiesInScene(const std::string& sceneName)
 
         entity->entityID = totalEntities;
         totalEntities++;
-    }
-
-    // if rigidBody in scene and b2WorldInstance doesnt exist, make one
-    if (rigidBodyInScene && b2WorldDB::b2WorldInstance == nullptr)
-    {
-        b2WorldDB::b2WorldInstance = new b2World(b2Vec2(0.0f, 9.8f));
     }
 }
 
@@ -338,12 +314,6 @@ Entity* SceneDB::Instantiate(const std::string& entityTemplateName)
 
         std::shared_ptr<luabridge::LuaRef> instanceTablePtr = std::make_shared<luabridge::LuaRef>(instanceTable);
         componentMap[component.first] = new Component(instanceTablePtr, component.second->type, component.second->hasStart, component.second->hasUpdate, component.second->hasLateUpdate);
-
-        // first rigid body added to scene
-        if (component.second->type == "Rigidbody")
-        {
-            b2WorldDB::b2WorldInstance = new b2World(b2Vec2(0.0f, 9.8f));
-        }
     }
 
     // Create the Entity object

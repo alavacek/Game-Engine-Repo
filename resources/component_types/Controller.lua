@@ -5,6 +5,7 @@ Controller = {
         -- self.count = 0
         self.x = 0
         self.y = 0
+        self.rigidbody = self.entity:GetComponent("Rigidbody")
     end,
 
     OnUpdate = function(self)
@@ -12,22 +13,26 @@ Controller = {
         -- Text.Draw("OutputMessage2", 25, 25, "OpenSans-Regular", 16, 255, 255, 255, 255)
         if (Input.GetKey("w"))
         then
-            self.y = self.y - 1
-        elseif (Input.GetKey("s"))
-        then
-            self.y = self.y + 1
+           Camera.SetPosition(Camera.GetPositionX(), Camera.GetPositionY() + 0.05)      
         elseif (Input.GetKey("a"))
         then
-            self.x = self.x - 1
+             
+        elseif (Input.GetKey("s"))
+        then
+            Camera.SetPosition(Camera.GetPositionX(), Camera.GetPositionY() - 0.05)
         elseif (Input.GetKey("d"))
         then
-            self.x = self.x + 1
+            
+        elseif (Input.GetKey("space"))
+        then
+            self.rigidbody:AddForce(Vector2(0, -100))
         elseif (Input.GetKeyDown("tab"))
         then
-            Entity.Instantiate("PlayerController")   
+            self.rigidbody:SetPosition(Vector2(-3, 0)) 
         end
 
-        Image.Draw("cat", self.x, self.y)
+        
+        Image.DrawEx("cat", self.rigidbody:GetPosition().x, self.rigidbody:GetPosition().y, self.rigidbody:GetRotation(), 1, 1, 0.5, 0.5, 255, 255, 255, 255, 0)
         
           
         -- Image.DrawPixel(400, 400, 255, 255, 255, 120)

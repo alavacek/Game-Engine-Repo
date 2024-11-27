@@ -13,7 +13,6 @@
 #include "SDL2/SDL.h"
 #include "SDLHelper.h"
 
-
 class Renderer
 {
 public:
@@ -46,5 +45,6 @@ private:
 	static int pixelsPerUnit;
 
 };
+
 #endif
 

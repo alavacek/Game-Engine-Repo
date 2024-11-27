@@ -4,6 +4,7 @@ std::unordered_map<std::string, SDL_Texture*> ImageDB::cachedTextures;
 std::deque<ImageRenderRequest> ImageDB::renderRequests;
 std::deque<ImageUIRenderRequest> ImageDB::renderUIRequests;
 std::deque<PixelRenderRequest> ImageDB::renderPixelRequests;
+std::deque<LineRenderRequest> ImageDB::renderLineRequests;
 
 SDL_Texture* ImageDB::LoadImage(const std::string& imageName)
 {
@@ -98,7 +99,6 @@ void ImageDB::RenderUIImages()
 {
     // UI Render Requests
     std::stable_sort(renderUIRequests.begin(), renderUIRequests.end(), CompareUIImageRequests);
-    int pixelsPerUnit = Renderer::GetPixelsPerUnit();
 
     for (auto& request : renderUIRequests)
     {
@@ -142,6 +142,49 @@ void ImageDB::RenderPixels()
     renderPixelRequests.clear();
 }
 
+void ImageDB::RenderLines()
+{
+    float zoomFactor = Renderer::GetZoomFactor();
+    int pixelsPerUnit = Renderer::GetPixelsPerUnit();
+
+    SDL_Renderer* renderer = Renderer::GetRenderer();
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
+    for (auto& request : renderLineRequests)
+    {
+        glm::ivec2 camDimensions = Renderer::GetResolution();
+
+        glm::vec2 finalRenderingPosition1 = (glm::vec2(request.x1, request.y1) - Renderer::GetCameraPosition());
+        glm::vec2 finalRenderingPosition2 = (glm::vec2(request.x2, request.y2) - Renderer::GetCameraPosition());
+
+        int x1 = static_cast<int>(finalRenderingPosition1.x * pixelsPerUnit * zoomFactor + camDimensions.x * 0.5f);
+        int y1 = static_cast<int>(finalRenderingPosition1.y * pixelsPerUnit * zoomFactor + camDimensions.y * 0.5f);
+
+        int x2 = static_cast<int>(finalRenderingPosition2.x * pixelsPerUnit * zoomFactor + camDimensions.x * 0.5f);
+        int y2 = static_cast<int>(finalRenderingPosition2.y * pixelsPerUnit * zoomFactor + camDimensions.y * 0.5f);
+
+
+        // culling
+        if ((x1 < 0 && x2 < 0) ||
+            (y1 < 0 && y2 < 0) ||
+            (x1 > (camDimensions.x / zoomFactor) && x2 > (camDimensions.x / zoomFactor)) ||
+            (y1 > (camDimensions.y / zoomFactor) && y2 > (camDimensions.x / zoomFactor)))
+        {
+            continue;
+        }
+
+        SDL_SetRenderDrawColor(renderer, request.r, request.g, request.b, request.a);
+
+        SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
+
+        // Remove tint / alpha from texture
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+    }
+
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+    renderLineRequests.clear();
+}
+
 void ImageDB::Draw(const std::string& imageName, float x, float y)
 {
     ImageRenderRequest request = ImageRenderRequest(imageName, x, y);
@@ -172,6 +215,13 @@ void ImageDB::DrawPixel(float x, float y, float r, float g, float b, float a)
 {
     PixelRenderRequest request = PixelRenderRequest(x, y, static_cast<int>(r), static_cast<int>(g), static_cast<int>(b), static_cast<int>(a));
     renderPixelRequests.push_back(request);
+}
+
+// BY SCENE COORDINATES!
+void ImageDB::DrawLine(float x1, float y1, float x2, float y2, float r, float g, float b, float a)
+{
+    LineRenderRequest request = LineRenderRequest(x1, y1, x2, y2, static_cast<int>(r), static_cast<int>(g), static_cast<int>(b), static_cast<int>(a));
+    renderLineRequests.push_back(request);
 }
 
 bool ImageDB::CompareImageRequests(const ImageRenderRequest& a, const ImageRenderRequest& b)

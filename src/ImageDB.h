@@ -95,6 +95,30 @@ struct PixelRenderRequest
 	int a;
 };
 
+struct LineRenderRequest
+{
+	LineRenderRequest(float x1In, float y1In, float x2In, float y2In, int rIn = 255, int gIn = 255, int bIn = 255, int aIn = 255)
+	{
+		x1 = x1In;
+		y1 = y1In;
+		x2 = x2In;
+		y2 = y2In;
+		r = rIn;
+		g = gIn;
+		b = bIn;
+		a = aIn;
+	}
+
+	float x1;
+	float y1;
+	float x2;
+	float y2;
+	int r;
+	int g;
+	int b;
+	int a;
+};
+
 class ImageDB
 {
 public:
@@ -102,6 +126,7 @@ public:
 	static void RenderImages();
 	static void RenderUIImages();
 	static void RenderPixels();
+	static void RenderLines();
 
 	static void Draw(const std::string& imageName, float x, float y);
 	static void DrawEx(const std::string& imageName, float x, float y,
@@ -111,6 +136,7 @@ public:
 	static void DrawUIEx(const std::string& imageName, float x, float y, float r, float g, float b, float a, float sortingOrder);
 
 	static void DrawPixel(float x, float y, float r, float g, float b, float a);
+	static void DrawLine(float x1, float y1, float x2, float y2, float r, float g, float b, float a);
 	
 private:
 	static bool CompareImageRequests(const ImageRenderRequest& a, const ImageRenderRequest& b);
@@ -121,5 +147,6 @@ private:
 	static std::deque<ImageRenderRequest> renderRequests;
 	static std::deque<ImageUIRenderRequest> renderUIRequests;
 	static std::deque<PixelRenderRequest> renderPixelRequests;
+	static std::deque<LineRenderRequest> renderLineRequests;
 };
 #endif
