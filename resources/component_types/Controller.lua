@@ -30,28 +30,40 @@ Controller = {
         then
             self.rigidbody:SetPosition(Vector2(-3, 0)) 
         end
-
         
+        local hits = Physics.RaycastAll(self.rigidbody:GetPosition(), Vector2(0, 1), 5)
+
+        if hits ~= nil and #hits > 0 then
+            for i, hit in ipairs(hits) do
+                if hit.is_trigger then
+                    print("Hit trigger: " .. hit.entity:GetName() .. 
+                        " at (" .. hit.point.x .. ", " .. hit.point.y .. ")")
+                else
+                    print("Hit collider: " .. hit.entity:GetName() .. 
+                    " at (" .. hit.point.x .. ", " .. hit.point.y .. ")")
+                end
+            end
+        else
+            print("No actor hit")
+        end
+
         Image.DrawEx("cat", self.rigidbody:GetPosition().x, self.rigidbody:GetPosition().y, self.rigidbody:GetRotation(), 1, 1, 0.5, 0.5, 255, 255, 255, 255, 0)
         
-          
-        -- Image.DrawPixel(400, 400, 255, 255, 255, 120)
-        -- Image.DrawPixel(400, 405, 255, 0, 0, 255)
     end,
 
     OnCollisionEnter = function(self, collision)
-        print("Collision Enter with " .. collision.other:GetName())
+        --print("Collision Enter with " .. collision.other:GetName())
     end, 
 
     OnCollisionExit = function(self, collision)
-        print("Collision Exit with " .. collision.other:GetName())
+        --print("Collision Exit with " .. collision.other:GetName())
     end,
 
     OnTriggerEnter = function(self, collision)
-        print("Trigger Enter with " .. collision.other:GetName())
+        --print("Trigger Enter with " .. collision.other:GetName())
     end, 
 
     OnTriggerExit = function(self, collision)
-        print("Trigger Exit with " .. collision.other:GetName())
+        --print("Trigger Exit with " .. collision.other:GetName())
     end
 }

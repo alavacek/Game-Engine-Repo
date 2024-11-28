@@ -6,6 +6,8 @@
         "first_component": {
           "type": "Rigidbody",
           "body_type": "kinematic",
+          "has_trigger": true,
+          "has_collider": true,
           "y": 3,
           "width": 10,
           "trigger_height": 1
@@ -14,6 +16,18 @@
     },
     {
       "template": "PlayerController"
+    },
+    {
+      "name": "lower_ground",
+      "components": {
+        "first_component": {
+          "type": "Rigidbody",
+          "body_type": "kinematic",
+          "y": 5,
+          "width": 10,
+          "trigger_height": 1
+        }
+      }
     }
   ]
 }

@@ -213,6 +213,24 @@ void Engine::LuaClassAndNamespaceSetup()
 		.addProperty("relative_velocity", &Collision2D::relativeVelocity)
 		.addProperty("normal", &Collision2D::normal)
 		.endClass();
+
+	// Collision Class inside of Lua
+	luabridge::getGlobalNamespace(luaState)
+		.beginClass<HitResult>("HitResult")
+		.addProperty("entity", &HitResult::entity)
+		.addProperty("point", &HitResult::point)
+		.addProperty("normal", &HitResult::normal)
+		.addProperty("is_trigger", &HitResult::isTrigger)
+		.endClass();
+
+	luabridge::getGlobalNamespace(luaState)
+		.beginNamespace("Physics")
+		.addFunction("Raycast", &b2WorldDB::Raycast)
+		.addFunction("RaycastAll", &b2WorldDB::RaycastAll)
+		.endNamespace();
+
+
+
 }
 
 

@@ -471,11 +471,24 @@ void ContactListener::BeginContact(b2Contact* contact)
 {
 	b2Fixture* fixtureA = contact->GetFixtureA();
 	Rigidbody2DLuaRef* rbA = reinterpret_cast<Rigidbody2DLuaRef*>(fixtureA->GetUserData().pointer);
+
+	// phantom collider
+	if (!rbA)
+	{
+		return;
+	}
+
 	Entity* entityA = rbA->owningEntity;
 
 	b2Fixture* fixtureB = contact->GetFixtureB();
 	Rigidbody2DLuaRef* rbB = reinterpret_cast<Rigidbody2DLuaRef*>(fixtureB->GetUserData().pointer);
 	Entity* entityB = rbB->owningEntity;
+
+	// phantom collider
+	if (!rbB)
+	{
+		return;
+	}
 
 	b2Vec2 relativeVelocityA = fixtureA->GetBody()->GetLinearVelocity() - fixtureB->GetBody()->GetLinearVelocity();
 	b2Vec2 relativeVelocityB =  fixtureB->GetBody()->GetLinearVelocity() - fixtureA->GetBody()->GetLinearVelocity();
@@ -511,9 +524,21 @@ void ContactListener::EndContact(b2Contact* contact)
 	Rigidbody2DLuaRef* rbA = reinterpret_cast<Rigidbody2DLuaRef*>(fixtureA->GetUserData().pointer);
 	Entity* entityA = rbA->owningEntity;
 
+	// phantom collider
+	if (!rbA)
+	{
+		return;
+	}
+
 	b2Fixture* fixtureB = contact->GetFixtureB();
 	Rigidbody2DLuaRef* rbB = reinterpret_cast<Rigidbody2DLuaRef*>(fixtureB->GetUserData().pointer);
 	Entity* entityB = rbB->owningEntity;
+
+	// phantom collider
+	if (!rbB)
+	{
+		return;
+	}
 
 	b2Vec2 invalid = b2Vec2(-999.0f, -999.0f);
 

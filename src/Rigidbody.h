@@ -7,7 +7,6 @@
 #include "Component.h"
 #include "ErrorHandling.h"
 
-#define DRAW_COLLISIONS
 
 class ContactListener;
 struct Collision2D;
