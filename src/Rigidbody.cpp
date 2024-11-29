@@ -164,6 +164,8 @@ void Rigidbody2DLuaRef::Start()
 			}
 		}
 
+		SetVelocity(startingVelocity);
+		SetAngularVelocity(startingAngularVelocity);
 	}
 	
 }
@@ -231,7 +233,14 @@ void Rigidbody2DLuaRef::LateUpdate()
 // destroying entity or removing component
 void Rigidbody2DLuaRef::OnDestroy()
 {
-	b2WorldDB::b2WorldInstance->DestroyBody(b2Body);
+	if (b2Body)
+	{
+		b2WorldDB::b2WorldInstance->DestroyBody(b2Body);
+
+		// cant delete but is this leaking memory?
+		b2Body = nullptr;
+
+	}
 }
 
 
@@ -393,67 +402,152 @@ void Rigidbody2DLuaRef::OnTriggerExit(Collision2D collision)
 
 void Rigidbody2DLuaRef::AddForce(b2Vec2 force)
 {
-	b2Body->ApplyForceToCenter(force, true);
+	if (b2Body)
+	{
+		b2Body->ApplyForceToCenter(force, true);
+	}
+	else
+	{
+		ErrorHandling::ReportString("Attempting to add force to uninstantiated rigidbody");
+	}
+
 }
 
 void Rigidbody2DLuaRef::SetVelocity(b2Vec2 velocity)
 {
-	b2Body->SetLinearVelocity(velocity);
+	if (b2Body)
+	{
+		b2Body->SetLinearVelocity(velocity);
+	}
+	else
+	{
+		startingVelocity = velocity;
+	}
+
 }
 
 void Rigidbody2DLuaRef::SetPosition(b2Vec2 position)
 {
-	b2Body->SetTransform(position, b2Body->GetAngle());
+	if (b2Body)
+	{
+		b2Body->SetTransform(position, b2Body->GetAngle());
+	}
+
+	x = position.x;
+	y = position.y;
+
 }
 
 void Rigidbody2DLuaRef::SetRotation(float degreesClockwise)
 {
-	b2Body->SetTransform(b2Body->GetPosition(), degreesClockwise * (b2_pi / 180.0f));
+	if (b2Body)
+	{
+		b2Body->SetTransform(b2Body->GetPosition(), degreesClockwise * (b2_pi / 180.0f));
+	}
+
+	rotation = degreesClockwise;
 }
 
 void Rigidbody2DLuaRef::SetAngularVelocity(float degreesClockwise)
 {
-	b2Body->SetAngularVelocity(degreesClockwise * (b2_pi / 180.0f));
+	if (b2Body)
+	{
+		b2Body->SetAngularVelocity(degreesClockwise * (b2_pi / 180.0f));
+	}
+	else
+	{
+		startingAngularVelocity = degreesClockwise;
+	}
+
 }
 
 void Rigidbody2DLuaRef::SetGravityScale(float scale)
 {
-	b2Body->SetGravityScale(scale);
+	if (b2Body)
+	{
+		b2Body->SetGravityScale(scale);
+	}
+
+	gravityScale = scale;
 }
 
 void Rigidbody2DLuaRef::SetUpDirection(b2Vec2 direction)
 {
 	direction.Normalize();
 
-	// bc we have -1 as y's "up", we gotta make y negative here
-	b2Body->SetTransform(b2Body->GetPosition(), glm::atan(direction.x, -1 * direction.y));
+	if (b2Body)
+	{
+		// bc we have -1 as y's "up", we gotta make y negative here
+		b2Body->SetTransform(b2Body->GetPosition(), glm::atan(direction.x, -1 * direction.y));
+	}
+
+	rotation = glm::atan(direction.x, -1 * direction.y) * (180.0f / b2_pi);
+	
 }
 
 void Rigidbody2DLuaRef::SetRightDirection(b2Vec2 direction)
 {
 	direction.Normalize();
 
-	b2Body->SetTransform(b2Body->GetPosition(), glm::atan(direction.x, -1 * direction.y) - (b2_pi / 2.0f));
+	if (b2Body)
+	{
+		b2Body->SetTransform(b2Body->GetPosition(), glm::atan(direction.x, -1 * direction.y) - (b2_pi / 2.0f));
+	}
+	
+	rotation = (glm::atan(direction.x, -1 * direction.y) - (b2_pi / 2.0f)) * (180.0f / b2_pi);
+
 }
 
 b2Vec2 Rigidbody2DLuaRef::GetVelocity()
 {
-	return b2Body->GetLinearVelocity();
+	if (b2Body)
+	{
+		return b2Body->GetLinearVelocity();
+	}
+	else
+	{
+		return startingVelocity;
+	}
+
 }
 
 float Rigidbody2DLuaRef::GetAngularVelocity()
 {
-	return b2Body->GetAngularVelocity();
+	if (b2Body)
+	{
+		return b2Body->GetAngularVelocity();
+	}
+	else
+	{
+		return startingAngularVelocity;
+	}
 }
 
 float Rigidbody2DLuaRef::GetGravityScale()
 {
-	return b2Body->GetGravityScale();
+	if (b2Body)
+	{
+		return b2Body->GetGravityScale();
+	}
+	else
+	{
+		return gravityScale;
+	}
+
 }
 
 b2Vec2 Rigidbody2DLuaRef::GetUpDirection()
 {
-	float angle = b2Body->GetAngle();
+	float angle;
+	if (b2Body)
+	{
+		angle = b2Body->GetAngle();
+	}
+	else
+	{
+		angle = rotation * (b2_pi / 180.0f);
+	}
+
 	b2Vec2 result = b2Vec2(glm::sin(angle), -1 *  glm::cos(angle));
 	result.Normalize();
 	return result;
@@ -461,7 +555,16 @@ b2Vec2 Rigidbody2DLuaRef::GetUpDirection()
 
 b2Vec2 Rigidbody2DLuaRef::GetRightDirection()
 {
-	float angle = b2Body->GetAngle();
+	float angle;
+	if (b2Body)
+	{
+		angle = b2Body->GetAngle();
+	}
+	else
+	{
+		angle = rotation * (b2_pi / 180.0f);
+	}
+
 	b2Vec2 result = b2Vec2(glm::cos(angle), glm::sin(angle));
 	result.Normalize();
 	return result;

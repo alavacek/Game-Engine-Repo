@@ -82,6 +82,9 @@ public:
 
 	std::string bodyType = "dynamic";
 
+	b2Vec2 startingVelocity = b2Vec2(0,0);
+	float startingAngularVelocity = 0.0f;
+
 	float gravityScale = 1.0f;
 	float density = 1.0f;
 	float angularFriction = 0.3f;

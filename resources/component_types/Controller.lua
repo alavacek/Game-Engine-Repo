@@ -26,13 +26,18 @@ Controller = {
         elseif (Input.GetKey("space"))
         then
             --self.rigidbody:AddForce(Vector2(0, -100))  
-            local RBs = self.entity:GetComponents("Rigidbody")   
+            -- local RBs = self.entity:GetComponents("Rigidbody")   
+            self.entity:RemoveComponent("Rigidbody")
         elseif (Input.GetKeyDown("tab"))
         then
             --self.rigidbody:SetPosition(Vector2(-3, 0)) 
             self.entity:AddComponent("Rigidbody")
 
-            local RBs = self.entity:GetComponents("Rigidbody")   
+            local test = self.entity:GetComponent("Rigidbody"):GetUpDirection()  
+            self.entity:RemoveComponent("Rigidbody")
+
+            Entity.Destroy(self.entity)
+
         end
 
         Image.DrawEx("cat", self.rigidbody:GetPosition().x, self.rigidbody:GetPosition().y, self.rigidbody:GetRotation(), 1, 1, 0.5, 0.5, 255, 255, 255, 255, 0)

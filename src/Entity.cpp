@@ -196,7 +196,7 @@ void Entity::RemoveComponent(const std::string& typeName)
 	// Set to nil by default
 	luabridge::LuaRef componentLuaRef = luabridge::LuaRef(LuaStateManager::GetLuaState());
 
-	for (const auto& componentKey : componentsKeysAlphabeticalOrder)
+	for (const std::string& componentKey : componentsKeysAlphabeticalOrder)
 	{
 		Component* component = components[componentKey];
 		// found component of type, no need to run logic if already planned to be removed
@@ -214,12 +214,18 @@ void Entity::RemoveComponent(const std::string& typeName)
 				component->wasRemoved = true;
 
 				keysOfComponentsToRemove.push_back(componentKey);
+
+				// destroy right here to stop simulating
+				if (component->type == "Rigidbody")
+				{
+					component->OnDestroy();
+				}
 			}
 		}
 	}
 
 	// incase added to keysOfNewlyAddComponents, should now remove
-	for (const auto& componentKey : keysOfNewlyAddedComponents)
+	for (const std::string& componentKey : keysOfNewlyAddedComponents)
 	{
 		Component* component = components[componentKey];
 		// found component of type, no need to run logic if already planned to be removed
@@ -290,7 +296,7 @@ void Entity::PreLifeCycleFunctionComponentCleanUp()
 		std::sort(keysAddedComponents.begin(), keysAddedComponents.end());
 
 		// Add Components
-		for (const auto& keyOfComponent : keysAddedComponents)
+		for (const std::string& keyOfComponent : keysAddedComponents)
 		{
 			// only if added component hasnt already been removed
 			if (components.find(keyOfComponent) != components.end())
@@ -316,7 +322,7 @@ void Entity::PreLifeCycleFunctionComponentCleanUp()
 void Entity::PostLifeCycleFunctionComponentCleanUp()
 {
 	// Remove components
-	for (const auto& keyOfComponent : keysOfComponentsToRemove)
+	for (const std::string& keyOfComponent : keysOfComponentsToRemove)
 	{
 		Component* componentToRemove = components[keyOfComponent];
 
