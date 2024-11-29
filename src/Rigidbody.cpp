@@ -228,6 +228,13 @@ void Rigidbody2DLuaRef::LateUpdate()
 #endif // DRAW_COLLISIONS
 }
 
+// destroying entity or removing component
+void Rigidbody2DLuaRef::OnDestroy()
+{
+	b2WorldDB::b2WorldInstance->DestroyBody(b2Body);
+}
+
+
 void Rigidbody2DLuaRef::OnCollisionEnter(Collision2D collision)
 {
 	for (const auto& componentKey : owningEntity->componentsKeysAlphabeticalOrder)

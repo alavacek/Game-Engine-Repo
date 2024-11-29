@@ -74,6 +74,7 @@ void ComponentDB::LoadComponents()
         .addFunction("OnStart", &Rigidbody2DLuaRef::Start)
         .addFunction("OnUpdate", &Rigidbody2DLuaRef::Update)
         .addFunction("OnLateUpdate", &Rigidbody2DLuaRef::LateUpdate)
+        .addFunction("OnDestroy", &Rigidbody2DLuaRef::OnDestroy)
         .addProperty("entity", &Rigidbody2DLuaRef::owningEntity)
         .addProperty("enabled", &Rigidbody2DLuaRef::isEnabled)
         // Rigidbody Properties

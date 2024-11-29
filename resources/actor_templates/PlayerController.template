@@ -6,7 +6,7 @@
     },
     "RB": {
       "type": "Rigidbody",
-      "body_type": "dynamic",
+      "body_type": "kinematic",
       "y": -3,
       "trigger_height": 1.5
     }

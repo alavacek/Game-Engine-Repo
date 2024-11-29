@@ -84,3 +84,25 @@ void Component::LateUpdate()
 		}
 	}
 }
+
+void Component::OnDestroy()
+{
+	std::shared_ptr<luabridge::LuaRef> luaRefPtr = luaRef; // Get the LuaRef pointer
+	luabridge::LuaRef luaRef = *luaRefPtr;
+
+	if (luaRefPtr && (luaRefPtr->isTable() || luaRefPtr->isUserdata()))
+	{
+		try
+		{
+			luabridge::LuaRef onDestroyFunc = (luaRef)["OnDestroy"];
+			if (onDestroyFunc.isFunction())
+			{
+				onDestroyFunc(luaRef);
+			}
+		}
+		catch (const luabridge::LuaException& e)
+		{
+			ErrorHandling::ReportError(owningEntityName, e);
+		}
+	}
+}

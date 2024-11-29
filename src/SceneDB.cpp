@@ -37,6 +37,8 @@ void SceneDB::LoadPendingScene()
     {
         if (entities[i]->destroyOnLoad)
         {
+            entities[i]->OnDestroy();
+
             delete entities[i];
         }
         else
@@ -44,6 +46,8 @@ void SceneDB::LoadPendingScene()
             dontDestroy.push_back(entities[i]);
         }
     }
+
+    // TODO: should I destroy b2 world? what if we load up menu scene with no simulations?
 
     entities.clear();
     entitiesToInstantiate.clear(); // NOTE: if a do not destroy entity is instantiate and scene is reloaded same frame, itll be destroyed
@@ -214,22 +218,33 @@ void SceneDB::LateUpdate()
     // handle clean up for entities we want to destroy
     for (auto& entity : entitiesToDestroy)
     {
-        int indexOfEntityInList = -1;
-        // remove from entities vector
-        for (int i = 0; i < entities.size(); i++)
+        // Incase entity was somehow already destroy
+        if (entity)
         {
-            if (entity == entities[i])
+            int indexOfEntityInList = -1;
+            // remove from entities vector
+            for (int i = 0; i < entities.size(); i++)
             {
-                indexOfEntityInList = i;
+                if (entity == entities[i])
+                {
+                    indexOfEntityInList = i;
+                }
             }
-        }
 
-        if (indexOfEntityInList != -1)
+            if (indexOfEntityInList != -1)
+            {
+                entities.erase(entities.begin() + indexOfEntityInList);
+            }
+
+            entity->OnDestroy();
+
+            delete(entity);
+        }
+        else
         {
-            entities.erase(entities.begin() + indexOfEntityInList);
+            ErrorHandling::ReportString("Attempted to destroy entity that was already destroyed");
         }
-
-        delete(entity);
+        
     }
 
     entitiesToDestroy.clear();

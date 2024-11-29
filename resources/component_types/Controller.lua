@@ -25,26 +25,14 @@ Controller = {
             self.rigidbody:AddForce(Vector2(10, 0))
         elseif (Input.GetKey("space"))
         then
-            self.rigidbody:AddForce(Vector2(0, -100))
+            --self.rigidbody:AddForce(Vector2(0, -100))  
+            local RBs = self.entity:GetComponents("Rigidbody")   
         elseif (Input.GetKeyDown("tab"))
         then
-            self.rigidbody:SetPosition(Vector2(-3, 0)) 
-        end
-        
-        local hits = Physics.RaycastAll(self.rigidbody:GetPosition(), Vector2(0, 1), 5)
+            --self.rigidbody:SetPosition(Vector2(-3, 0)) 
+            self.entity:AddComponent("Rigidbody")
 
-        if hits ~= nil and #hits > 0 then
-            for i, hit in ipairs(hits) do
-                if hit.is_trigger then
-                    print("Hit trigger: " .. hit.entity:GetName() .. 
-                        " at (" .. hit.point.x .. ", " .. hit.point.y .. ")")
-                else
-                    print("Hit collider: " .. hit.entity:GetName() .. 
-                    " at (" .. hit.point.x .. ", " .. hit.point.y .. ")")
-                end
-            end
-        else
-            print("No actor hit")
+            local RBs = self.entity:GetComponents("Rigidbody")   
         end
 
         Image.DrawEx("cat", self.rigidbody:GetPosition().x, self.rigidbody:GetPosition().y, self.rigidbody:GetRotation(), 1, 1, 0.5, 0.5, 255, 255, 255, 255, 0)
@@ -65,5 +53,9 @@ Controller = {
 
     OnTriggerExit = function(self, collision)
         --print("Trigger Exit with " .. collision.other:GetName())
+    end,
+
+    OnDestroy = function(self)
+        print("Destroy logic")
     end
 }

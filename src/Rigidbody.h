@@ -66,6 +66,7 @@ public:
 	virtual void Start() override;
 	virtual void Update() override;
 	virtual void LateUpdate() override;
+	virtual void OnDestroy() override;
 
 	void OnCollisionEnter(Collision2D collision);
 	void OnCollisionExit(Collision2D collision);

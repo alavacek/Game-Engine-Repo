@@ -53,6 +53,7 @@ public:
 	void Start();
 	void Update();
 	void LateUpdate();
+	void OnDestroy();
 
 	std::string GetName() const { return entityName; }
 	int GetID() const { return entityID;  }

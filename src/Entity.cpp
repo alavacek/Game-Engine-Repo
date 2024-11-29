@@ -60,6 +60,16 @@ void Entity::LateUpdate()
 	PostLifeCycleFunctionComponentCleanUp();
 }
 
+void Entity::OnDestroy()
+{
+	for (const auto& componentKey : componentsKeysAlphabeticalOrder)
+	{
+		Component* component = components[componentKey];
+
+		component->OnDestroy();
+	}
+}
+
 luabridge::LuaRef Entity::GetComponentByKey(const std::string& key)
 {
 	if (components.find(key) != components.end() && !components.find(key)->second->wasRemoved)
@@ -74,9 +84,33 @@ luabridge::LuaRef Entity::GetComponentByKey(const std::string& key)
 
 luabridge::LuaRef Entity::GetComponent(const std::string& typeName)
 {
-	for (const auto& componentKey : componentsKeysAlphabeticalOrder)
+	std::vector<std::string>::iterator existingComponentsIt = componentsKeysAlphabeticalOrder.begin();
+	std::vector<std::string>::iterator newlyAddedComponentsIt = keysOfNewlyAddedComponents.begin();
+	while (existingComponentsIt != componentsKeysAlphabeticalOrder.end() || newlyAddedComponentsIt != keysOfNewlyAddedComponents.end())
 	{
-		Component* component = components[componentKey];
+		Component* component;
+		if (existingComponentsIt == componentsKeysAlphabeticalOrder.end())
+		{
+			component = components[*newlyAddedComponentsIt];
+			newlyAddedComponentsIt++;
+		}
+		else if (newlyAddedComponentsIt == keysOfNewlyAddedComponents.end())
+		{
+			component = components[*existingComponentsIt];
+			existingComponentsIt++;
+		}
+		else if (*existingComponentsIt <= *newlyAddedComponentsIt)
+		{
+			component = components[*existingComponentsIt];
+			existingComponentsIt++;
+		}
+		// (*existingComponentsIt < *newlyAddedComponentsIt)
+		else
+		{
+			component = components[*newlyAddedComponentsIt];
+			newlyAddedComponentsIt++;
+		}
+
 		if (component->type == typeName && !component->wasRemoved)
 		{
 			return *(component->luaRef);
@@ -91,9 +125,33 @@ luabridge::LuaRef Entity::GetComponents(const std::string& typeName)
 	luabridge::LuaRef componentsTable = luabridge::newTable(LuaStateManager::GetLuaState());
 	int index = 1;
 
-	for (const auto& componentKey : componentsKeysAlphabeticalOrder)
+	std::vector<std::string>::iterator existingComponentsIt = componentsKeysAlphabeticalOrder.begin();
+	std::vector<std::string>::iterator newlyAddedComponentsIt = keysOfNewlyAddedComponents.begin();
+	while (existingComponentsIt != componentsKeysAlphabeticalOrder.end() || newlyAddedComponentsIt != keysOfNewlyAddedComponents.end())
 	{
-		Component* component = components[componentKey];
+		Component* component;
+		if (existingComponentsIt == componentsKeysAlphabeticalOrder.end())
+		{
+			component = components[*newlyAddedComponentsIt];
+			newlyAddedComponentsIt++;
+		}
+		else if (newlyAddedComponentsIt == keysOfNewlyAddedComponents.end())
+		{
+			component = components[*existingComponentsIt];
+			existingComponentsIt++;
+		}
+		else if (*existingComponentsIt <= *newlyAddedComponentsIt)
+		{
+			component = components[*existingComponentsIt];
+			existingComponentsIt++;
+		}
+		// (*existingComponentsIt < *newlyAddedComponentsIt)
+		else
+		{
+			component = components[*newlyAddedComponentsIt];
+			newlyAddedComponentsIt++;
+		}
+
 		if (component->type == typeName && !component->wasRemoved)
 		{
 			componentsTable[index] = (*(component->luaRef));
@@ -109,6 +167,7 @@ luabridge::LuaRef Entity::AddComponent(const std::string& typeName)
 	if (ComponentDB::components.find(typeName) != ComponentDB::components.end())
 	{
 		std::string componentKey = "r" + std::to_string(ComponentDB::numRuntimeAddedComponents);
+		ComponentDB::numRuntimeAddedComponents++;
 
 		luabridge::LuaRef instanceTable = ComponentDB::CreateInstanceTable(componentKey, typeName);
 		Component* parentComponent = ComponentDB::components[typeName];
@@ -119,6 +178,9 @@ luabridge::LuaRef Entity::AddComponent(const std::string& typeName)
 		 // add ref for components table
 		 components[componentKey] = addedComponent;
 		 keysOfNewlyAddedComponents.push_back(componentKey);
+
+		 // Can get expensive
+		 std::sort(keysOfNewlyAddedComponents.begin(), keysOfNewlyAddedComponents.end());
 
 		 return instanceTable;
 	}
@@ -258,7 +320,7 @@ void Entity::PostLifeCycleFunctionComponentCleanUp()
 	{
 		Component* componentToRemove = components[keyOfComponent];
 
-		if (components[keyOfComponent]->wasInstantiated)
+		if (componentToRemove->wasInstantiated)
 		{
 			// remove from alphabetical order vector
 			int indexToRemove = IndexOfComponentInAlphabeticalVector(keyOfComponent);
@@ -269,6 +331,8 @@ void Entity::PostLifeCycleFunctionComponentCleanUp()
 				std::cout << "ERROR: Trying to remove a key that does not exist!";
 				exit(0);
 			}
+
+			componentToRemove->OnDestroy();
 
 			componentsKeysAlphabeticalOrder.erase(componentsKeysAlphabeticalOrder.begin() + indexToRemove);
 		}

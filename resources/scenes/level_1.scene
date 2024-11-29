@@ -28,6 +28,18 @@
           "trigger_height": 1
         }
       }
+    },
+    {
+      "name": "lower_ground2",
+      "components": {
+        "first_component": {
+          "type": "Rigidbody",
+          "body_type": "kinematic",
+          "y": 4,
+          "width": 10,
+          "trigger_height": 1
+        }
+      }
     }
   ]
 }
