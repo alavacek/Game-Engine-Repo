@@ -12,6 +12,7 @@
 #include "ComponentDB.h"
 #include "EngineUtils.h"
 #include "Entity.h"
+#include "Event.h"
 #include "glm/glm.hpp"
 #include "Template.h"
 #include "TemplateDB.h"

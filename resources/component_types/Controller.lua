@@ -6,6 +6,7 @@ Controller = {
         self.x = 0
         self.y = 0
         self.rigidbody = self.entity:GetComponent("Rigidbody")
+
     end,
 
     OnUpdate = function(self)
@@ -25,19 +26,10 @@ Controller = {
             self.rigidbody:AddForce(Vector2(10, 0))
         elseif (Input.GetKey("space"))
         then
-            --self.rigidbody:AddForce(Vector2(0, -100))  
-            -- local RBs = self.entity:GetComponents("Rigidbody")   
-            self.entity:RemoveComponent("Rigidbody")
-        elseif (Input.GetKeyDown("tab"))
+            self.rigidbody:AddForce(Vector2(0, -100))  
+        elseif (Input.GetKeyDown("tab"))    
         then
-            --self.rigidbody:SetPosition(Vector2(-3, 0)) 
-            self.entity:AddComponent("Rigidbody")
-
-            local test = self.entity:GetComponent("Rigidbody"):GetUpDirection()  
-            self.entity:RemoveComponent("Rigidbody")
-
-            Entity.Destroy(self.entity)
-
+            Event.Publish("OutMessage", self)
         end
 
         Image.DrawEx("cat", self.rigidbody:GetPosition().x, self.rigidbody:GetPosition().y, self.rigidbody:GetRotation(), 1, 1, 0.5, 0.5, 255, 255, 255, 255, 0)
@@ -62,5 +54,9 @@ Controller = {
 
     OnDestroy = function(self)
         print("Destroy logic")
+    end,
+
+    SomeFunction = function(self)
+        print("Awesome")
     end
 }

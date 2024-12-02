@@ -17,8 +17,17 @@ public:
 		// Normalize file paths across platforms
 		std::replace(errorMessage.begin(), errorMessage.end(), '\\', '/');
 
-		// Display (with color codes)
-		std::cout << "\033[31m" << entityName << " : " << errorMessage << "\033[0m" << "\n";
+		if (entityName != "")
+		{
+			// Display (with color codes)
+			std::cout << "\033[31m" << entityName << " : " << errorMessage << "\033[0m" << "\n";
+		}
+		else
+		{
+			// Display (with color codes)
+			std::cout << "\033[31m" << errorMessage << "\033[0m" << "\n";
+		}
+
 	}
 
 	static void ReportString(const std::string& error)

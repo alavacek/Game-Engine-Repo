@@ -9,6 +9,9 @@
       "body_type": "dynamic",
       "y": -3,
       "trigger_height": 1.5
+    },
+    "Out Message": {
+      "type": "OutputMessage"
     }
   }
 }

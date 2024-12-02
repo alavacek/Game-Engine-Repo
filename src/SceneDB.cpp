@@ -249,6 +249,9 @@ void SceneDB::LateUpdate()
 
     entitiesToDestroy.clear();
 
+    // Handle Events that were published this frame
+    Event::UpdateSubscriptions();
+
     // step through physics if b2WorldInstance exists
     if (b2WorldDB::b2WorldInstance != nullptr)
     {

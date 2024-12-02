@@ -229,7 +229,12 @@ void Engine::LuaClassAndNamespaceSetup()
 		.addFunction("RaycastAll", &b2WorldDB::RaycastAll)
 		.endNamespace();
 
-
+	luabridge::getGlobalNamespace(luaState)
+		.beginNamespace("Event")
+		.addFunction("Publish", &Event::Publish)
+		.addFunction("Unsubscribe", &Event::Unsubscribe)
+		.addFunction("Subscribe", &Event::Subscribe)
+		.endNamespace();
 
 }
 
@@ -263,7 +268,8 @@ void Engine::Update()
 
 		// Late Update
 		SceneDB::LateUpdate();
-		Input::LateUpdate();;
+
+		Input::LateUpdate();
 	}
 }
 
