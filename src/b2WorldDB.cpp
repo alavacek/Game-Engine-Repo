@@ -64,9 +64,6 @@ luabridge::LuaRef b2WorldDB::RaycastAll(b2Vec2 pos, b2Vec2 dir, float dist)
 
     return entityTable;
 
-
-	//HitResult hit;
-
 	return luabridge::LuaRef(LuaStateManager::GetLuaState());
 }
 
