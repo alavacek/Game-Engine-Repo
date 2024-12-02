@@ -72,7 +72,8 @@ luabridge::LuaRef b2WorldDB::RaycastAll(b2Vec2 pos, b2Vec2 dir, float dist)
 
 float RayCastCallback::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float fraction)
 {
-    if (fixture == nullptr)
+    // no fixture or phantom fixture
+    if (fixture == nullptr || !(reinterpret_cast<Rigidbody2DLuaRef*>(fixture->GetUserData().pointer)))
     {
         return -1;
     }

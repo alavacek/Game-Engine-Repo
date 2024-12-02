@@ -1,5 +1,8 @@
 #include "Rigidbody.h"
 
+#define COLLIDER_CATEGORY 0x0001  // Category 1
+#define TRIGGER_CATEGORY  0x0002  // Category 2
+
 void Rigidbody2DLuaRef::Start()
 {
 	// first rigid body added to scene
@@ -56,6 +59,8 @@ void Rigidbody2DLuaRef::Start()
 	}
 	else
 	{
+		// TODO: unity makes it so on trigger enter is also called when a collider collides w a trigger
+		// Do I want this functionality? Rn filters say collider w colliders, triggers w triggers
 		if (hasCollider)
 		{
 			if (colliderType == "box")
@@ -69,6 +74,9 @@ void Rigidbody2DLuaRef::Start()
 				fixture.friction = colliderFriction;
 				fixture.restitution = colliderBounciness;
 				fixture.isSensor = false;
+
+				fixture.filter.categoryBits = COLLIDER_CATEGORY;
+				fixture.filter.maskBits = COLLIDER_CATEGORY;
 
 				// Reference to owning Entity, used in collision detection me thinks
 				fixture.userData.pointer = reinterpret_cast<uintptr_t>(this);
@@ -86,6 +94,9 @@ void Rigidbody2DLuaRef::Start()
 				fixture.friction = colliderFriction;
 				fixture.restitution = colliderBounciness;
 				fixture.isSensor = false;
+
+				fixture.filter.categoryBits = COLLIDER_CATEGORY;
+				fixture.filter.maskBits = COLLIDER_CATEGORY;
 
 				// Reference to owning Entity, used in collision detection me thinks
 				fixture.userData.pointer = reinterpret_cast<uintptr_t>(this);
@@ -106,6 +117,9 @@ void Rigidbody2DLuaRef::Start()
 				fixture.restitution = colliderBounciness;
 				fixture.isSensor = false;
 
+				fixture.filter.categoryBits = COLLIDER_CATEGORY;
+				fixture.filter.maskBits = COLLIDER_CATEGORY;
+
 				// Reference to owning Entity, used in collision detection me thinks
 				fixture.userData.pointer = reinterpret_cast<uintptr_t>(this);
 
@@ -125,6 +139,9 @@ void Rigidbody2DLuaRef::Start()
 				fixture.density = density;
 				fixture.isSensor = true;
 
+				fixture.filter.categoryBits = TRIGGER_CATEGORY;
+				fixture.filter.maskBits = TRIGGER_CATEGORY;
+
 				// Reference to owning Entity, used in collision detection me thinks
 				fixture.userData.pointer = reinterpret_cast<uintptr_t>(this);
 
@@ -139,6 +156,9 @@ void Rigidbody2DLuaRef::Start()
 				fixture.shape = &myShape;
 				fixture.density = density;
 				fixture.isSensor = true;
+
+				fixture.filter.categoryBits = TRIGGER_CATEGORY;
+				fixture.filter.maskBits = TRIGGER_CATEGORY;
 
 				// Reference to owning Entity, used in collision detection me thinks
 				fixture.userData.pointer = reinterpret_cast<uintptr_t>(this);
@@ -156,6 +176,9 @@ void Rigidbody2DLuaRef::Start()
 				fixture.shape = &myShape;
 				fixture.density = density;
 				fixture.isSensor = true;
+
+				fixture.filter.categoryBits = TRIGGER_CATEGORY;
+				fixture.filter.maskBits = TRIGGER_CATEGORY;
 
 				// Reference to owning Entity, used in collision detection me thinks
 				fixture.userData.pointer = reinterpret_cast<uintptr_t>(this);
@@ -603,6 +626,7 @@ void ContactListener::BeginContact(b2Contact* contact)
 	b2Vec2 relativeVelocityA = fixtureA->GetBody()->GetLinearVelocity() - fixtureB->GetBody()->GetLinearVelocity();
 	b2Vec2 relativeVelocityB =  fixtureB->GetBody()->GetLinearVelocity() - fixtureA->GetBody()->GetLinearVelocity();
 
+	                                                        
 	// Collider Collision
 	if (!fixtureA->IsSensor() && !fixtureB->IsSensor())
 	{
@@ -625,6 +649,12 @@ void ContactListener::BeginContact(b2Contact* contact)
 
 		Collision2D collisionB(entityA, invalid, relativeVelocityB, invalid);
 		rbB->OnTriggerEnter(collisionB);
+	}
+	else
+	{
+		// TODO: unity makes it so on trigger enter is also called when a collider collides w a trigger
+		// Do I want this functionality?
+		// Would also need to adjust filters
 	}
 }
 
@@ -670,5 +700,11 @@ void ContactListener::EndContact(b2Contact* contact)
 	{
 		rbA->OnTriggerExit(collisionA);
 		rbB->OnTriggerExit(collisionB);
+	}
+	else
+	{
+		// TODO: unity makes it so on trigger enter is also called when a collider collides w a trigger
+		// Do I want this functionality?
+		// Would also need to adjust filters
 	}
 }

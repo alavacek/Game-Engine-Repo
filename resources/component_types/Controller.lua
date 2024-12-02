@@ -31,25 +31,25 @@ Controller = {
         then
             Event.Publish("OutMessage", self)
         end
-
+        
         Image.DrawEx("cat", self.rigidbody:GetPosition().x, self.rigidbody:GetPosition().y, self.rigidbody:GetRotation(), 1, 1, 0.5, 0.5, 255, 255, 255, 255, 0)
         
     end,
 
     OnCollisionEnter = function(self, collision)
-        --print("Collision Enter with " .. collision.other:GetName())
+        print("Collision Enter with " .. collision.other:GetName())
     end, 
 
     OnCollisionExit = function(self, collision)
-        --print("Collision Exit with " .. collision.other:GetName())
+        print("Collision Exit with " .. collision.other:GetName())
     end,
 
     OnTriggerEnter = function(self, collision)
-        --print("Trigger Enter with " .. collision.other:GetName())
+        print("Trigger Enter with " .. collision.other:GetName())
     end, 
 
     OnTriggerExit = function(self, collision)
-        --print("Trigger Exit with " .. collision.other:GetName())
+        print("Trigger Exit with " .. collision.other:GetName())
     end,
 
     OnDestroy = function(self)
