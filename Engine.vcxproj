@@ -97,11 +97,12 @@
     <ClCompile Include="lua\lvm.c" />
     <ClCompile Include="lua\lzio.c" />
     <ClCompile Include="src\AudioDB.cpp" />
+    <ClCompile Include="src\b2WorldDB.cpp" />
     <ClCompile Include="src\Component.cpp" />
     <ClCompile Include="src\ComponentDB.cpp" />
     <ClCompile Include="src\Engine.cpp" />
     <ClCompile Include="src\Entity.cpp" />
-    <ClCompile Include="src\HealthComponent.cpp" />
+    <ClCompile Include="src\Event.cpp" />
     <ClCompile Include="src\ImageDB.cpp" />
     <ClCompile Include="src\Input.cpp" />
     <ClCompile Include="src\LuaStateManager.cpp" />
@@ -201,7 +202,7 @@
     <ClInclude Include="src\EngineUtils.h" />
     <ClInclude Include="src\Entity.h" />
     <ClInclude Include="src\ErrorHandling.h" />
-    <ClInclude Include="src\HealthComponent.h" />
+    <ClInclude Include="src\Event.h" />
     <ClInclude Include="src\ImageDB.h" />
     <ClInclude Include="src\Input.h" />
     <ClInclude Include="src\LuaStateManager.h" />
