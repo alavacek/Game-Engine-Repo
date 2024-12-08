@@ -277,11 +277,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir);$(ProjectDir)SDL2;$(ProjectDir)SDL2_image;$(ProjectDir)SDL2_mixer;$(ProjectDir)SDL2_ttf;$(ProjectDir)lua;$(ProjectDir)luaBridge;$(ProjectDir)box2d;$(ProjectDir)box2d/include;$(ProjectDir)box2d/src/collision;$(ProjectDir)box2d/src/common;$(ProjectDir)box2d/src/dynamics;$(ProjectDir)box2d/src/rope;$(ProjectDir)box2d/include/box2d;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir);$(ProjectDir)SDL2;$(ProjectDir)SDL2_image;$(ProjectDir)SDL2_mixer;$(ProjectDir)SDL2_ttf;$(ProjectDir)lua;$(ProjectDir)luaBridge;$(ProjectDir)box2d;$(ProjectDir)box2d/include;$(ProjectDir)box2d/src/collision;$(ProjectDir)box2d/src/common;$(ProjectDir)box2d/src/dynamics;$(ProjectDir)box2d/src/rope;$(ProjectDir)box2d/include/box2d;$(ProjectDir)imgui;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)SDL2\lib\;$(ProjectDir)SDL2_image\lib\;$(ProjectDir)SDL2_mixer\lib\;$(ProjectDir)SDL2_ttf\lib\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir);$(ProjectDir)SDL2;$(ProjectDir)SDL2_image;$(ProjectDir)SDL2_mixer;$(ProjectDir)SDL2_ttf;$(ProjectDir)lua;$(ProjectDir)luaBridge;$(ProjectDir)box2d;$(ProjectDir)box2d/include;$(ProjectDir)box2d/src/collision;$(ProjectDir)box2d/src/common;$(ProjectDir)box2d/src/dynamics;$(ProjectDir)box2d/src/rope;$(ProjectDir)box2d/include/box2d;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir);$(ProjectDir)SDL2;$(ProjectDir)SDL2_image;$(ProjectDir)SDL2_mixer;$(ProjectDir)SDL2_ttf;$(ProjectDir)lua;$(ProjectDir)luaBridge;$(ProjectDir)box2d;$(ProjectDir)box2d/include;$(ProjectDir)box2d/src/collision;$(ProjectDir)box2d/src/common;$(ProjectDir)box2d/src/dynamics;$(ProjectDir)box2d/src/rope;$(ProjectDir)box2d/include/box2d;$(ProjectDir)imgui;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)SDL2\lib\;$(ProjectDir)SDL2_image\lib\;$(ProjectDir)SDL2_mixer\lib\;$(ProjectDir)SDL2_ttf\lib\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
