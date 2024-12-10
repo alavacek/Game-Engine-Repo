@@ -1,4 +1,19 @@
-﻿  Engine.vcxproj -> C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\x64\Debug\Engine.exe
+﻿  Editor.cpp
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\SDLHelper.h(227,60): warning C4127: conditional expression is constant
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\SDLHelper.h(227,60): message : consider using 'if constexpr' statement instead
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\EngineUtils.h(30,30): warning C4189: 'errorCode': local variable is initialized but not referenced
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\b2WorldDB.h(48,1): warning C4099: 'HitResult': type name first seen using 'class' now seen using 'struct'
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\b2WorldDB.h(47,8): message : see declaration of 'HitResult'
+  main.cpp
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\SDLHelper.h(227,60): warning C4127: conditional expression is constant
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\SDLHelper.h(227,60): message : consider using 'if constexpr' statement instead
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\EngineUtils.h(30,30): warning C4189: 'errorCode': local variable is initialized but not referenced
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\b2WorldDB.h(48,1): warning C4099: 'HitResult': type name first seen using 'class' now seen using 'struct'
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\b2WorldDB.h(47,8): message : see declaration of 'HitResult'
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\main.cpp(7,26): warning C4100: 'argv': unreferenced formal parameter
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\main.cpp(7,14): warning C4100: 'argc': unreferenced formal parameter
+  Generating Code...
+  Engine.vcxproj -> C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\x64\Debug\Engine.exe
   dlls\SDL2.dll
   dlls\SDL2_image.dll
   dlls\SDL2_mixer.dll

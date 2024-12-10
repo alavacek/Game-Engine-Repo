@@ -79,6 +79,7 @@ C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\AudioDB.cpp;C:\Users\a
 C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\b2WorldDB.cpp;C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\x64\Debug\b2WorldDB.obj
 C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\Component.cpp;C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\x64\Debug\Component.obj
 C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\ComponentDB.cpp;C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\x64\Debug\ComponentDB.obj
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\Editor.cpp;C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\x64\Debug\Editor.obj
 C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\Engine.cpp;C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\x64\Debug\Engine.obj
 C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\Entity.cpp;C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\x64\Debug\Entity.obj
 C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\Event.cpp;C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\x64\Debug\Event.obj
