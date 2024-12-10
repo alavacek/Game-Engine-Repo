@@ -6,14 +6,19 @@ void Engine::GameLoop()
 
 	while (isRunning)
 	{
-		Input();
-
-		Update();
-
-		Render();
-
-		SDL_Delay(16); //time for each frame
+		Frame();
 	}
+}
+
+void Engine::Frame()
+{
+	Input();
+
+	Update();
+
+	Render();
+
+	SDL_Delay(16); //time for each frame
 }
 
 void Engine::Start()
@@ -246,7 +251,15 @@ void Engine::Input()
 	{
 		if (e.type == SDL_QUIT)
 		{
-			exit(1);
+			if (editorInstance)
+			{
+				isRunning = false;
+				SDL_DestroyWindow(Renderer::GetWindow());
+			}
+			else
+			{
+				exit(1);
+			}
 		}
 
 		Input::ProcessEvent(e);
@@ -296,12 +309,21 @@ void Engine::Render()
 
 void Engine::EndGame()
 {
-	
+	if (editorInstance)
+	{
+		isRunning = false;
+		SceneDB::Reset();
+	}
+	else
+	{
+		exit(1);
+	}
 }
 
 // Lua Functions
 void Engine::Quit()
 {
+	// TODO: how to handle if we are in an editorInstance?
 	exit(0);
 }
 
@@ -332,6 +354,7 @@ void Engine::OpenURL(std::string url)
 
 Engine::~Engine()
 {
-
+	SDL_DestroyWindow(Renderer::GetWindow());
+	SDL_DestroyRenderer(Renderer::GetRenderer());
 }
 

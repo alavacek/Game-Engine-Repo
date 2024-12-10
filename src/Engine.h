@@ -41,6 +41,7 @@ public:
 	void LuaClassAndNamespaceSetup();
 
 	void Start();
+	void Frame();
 
 	void Input();
 
@@ -74,6 +75,7 @@ private:
 	bool isRunning = true;	
 	bool inHealthCooldown = false;
 	bool debugShowCollisions = true;
+	bool editorInstance = true;
 };
 
 #endif

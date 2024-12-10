@@ -387,6 +387,18 @@ void SceneDB::DontDestroy(Entity* entity)
     entity->destroyOnLoad = false;
 }
 
+void SceneDB::Reset()
+{
+    for (int i = 0; i < entities.size(); i++)
+    {
+        delete entities[i];
+    }
+
+    entities.clear();
+    entitiesToInstantiate.clear();
+    entitiesToDestroy.clear();
+}
+
 uint64_t SceneDB::GetNumberOfEntitiesInScene()
 {
     return entities.size();

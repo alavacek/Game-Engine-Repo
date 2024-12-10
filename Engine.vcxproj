@@ -64,6 +64,19 @@
     <ClCompile Include="box2d\src\dynamics\b2_world.cpp" />
     <ClCompile Include="box2d\src\dynamics\b2_world_callbacks.cpp" />
     <ClCompile Include="box2d\src\rope\b2_rope.cpp" />
+    <ClCompile Include="imgui\backends\imgui_impl_dx10.cpp" />
+    <ClCompile Include="imgui\backends\imgui_impl_dx11.cpp" />
+    <ClCompile Include="imgui\backends\imgui_impl_dx12.cpp" />
+    <ClCompile Include="imgui\backends\imgui_impl_dx9.cpp" />
+    <ClCompile Include="imgui\backends\imgui_impl_sdl2.cpp" />
+    <ClCompile Include="imgui\backends\imgui_impl_sdlrenderer2.cpp" />
+    <ClCompile Include="imgui\backends\imgui_impl_win32.cpp" />
+    <ClCompile Include="imgui\imgui.cpp" />
+    <ClCompile Include="imgui\imgui_demo.cpp" />
+    <ClCompile Include="imgui\imgui_draw.cpp" />
+    <ClCompile Include="imgui\imgui_tables.cpp" />
+    <ClCompile Include="imgui\imgui_widgets.cpp" />
+    <ClCompile Include="imgui\misc\cpp\imgui_stdlib.cpp" />
     <ClCompile Include="lua\lapi.c" />
     <ClCompile Include="lua\lauxlib.c" />
     <ClCompile Include="lua\lbaselib.c" />
@@ -165,6 +178,24 @@
     <ClInclude Include="box2d\src\dynamics\b2_island.h" />
     <ClInclude Include="box2d\src\dynamics\b2_polygon_circle_contact.h" />
     <ClInclude Include="box2d\src\dynamics\b2_polygon_contact.h" />
+    <ClInclude Include="imgui\backends\imgui_impl_dx10.h" />
+    <ClInclude Include="imgui\backends\imgui_impl_dx11.h" />
+    <ClInclude Include="imgui\backends\imgui_impl_dx12.h" />
+    <ClInclude Include="imgui\backends\imgui_impl_dx9.h" />
+    <ClInclude Include="imgui\backends\imgui_impl_metal.h" />
+    <ClInclude Include="imgui\backends\imgui_impl_osx.h" />
+    <ClInclude Include="imgui\backends\imgui_impl_sdl2.h" />
+    <ClInclude Include="imgui\backends\imgui_impl_sdlrenderer2.h" />
+    <ClInclude Include="imgui\backends\imgui_impl_sdlrenderer3.h" />
+    <ClInclude Include="imgui\backends\imgui_impl_win32.h" />
+    <ClInclude Include="imgui\imconfig.h" />
+    <ClInclude Include="imgui\imgui.h" />
+    <ClInclude Include="imgui\imgui_internal.h" />
+    <ClInclude Include="imgui\imstb_rectpack.h" />
+    <ClInclude Include="imgui\imstb_textedit.h" />
+    <ClInclude Include="imgui\imstb_truetype.h" />
+    <ClInclude Include="imgui\misc\cpp\imgui_stdlib.h" />
+    <ClInclude Include="imgui\misc\single_file\imgui_single_file.h" />
     <ClInclude Include="lua\lapi.h" />
     <ClInclude Include="lua\lauxlib.h" />
     <ClInclude Include="lua\lcode.h" />
@@ -279,11 +310,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir);$(ProjectDir)SDL2;$(ProjectDir)SDL2_image;$(ProjectDir)SDL2_mixer;$(ProjectDir)SDL2_ttf;$(ProjectDir)lua;$(ProjectDir)luaBridge;$(ProjectDir)box2d;$(ProjectDir)box2d/include;$(ProjectDir)box2d/src/collision;$(ProjectDir)box2d/src/common;$(ProjectDir)box2d/src/dynamics;$(ProjectDir)box2d/src/rope;$(ProjectDir)box2d/include/box2d;$(ProjectDir)imgui;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir);$(ProjectDir)SDL2;$(ProjectDir)SDL2_image;$(ProjectDir)SDL2_mixer;$(ProjectDir)SDL2_ttf;$(ProjectDir)lua;$(ProjectDir)luaBridge;$(ProjectDir)box2d;$(ProjectDir)box2d/include;$(ProjectDir)box2d/src/collision;$(ProjectDir)box2d/src/common;$(ProjectDir)box2d/src/dynamics;$(ProjectDir)box2d/src/rope;$(ProjectDir)box2d/include/box2d;$(ProjectDir)imgui;$(ProjectDir)imgui/backends;$(ProjectDir)imgui/misc;$(ProjectDir)imgui/misc/cpp;$(ProjectDir)imgui/misc/debuggers;$(ProjectDir)imgui/fonts;$(ProjectDir)imgui/freetype;$(ProjectDir)imgui/single_file;$(ProjectDir)imgui/backends/vulkan;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)SDL2\lib\;$(ProjectDir)SDL2_image\lib\;$(ProjectDir)SDL2_mixer\lib\;$(ProjectDir)SDL2_ttf\lib\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir);$(ProjectDir)SDL2;$(ProjectDir)SDL2_image;$(ProjectDir)SDL2_mixer;$(ProjectDir)SDL2_ttf;$(ProjectDir)lua;$(ProjectDir)luaBridge;$(ProjectDir)box2d;$(ProjectDir)box2d/include;$(ProjectDir)box2d/src/collision;$(ProjectDir)box2d/src/common;$(ProjectDir)box2d/src/dynamics;$(ProjectDir)box2d/src/rope;$(ProjectDir)box2d/include/box2d;$(ProjectDir)imgui;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir);$(ProjectDir)SDL2;$(ProjectDir)SDL2_image;$(ProjectDir)SDL2_mixer;$(ProjectDir)SDL2_ttf;$(ProjectDir)lua;$(ProjectDir)luaBridge;$(ProjectDir)box2d;$(ProjectDir)box2d/include;$(ProjectDir)box2d/src/collision;$(ProjectDir)box2d/src/common;$(ProjectDir)box2d/src/dynamics;$(ProjectDir)box2d/src/rope;$(ProjectDir)box2d/include/box2d;$(ProjectDir)imgui;$(ProjectDir)imgui/backends;$(ProjectDir)imgui/misc;$(ProjectDir)imgui/misc/cpp;$(ProjectDir)imgui/misc/debuggers;$(ProjectDir)imgui/fonts;$(ProjectDir)imgui/freetype;$(ProjectDir)imgui/single_file;$(ProjectDir)imgui/backends/vulkan;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)SDL2\lib\;$(ProjectDir)SDL2_image\lib\;$(ProjectDir)SDL2_mixer\lib\;$(ProjectDir)SDL2_ttf\lib\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

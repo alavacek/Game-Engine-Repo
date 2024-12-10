@@ -21,6 +21,7 @@ public:
 
 	static SDL_Renderer* GetRenderer() { return renderer;  }
 	static glm::ivec2 GetResolution() { return resolution; }
+	static SDL_Window* GetWindow() { return window; }
 
 	static float GetZoomFactor() { return zoomFactor; }
 	static void SetZoomFactor(float zoomFactorIn) { zoomFactor = zoomFactorIn; }

@@ -45,6 +45,8 @@ public:
 
 	static void DontDestroy(Entity* entity);
 
+	static void Reset();
+
 	static bool pendingScene;
 
 private:
