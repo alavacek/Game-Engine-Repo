@@ -46,6 +46,8 @@ public:
 	static void DrawText(const std::string& textContent, float x, float y, 
 		const std::string& fontName, float fontSize, float r, float g, float b, float a);
 	static void RenderText();
+
+	static void Reset();
 private:
 	static TTF_Font* FindFont(const std::string& fontName, int fontSize);
 	static std::unordered_map<TextKey, SDL_Texture*, TextKeyHash> cachedTextures;

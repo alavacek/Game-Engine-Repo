@@ -21,6 +21,7 @@ class TemplateDB
 public:
     static Template* FindEntity(std::string templateName);
     static void LoadTemplates();
+    static void Reset();
 
 private:
     static std::unordered_map<std::string, Template*> templates;

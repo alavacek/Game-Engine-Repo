@@ -81,6 +81,15 @@ TTF_Font* TextDB::FindFont(const std::string& fontName, int fontSize)
         return font;
     }
 
+}
 
+void TextDB::Reset()
+{
+    cachedTextures.clear();
+    cachedFonts.clear();
 
+    while (!renderRequests.empty())
+    {
+        renderRequests.pop();
+    }
 }

@@ -1,27 +1,60 @@
-﻿  ImageDB.cpp
+﻿  AudioDB.cpp
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\SDLHelper.h(227,60): warning C4127: conditional expression is constant
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\SDLHelper.h(227,60): message : consider using 'if constexpr' statement instead
+  Editor.cpp
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\SDLHelper.h(227,60): warning C4127: conditional expression is constant
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\SDLHelper.h(227,60): message : consider using 'if constexpr' statement instead
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\EngineUtils.h(30,30): warning C4189: 'errorCode': local variable is initialized but not referenced
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\b2WorldDB.h(48,1): warning C4099: 'HitResult': type name first seen using 'class' now seen using 'struct'
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\b2WorldDB.h(47,8): message : see declaration of 'HitResult'
+  Engine.cpp
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\SDLHelper.h(227,60): warning C4127: conditional expression is constant
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\SDLHelper.h(227,60): message : consider using 'if constexpr' statement instead
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\EngineUtils.h(30,30): warning C4189: 'errorCode': local variable is initialized but not referenced
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\b2WorldDB.h(48,1): warning C4099: 'HitResult': type name first seen using 'class' now seen using 'struct'
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\b2WorldDB.h(47,8): message : see declaration of 'HitResult'
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\Engine.cpp(35,13): warning C4189: 'luaState': local variable is initialized but not referenced
+  SceneDB.cpp
 C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\EngineUtils.h(30,30): warning C4189: 'errorCode': local variable is initialized but not referenced
 C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\SDLHelper.h(227,60): warning C4127: conditional expression is constant
 C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\SDLHelper.h(227,60): message : consider using 'if constexpr' statement instead
-C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\ImageDB.cpp(62,26): warning C4244: '*=': conversion from 'float' to 'int', possible loss of data
-C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\ImageDB.cpp(63,26): warning C4244: '*=': conversion from 'float' to 'int', possible loss of data
-C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\ImageDB.cpp(81,70): warning C4244: 'argument': conversion from 'int' to 'Uint8', possible loss of data
-C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\ImageDB.cpp(81,59): warning C4244: 'argument': conversion from 'int' to 'Uint8', possible loss of data
-C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\ImageDB.cpp(81,48): warning C4244: 'argument': conversion from 'int' to 'Uint8', possible loss of data
-C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\ImageDB.cpp(82,48): warning C4244: 'argument': conversion from 'int' to 'Uint8', possible loss of data
-C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\ImageDB.cpp(113,70): warning C4244: 'argument': conversion from 'int' to 'Uint8', possible loss of data
-C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\ImageDB.cpp(113,59): warning C4244: 'argument': conversion from 'int' to 'Uint8', possible loss of data
-C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\ImageDB.cpp(113,48): warning C4244: 'argument': conversion from 'int' to 'Uint8', possible loss of data
-C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\ImageDB.cpp(114,48): warning C4244: 'argument': conversion from 'int' to 'Uint8', possible loss of data
-C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\ImageDB.cpp(133,82): warning C4244: 'argument': conversion from 'int' to 'Uint8', possible loss of data
-C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\ImageDB.cpp(133,71): warning C4244: 'argument': conversion from 'int' to 'Uint8', possible loss of data
-C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\ImageDB.cpp(133,60): warning C4244: 'argument': conversion from 'int' to 'Uint8', possible loss of data
-C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\ImageDB.cpp(133,49): warning C4244: 'argument': conversion from 'int' to 'Uint8', possible loss of data
-C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\ImageDB.cpp(135,72): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\ImageDB.cpp(135,61): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\ImageDB.cpp(176,82): warning C4244: 'argument': conversion from 'int' to 'Uint8', possible loss of data
-C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\ImageDB.cpp(176,71): warning C4244: 'argument': conversion from 'int' to 'Uint8', possible loss of data
-C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\ImageDB.cpp(176,60): warning C4244: 'argument': conversion from 'int' to 'Uint8', possible loss of data
-C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\ImageDB.cpp(176,49): warning C4244: 'argument': conversion from 'int' to 'Uint8', possible loss of data
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\b2WorldDB.h(48,1): warning C4099: 'HitResult': type name first seen using 'class' now seen using 'struct'
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\b2WorldDB.h(47,8): message : see declaration of 'HitResult'
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\SceneDB.cpp(65,16): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\SceneDB.cpp(89,16): warning C4189: 'luaState': local variable is initialized but not referenced
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\SceneDB.cpp(313,16): warning C4189: 'luaState': local variable is initialized but not referenced
+  TemplateDB.cpp
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\EngineUtils.h(30,30): warning C4189: 'errorCode': local variable is initialized but not referenced
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\SDLHelper.h(227,60): warning C4127: conditional expression is constant
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\SDLHelper.h(227,60): message : consider using 'if constexpr' statement instead
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\b2WorldDB.h(48,1): warning C4099: 'HitResult': type name first seen using 'class' now seen using 'struct'
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\b2WorldDB.h(47,8): message : see declaration of 'HitResult'
+  TextDB.cpp
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\EngineUtils.h(30,30): warning C4189: 'errorCode': local variable is initialized but not referenced
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\SDLHelper.h(227,60): warning C4127: conditional expression is constant
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\SDLHelper.h(227,60): message : consider using 'if constexpr' statement instead
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\TextDB.cpp(12,45): warning C4100: 'fontName': unreferenced formal parameter
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\TextDB.cpp(19,41): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\TextDB.cpp(20,46): warning C4838: conversion from 'int' to 'Uint8' requires a narrowing conversion
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\TextDB.cpp(20,46): warning C4244: 'initializing': conversion from 'int' to 'Uint8', possible loss of data
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\TextDB.cpp(20,67): warning C4838: conversion from 'int' to 'Uint8' requires a narrowing conversion
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\TextDB.cpp(20,67): warning C4244: 'initializing': conversion from 'int' to 'Uint8', possible loss of data
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\TextDB.cpp(20,88): warning C4838: conversion from 'int' to 'Uint8' requires a narrowing conversion
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\TextDB.cpp(20,88): warning C4244: 'initializing': conversion from 'int' to 'Uint8', possible loss of data
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\TextDB.cpp(20,109): warning C4838: conversion from 'int' to 'Uint8' requires a narrowing conversion
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\TextDB.cpp(20,109): warning C4244: 'initializing': conversion from 'int' to 'Uint8', possible loss of data
+  main.cpp
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\SDLHelper.h(227,60): warning C4127: conditional expression is constant
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\SDLHelper.h(227,60): message : consider using 'if constexpr' statement instead
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\EngineUtils.h(30,30): warning C4189: 'errorCode': local variable is initialized but not referenced
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\b2WorldDB.h(48,1): warning C4099: 'HitResult': type name first seen using 'class' now seen using 'struct'
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\b2WorldDB.h(47,8): message : see declaration of 'HitResult'
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\main.cpp(7,26): warning C4100: 'argv': unreferenced formal parameter
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\main.cpp(7,14): warning C4100: 'argc': unreferenced formal parameter
+  Generating Code...
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\SDLHelper.h(323): warning C4702: unreachable code
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\SDLHelper.h(323): warning C4702: unreachable code
+C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\src\AudioHelper.h(125): warning C4702: unreachable code
   Engine.vcxproj -> C:\Users\allie\Documents\Game Engine\Game-Engine-Repo\x64\Debug\Engine.exe
   dlls\SDL2.dll
   dlls\SDL2_image.dll

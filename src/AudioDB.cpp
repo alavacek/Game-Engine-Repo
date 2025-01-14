@@ -92,3 +92,8 @@ void AudioDB::SetVolume(int channel, float volume)
 {
 	AudioHelper::Mix_Volume498(channel, static_cast<int>(volume));
 }
+
+void AudioDB::Reset()
+{
+	cachedAudio.clear();
+}

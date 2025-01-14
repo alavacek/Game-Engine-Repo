@@ -319,6 +319,9 @@ void Engine::EndGame()
 
 		SceneDB::Reset();
 		ImageDB::Reset();
+		AudioDB::Reset();
+		TextDB::Reset();
+		TemplateDB::Reset();
 
 		SDL_DestroyWindow(window);
 		SDL_DestroyRenderer(renderer);

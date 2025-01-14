@@ -58,3 +58,14 @@ void TemplateDB::LoadTemplates()
         }
     }
 }
+
+void TemplateDB::Reset()
+{
+    for (auto temp : templates)
+    {
+        delete(temp.second);
+    }
+
+    templates.clear();
+
+}

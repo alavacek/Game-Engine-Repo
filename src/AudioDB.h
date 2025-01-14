@@ -19,6 +19,8 @@ public:
 	static void HaltChannel(int channel);
 	static void SetVolume(int channel, float volume);
 
+	static void Reset();
+
 private:
 	static bool hasIntroAudio;
 	static std::unordered_map<std::string, Mix_Chunk*> cachedAudio;
