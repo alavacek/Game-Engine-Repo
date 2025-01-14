@@ -224,6 +224,15 @@ void ImageDB::DrawLine(float x1, float y1, float x2, float y2, float r, float g,
     renderLineRequests.push_back(request);
 }
 
+void ImageDB::Reset()
+{
+    renderRequests.clear();
+    renderUIRequests.clear();
+    renderPixelRequests.clear();
+    renderLineRequests.clear();
+    cachedTextures.clear();
+}
+
 bool ImageDB::CompareImageRequests(const ImageRenderRequest& a, const ImageRenderRequest& b)
 {
     return a.sortingOrder < b.sortingOrder;

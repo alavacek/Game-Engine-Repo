@@ -397,6 +397,10 @@ void SceneDB::Reset()
     entities.clear();
     entitiesToInstantiate.clear();
     entitiesToDestroy.clear();
+
+    // reset physics
+    delete(b2WorldDB::b2WorldInstance);
+    b2WorldDB::b2WorldInstance = nullptr;
 }
 
 uint64_t SceneDB::GetNumberOfEntitiesInScene()

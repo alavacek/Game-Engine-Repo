@@ -40,6 +40,7 @@ void Editor::EditorLoop()
         SDL_Event event;
         while (SDL_PollEvent(&event)) 
         {
+            // process editor events
             if (SDL_GetWindowFromID(event.window.windowID) == window)
             {
                 if ((event.type == SDL_WINDOWEVENT) && (event.window.event == SDL_WINDOWEVENT_CLOSE))
@@ -47,6 +48,16 @@ void Editor::EditorLoop()
                     running = false;
                 }
                 ImGui_ImplSDL2_ProcessEvent(&event);
+            }
+            else if (simulating && currentSimulation && SDL_GetWindowFromID(event.window.windowID) == currentSimulation->GetWindow())
+            {
+                if ((event.type == SDL_WINDOWEVENT) && (event.window.event == SDL_WINDOWEVENT_CLOSE))
+                {
+                    StopSimulation();
+                    continue;
+                }
+
+                Input::ProcessEvent(event);
             }
         }
 
@@ -79,6 +90,8 @@ void Editor::EditorLoop()
                 StopSimulation();
             }
         }
+
+        SDL_Delay(16); //time for each frame
     }
 }
 
@@ -147,9 +160,7 @@ void Editor::Simulate()
     // Simulation already open
     if (simulating)
     {
-        return; // TODO REMOVE
-        currentSimulation->EndGame();
-        delete(currentSimulation);
+        StopSimulation();
     }
 
     currentSimulation = new Engine();

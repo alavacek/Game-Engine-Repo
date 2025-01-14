@@ -52,6 +52,7 @@ public:
 	void EndGame();
 
 	bool GetIsRunning() { return isRunning; }
+	SDL_Window* GetWindow() { return window; }
 
 	static void Quit();
 	static void Sleep(int milliseconds);
@@ -68,6 +69,7 @@ private:
 	rapidjson::Document configDocument;
 
 	SDL_Renderer* renderer;
+	SDL_Window* window;
 
 	int frameSinceDamageTaken;
 

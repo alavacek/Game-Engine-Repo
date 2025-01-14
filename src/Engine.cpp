@@ -12,13 +12,20 @@ void Engine::GameLoop()
 
 void Engine::Frame()
 {
-	Input();
+	// input is handled inside of editor 
+	if (!editorInstance)
+	{
+		Input();
+	}
 
 	Update();
 
 	Render();
 
-	SDL_Delay(16); //time for each frame
+	if (!editorInstance)
+	{
+		SDL_Delay(16); //time for each frame
+	}
 }
 
 void Engine::Start()
@@ -51,6 +58,8 @@ void Engine::Start()
 		std::cout << "error: text render failed. No font configured";
 		exit(0);
 	}
+
+	window = Renderer::GetWindow();
 
 	// Entity Start
 	SceneDB::Start();
@@ -244,25 +253,17 @@ void Engine::LuaClassAndNamespaceSetup()
 }
 
 
-void Engine::Input()
+void Engine::Input() // NOTE: THIS IS ONLY CALLED WHEN RUNNING WITHOUT AN EDITOR
 {
 	SDL_Event event;
-	SDL_Window* window = Renderer::GetWindow();
-	while (Helper::SDL_PollEvent498(&event)) // empty/consume all the events in the event queue
+	
+	while (SDL_PollEvent(&event)) // empty/consume all the events in the event queue
 	{
 		if (SDL_GetWindowFromID(event.window.windowID) == window)
 		{
 			if ((event.type == SDL_WINDOWEVENT) && (event.window.event == SDL_WINDOWEVENT_CLOSE))
 			{
-				if (editorInstance)
-				{
-					isRunning = false;
-					SDL_DestroyWindow(window);
-				}
-				else
-				{
-					exit(1);
-				}
+				exit(1);
 			}
 
 			Input::ProcessEvent(event);
@@ -306,7 +307,7 @@ void Engine::Render()
 
 		ImageDB::RenderLines();
 
-		Helper::SDL_RenderPresent498(renderer);
+		SDL_RenderPresent(renderer);
 	}
 }
 
@@ -315,7 +316,12 @@ void Engine::EndGame()
 	if (editorInstance)
 	{
 		isRunning = false;
+
 		SceneDB::Reset();
+		ImageDB::Reset();
+
+		SDL_DestroyWindow(window);
+		SDL_DestroyRenderer(renderer);
 	}
 	else
 	{
