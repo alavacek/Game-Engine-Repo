@@ -6,14 +6,14 @@
 
 int main(int argc, char* argv[])
 {
-    //Editor editor;
+    Editor editor;
 
-    //editor.Init();
-    //editor.EditorLoop();
-    //editor.EditorCleanup();
+    editor.Init();
+    editor.EditorLoop();
+    editor.EditorCleanup();
 
-    Engine engine;
-    engine.GameLoop();
+    //Engine engine;
+    //engine.GameLoop();
     return 0;
 
 }

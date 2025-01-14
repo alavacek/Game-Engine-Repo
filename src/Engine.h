@@ -51,6 +51,8 @@ public:
 
 	void EndGame();
 
+	bool GetIsRunning() { return isRunning; }
+
 	static void Quit();
 	static void Sleep(int milliseconds);
 	static void OpenURL(std::string url);

@@ -246,24 +246,27 @@ void Engine::LuaClassAndNamespaceSetup()
 
 void Engine::Input()
 {
-	SDL_Event e;
-	while (Helper::SDL_PollEvent498(&e)) // empty/consume all the events in the event queue
+	SDL_Event event;
+	SDL_Window* window = Renderer::GetWindow();
+	while (Helper::SDL_PollEvent498(&event)) // empty/consume all the events in the event queue
 	{
-		if (e.type == SDL_QUIT)
+		if (SDL_GetWindowFromID(event.window.windowID) == window)
 		{
-			if (editorInstance)
+			if ((event.type == SDL_WINDOWEVENT) && (event.window.event == SDL_WINDOWEVENT_CLOSE))
 			{
-				isRunning = false;
-				SDL_DestroyWindow(Renderer::GetWindow());
+				if (editorInstance)
+				{
+					isRunning = false;
+					SDL_DestroyWindow(window);
+				}
+				else
+				{
+					exit(1);
+				}
 			}
-			else
-			{
-				exit(1);
-			}
+
+			Input::ProcessEvent(event);
 		}
-
-		Input::ProcessEvent(e);
-
 	}
 }
 

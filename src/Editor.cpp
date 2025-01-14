@@ -38,13 +38,16 @@ void Editor::EditorLoop()
     while (running) 
     {
         SDL_Event event;
-        while (Helper::SDL_PollEvent498(&event)) 
+        while (SDL_PollEvent(&event)) 
         {
-            if (event.type == SDL_QUIT)
+            if (SDL_GetWindowFromID(event.window.windowID) == window)
             {
-                running = false;
+                if ((event.type == SDL_WINDOWEVENT) && (event.window.event == SDL_WINDOWEVENT_CLOSE))
+                {
+                    running = false;
+                }
+                ImGui_ImplSDL2_ProcessEvent(&event);
             }
-            ImGui_ImplSDL2_ProcessEvent(&event);
         }
 
         // Start the ImGui frame
@@ -58,7 +61,7 @@ void Editor::EditorLoop()
         ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
 
         // show all renders now
-        Helper::SDL_RenderPresent498(renderer);
+        SDL_RenderPresent(renderer);
 
         // clear the renders 
         SDL_RenderClear(renderer);
@@ -66,7 +69,15 @@ void Editor::EditorLoop()
         // if a simulation is running, run its logic
         if (simulating)
         {
-            currentSimulation->Frame();
+            if (currentSimulation->GetIsRunning())
+            {
+                currentSimulation->Frame();
+            }
+            else
+            {
+                // stopped within engine, maybe from exit event
+                StopSimulation();
+            }
         }
     }
 }
@@ -136,6 +147,7 @@ void Editor::Simulate()
     // Simulation already open
     if (simulating)
     {
+        return; // TODO REMOVE
         currentSimulation->EndGame();
         delete(currentSimulation);
     }
