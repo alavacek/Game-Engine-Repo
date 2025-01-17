@@ -17,7 +17,7 @@ public:
 	void EditorLoop();
 	void EditorCleanup();
 
-	void RenderEditor();
+	void RenderEditor(bool resetDefaults = false);
 	void RenderSceneHierarchy();
 	void RenderInspector(Entity* entity);
 
@@ -30,6 +30,7 @@ private:
 	SDL_Window* window = nullptr;
 	SDL_Renderer* renderer = nullptr;
 	SDL_GLContext glContext;
+	ImVec2 windowSize = ImVec2(1280, 720);
 
 	bool simulating = false;
 

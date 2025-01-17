@@ -6,17 +6,16 @@ void Editor::Init()
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
 
-    window = Helper::SDL_CreateWindow498("ImGui Example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, SDL_WINDOW_RESIZABLE);
+    window = Helper::SDL_CreateWindow498("Editor", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowSize.x, windowSize.y, SDL_WINDOW_RESIZABLE);
     renderer = Helper::SDL_CreateRenderer498(window, 0, 0);
-
 
     ImGuiIO& io = ImGui::GetIO();
     (void)io;
 
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable keyboard controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-    //io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
-    //io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows
 
     // theme
     ImGui::StyleColorsDark();
@@ -28,6 +27,24 @@ void Editor::Init()
     // Start the Dear ImGui frame
     ImGui_ImplSDLRenderer2_NewFrame();
     ImGui_ImplSDL2_NewFrame();
+
+
+    // Initial Render
+    // Start the ImGui frame
+    ImGui::NewFrame();
+
+    // properties window
+    RenderEditor(true);
+
+    // send ImGui context to SDL Renderer context
+    ImGui::Render();
+    ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
+
+    // show all renders now
+    SDL_RenderPresent(renderer);
+
+    // clear the renders 
+    SDL_RenderClear(renderer);
 }
 
 void Editor::EditorLoop()
@@ -102,40 +119,66 @@ void Editor::EditorCleanup()
     SDL_Quit();
 }
 
-void Editor::RenderEditor()
+void Editor::RenderEditor(bool resetDefaults)
 {
-    ImGui::Begin("Editor");
+    // Retrieve the main viewport size for fullscreen docking.
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->Pos);
+    ImGui::SetNextWindowSize(viewport->Size);
+    //ImGui::SetNextWindowViewport(viewport->ID);
 
-    if (ImGui::Button("Play")) 
+    // Set up the main editor window as a dockspace.
+    ImGuiWindowFlags mainWindowFlags = ImGuiWindowFlags_NoTitleBar |
+        ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus;
+    ImGui::Begin("Editor", nullptr, mainWindowFlags);
+
+    // Enable Dockspace
+    ImGuiID dockspaceID = ImGui::GetID("MyDockspace");
+    ImGui::DockSpace(dockspaceID, ImVec2(0, 0));
+
+    // Inspector Defaults
+    // TODO
+    if (resetDefaults)
+    {
+        ImGui::SetNextWindowCollapsed(false);
+        
+    }
+
+    // Inspector Panel
+    ImGui::Begin("Inspector");
+    ImGui::Text("Inspector Content");
+    ImGui::End();
+
+    // Scene Hierarchy Panel
+    ImGui::Begin("Scene Hierarchy");
+    ImGui::Text("Scene Hierarchy Content");
+    ImGui::End();
+
+
+    // Scene Hierarchy Panel
+    ImGui::Begin("Simulate");
+
+    if (ImGui::Button("Play"))
     {
         // When the button is pressed, call PlayFunction
         Simulate();
     }
-    
-
-    //// Scene Hierarchy
-    //ImGui::Begin("Scene Hierarchy");
-    //// Add hierarchy content here
-    //ImGui::End();
-
-    //// Inspector Panel
-    //ImGui::Begin("Inspector");
-    //// Add inspector content here
-    //ImGui::End();
-
-    //// Asset Browser
-    //ImGui::Begin("Asset Browser");
-    //// Add asset browser content here
-    //ImGui::End();
-
-    //// Debug Console
-    //ImGui::Begin("Debug Console");
-    //// Add debug logs here
-    //ImGui::End();
 
     ImGui::End();
 
-    
+
+    // Asset Browser Panel
+    ImGui::Begin("Asset Browser");
+    ImGui::Text("Asset Browser Content");
+    ImGui::End();
+
+    // Debug Console Panel
+    ImGui::Begin("Debug Console");
+    ImGui::Text("Debug Console Logs");
+    ImGui::End();
+
+    ImGui::End(); // End Editor Window
+  
 }
 
 void Editor::RenderSceneHierarchy() 

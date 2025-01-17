@@ -32,10 +32,10 @@
       <UniqueIdentifier>{1f1cbf4b-78ac-4dc1-925c-8d388d1ead98}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\ImGui">
-      <UniqueIdentifier>{234f5f5b-359a-4758-8351-92a931c23082}</UniqueIdentifier>
+      <UniqueIdentifier>{5129f91d-361b-4cf5-bff0-9e5d8fcf7441}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\ImGui">
-      <UniqueIdentifier>{0f93e494-4e3e-440f-bb6c-5871625348bd}</UniqueIdentifier>
+      <UniqueIdentifier>{8c5e4d96-fdcf-42ea-bdfe-78fbd2c85487}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -333,25 +333,10 @@
     <ClCompile Include="imgui\imgui_draw.cpp">
       <Filter>Source Files\ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="imgui\backends\imgui_impl_dx9.cpp">
-      <Filter>Source Files\ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui\backends\imgui_impl_dx10.cpp">
-      <Filter>Source Files\ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui\backends\imgui_impl_dx11.cpp">
-      <Filter>Source Files\ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui\backends\imgui_impl_dx12.cpp">
-      <Filter>Source Files\ImGui</Filter>
-    </ClCompile>
     <ClCompile Include="imgui\backends\imgui_impl_sdl2.cpp">
       <Filter>Source Files\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="imgui\backends\imgui_impl_sdlrenderer2.cpp">
-      <Filter>Source Files\ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui\backends\imgui_impl_win32.cpp">
       <Filter>Source Files\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="imgui\misc\cpp\imgui_stdlib.cpp">
@@ -671,34 +656,10 @@
     <ClInclude Include="imgui\imgui.h">
       <Filter>Header Files\ImGui</Filter>
     </ClInclude>
-    <ClInclude Include="imgui\backends\imgui_impl_dx9.h">
-      <Filter>Header Files\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\backends\imgui_impl_dx10.h">
-      <Filter>Header Files\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\backends\imgui_impl_dx11.h">
-      <Filter>Header Files\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\backends\imgui_impl_dx12.h">
-      <Filter>Header Files\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\backends\imgui_impl_metal.h">
-      <Filter>Header Files\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\backends\imgui_impl_osx.h">
-      <Filter>Header Files\ImGui</Filter>
-    </ClInclude>
     <ClInclude Include="imgui\backends\imgui_impl_sdl2.h">
       <Filter>Header Files\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="imgui\backends\imgui_impl_sdlrenderer2.h">
-      <Filter>Header Files\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\backends\imgui_impl_sdlrenderer3.h">
-      <Filter>Header Files\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\backends\imgui_impl_win32.h">
       <Filter>Header Files\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="imgui\imgui_internal.h">
