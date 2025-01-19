@@ -5,6 +5,7 @@
 #include <unordered_map>
 
 #include "AudioHelper.h"
+#include "DebugDB.h"
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/document.h"
 

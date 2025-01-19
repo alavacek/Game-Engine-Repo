@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "DebugDB.h"
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/document.h"
 #include "Renderer.h"

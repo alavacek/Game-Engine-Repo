@@ -15,6 +15,7 @@
 #include "b2WorldDB.h"
 #include "box2d/box2d.h"
 #include "ComponentDB.h"
+#include "DebugDB.h"
 #include "EngineUtils.h"
 #include "Entity.h"
 #include "Event.h"

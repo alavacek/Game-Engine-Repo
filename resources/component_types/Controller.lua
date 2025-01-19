@@ -37,26 +37,26 @@ Controller = {
     end,
 
     OnCollisionEnter = function(self, collision)
-        print("Collision Enter with " .. collision.other:GetName())
+        Debug.Log("Collision Enter with " .. collision.other:GetName())
     end, 
 
     OnCollisionExit = function(self, collision)
-        print("Collision Exit with " .. collision.other:GetName())
+        Debug.Log("Collision Exit with " .. collision.other:GetName())
     end,
 
     OnTriggerEnter = function(self, collision)
-        print("Trigger Enter with " .. collision.other:GetName())
+        Debug.Log("Trigger Enter with " .. collision.other:GetName())
     end, 
 
     OnTriggerExit = function(self, collision)
-        print("Trigger Exit with " .. collision.other:GetName())
+        Debug.Log("Trigger Exit with " .. collision.other:GetName())
     end,
 
     OnDestroy = function(self)
-        print("Destroy logic")
+        Debug.Log("Destroy logic")
     end,
 
     SomeFunction = function(self)
-        print("Awesome")
+        Debug.Log("Awesome")
     end
 }

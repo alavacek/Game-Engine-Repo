@@ -17,8 +17,13 @@ SDL_Texture* ImageDB::LoadImage(const std::string& imageName)
     SDL_Texture* texture = IMG_LoadTexture(Renderer::GetRenderer(), path.c_str());
     
     if (!texture) {
-        std::cout << "error: missing image " << imageName;
-        exit(0);
+        //std::cout << "error: missing image " << imageName;
+        //exit(0);
+
+        std::string message = "missing image " + imageName;
+
+        DebugDB::AddStatement(DebugType::LogError, "", "", message);
+        return nullptr;
     }
 
     cachedTextures[imageName] = texture;
@@ -41,6 +46,13 @@ void ImageDB::RenderImages()
         glm::vec2 finalRenderingPosition = glm::vec2(request.x, request.y) - Renderer::GetCameraPosition();
 
         SDL_Texture* texture = LoadImage(request.imageName);
+
+        // failed to load
+        if (texture == nullptr)
+        {
+            continue;
+        }
+
         SDL_Rect textureRect;
 
         SDL_QueryTexture(texture, NULL, NULL, &textureRect.w, &textureRect.h);
@@ -103,6 +115,13 @@ void ImageDB::RenderUIImages()
     for (auto& request : renderUIRequests)
     {
         SDL_Texture* texture = LoadImage(request.imageName);
+
+        // failed to load
+        if (texture == nullptr)
+        {
+            continue;
+        }
+
         SDL_Rect textureRect;
 
         SDL_QueryTexture(texture, NULL, NULL, &textureRect.w, &textureRect.h);

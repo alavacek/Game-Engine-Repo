@@ -104,7 +104,6 @@ luabridge::LuaRef Entity::GetComponent(const std::string& typeName)
 			component = components[*existingComponentsIt];
 			existingComponentsIt++;
 		}
-		// (*existingComponentsIt < *newlyAddedComponentsIt)
 		else
 		{
 			component = components[*newlyAddedComponentsIt];
@@ -145,7 +144,6 @@ luabridge::LuaRef Entity::GetComponents(const std::string& typeName)
 			component = components[*existingComponentsIt];
 			existingComponentsIt++;
 		}
-		// (*existingComponentsIt < *newlyAddedComponentsIt)
 		else
 		{
 			component = components[*newlyAddedComponentsIt];
@@ -186,8 +184,11 @@ luabridge::LuaRef Entity::AddComponent(const std::string& typeName)
 	}
 	else
 	{
-		std::cout << "error: failed to add component of type " << typeName;
-		exit(0);
+		std::string message = "failed to add component of type " + typeName;
+
+		DebugDB::AddStatement(DebugType::LogError, entityName, "", message);
+		//std::cout << message;
+		//exit(0);
 	}
 }
 
@@ -334,8 +335,14 @@ void Entity::PostLifeCycleFunctionComponentCleanUp()
 			// If binary search failed and returned -1
 			if (indexToRemove < 0)
 			{
-				std::cout << "ERROR: Trying to remove a key that does not exist!";
-				exit(0);
+				//std::cout << "ERROR: Trying to remove a key that does not exist!";
+				//exit(0);
+
+				std::string message = "Trying to remove a key that does not exist!";
+
+				DebugDB::AddStatement(DebugType::LogError, "", "", message);
+
+				continue;
 			}
 
 			componentToRemove->OnDestroy();
@@ -360,52 +367,4 @@ Entity::~Entity()
 	//{
 	//	delete pair.second;
 	//}
-}
-
-
-// OLD C++ HARD CODED COMPONENTS
-
-void SpriteRenderer::ChangeSprite(const std::string& viewImageName_in, glm::dvec2 pivot)
-{
-	viewImageName = viewImageName_in;
-
-	if (!viewImageName.empty()) {
-		viewImage = ImageDB::LoadImage(viewImageName);
-	}
-
-	// Calculate default pivot offset if not provided
-	// Later is used when enity's sprite is different from template
-	if (viewImage && (viewPivotOffset.x == -1 || viewPivotOffset.y == -1) || (useDefaultPivotX || useDefaultPivotY))
-	{
-		int w = 0, h = 0;
-		SDL_QueryTexture(viewImage, nullptr, nullptr, &w, &h);
-
-		if (viewPivotOffset.x == -1 || useDefaultPivotX)
-		{
-			viewPivotOffset.x = w * 0.5;
-		}
-
-		if (viewPivotOffset.y == -1 || useDefaultPivotY)
-		{
-			viewPivotOffset.y = h * 0.5;
-		}
-	}
-}
-
-void SpriteRenderer::RenderEntity(Entity* entity, SDL_Rect* cameraRect, int pixelsPerUnit, bool drawCollision)
-{
-
-}
-
-bool SpriteRenderer::IsEntityInView(SDL_Rect* entityDestinationRect)
-{
-	if ((entityDestinationRect->x + entityDestinationRect->w < 0) ||
-		(entityDestinationRect->y + entityDestinationRect->h < 0) || 
-		(entityDestinationRect->x > (Renderer::GetResolution().x / Renderer::GetZoomFactor())) || 
-		(entityDestinationRect->y > (Renderer::GetResolution().y / Renderer::GetZoomFactor())))
-	{
-		return false;
-	}
-	
-	return true;
 }

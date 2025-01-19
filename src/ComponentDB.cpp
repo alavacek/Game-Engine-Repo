@@ -125,12 +125,7 @@ void ComponentDB::LoadComponents()
 
     components["Rigidbody"] = new Component(luaRefPtr, "Rigidbody", true, true, true);
 
-    // Debug Namesapce
-	luabridge::getGlobalNamespace(luaState)
-		.beginNamespace("Debug")
-		.addFunction("Log", &ComponentDB::CppDebugLog)
-		.addFunction("LogError", &ComponentDB::CppDebugLogError)
-		.endNamespace();
+
 }
 
 void ComponentDB::EstablishLuaInheritance(luabridge::LuaRef& instanceTable, luabridge::LuaRef& parentTable)
@@ -148,15 +143,7 @@ void ComponentDB::EstablishLuaInheritance(luabridge::LuaRef& instanceTable, luab
 	lua_pop(luaState, 1);
 }
 
-void ComponentDB::CppDebugLog(const std::string& message)
-{
-	std::cout << message << std::endl;
-}
 
-void ComponentDB::CppDebugLogError(const std::string& message)
-{
-	std::cerr << message << std::endl;
-}
 
 luabridge::LuaRef ComponentDB::CreateInstanceTable(const std::string& componentName, const std::string& componentType)
 {

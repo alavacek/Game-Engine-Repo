@@ -30,9 +30,13 @@ void Engine::Frame()
 
 void Engine::Start()
 {
-	// Lua Loading
-	LuaStateManager::Initialize();
-	lua_State* luaState = LuaStateManager::GetLuaState();
+	// editor should read resources earlier on in order to fill hierarchy
+	if (!editorInstance)
+	{
+		ReadResources();
+	}
+
+	isRunning = true;
 
 	// set up renderer
 	Renderer::RendererInit();
@@ -40,10 +44,6 @@ void Engine::Start()
 
 	// set up Input
 	Input::Init();
-
-	LuaClassAndNamespaceSetup();
-
-	ReadResources();
 
 	// set up audio
 	AudioDB::InitAudio();
@@ -63,10 +63,19 @@ void Engine::Start()
 
 	// Entity Start
 	SceneDB::Start();
+
+	// let editor know its 
+	DebugDB::MarkDebugStatementsDirty();
 }
 
 void Engine::ReadResources()
 {
+	// Lua Loading
+	LuaStateManager::Initialize();
+	lua_State* luaState = LuaStateManager::GetLuaState();
+
+	LuaClassAndNamespaceSetup();
+
 	// check for resource folder
 	if (!std::filesystem::exists("resources"))
 	{
@@ -88,6 +97,8 @@ void Engine::ReadResources()
 	// Determine what components exist in resources/component_types
 	ComponentDB::LoadComponents();
 
+	DebugDB::Init();
+
 	// template config
 	TemplateDB::LoadTemplates();
 
@@ -103,6 +114,11 @@ void Engine::ReadResources()
 		// no initial scene specified
 		std::cout << "error: initial_scene unspecified";
 		exit(0);
+	}
+
+	if (editorInstance)
+	{
+		DebugDB::saveDebugStatements = true;
 	}
 }
 
@@ -322,6 +338,7 @@ void Engine::EndGame()
 		AudioDB::Reset();
 		TextDB::Reset();
 		TemplateDB::Reset();
+		DebugDB::Reset();
 
 		SDL_DestroyWindow(window);
 		SDL_DestroyRenderer(renderer);
@@ -356,8 +373,11 @@ void Engine::OpenURL(std::string url)
 	std::string command = "xdg-open " + url;
 
 #else
-	std::cout << "Platform not supported\n";
-	exit(0);
+	//std::cout << "Platform not supported\n";
+	//exit(0);
+	std::string message = "Platform not supported";
+
+	DebugDB::AddStatement(DebugType::LogError, "", "", message);
 
 #endif
 	std::system(command.c_str());

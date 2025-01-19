@@ -108,6 +108,7 @@
     <ClCompile Include="src\b2WorldDB.cpp" />
     <ClCompile Include="src\Component.cpp" />
     <ClCompile Include="src\ComponentDB.cpp" />
+    <ClCompile Include="src\DebugDB.cpp" />
     <ClCompile Include="src\Editor.cpp" />
     <ClCompile Include="src\Engine.cpp" />
     <ClCompile Include="src\Entity.cpp" />
@@ -217,6 +218,7 @@
     <ClInclude Include="src\CComponent.h" />
     <ClInclude Include="src\Component.h" />
     <ClInclude Include="src\ComponentDB.h" />
+    <ClInclude Include="src\DebugDB.h" />
     <ClInclude Include="src\Editor.h" />
     <ClInclude Include="src\Engine.h" />
     <ClInclude Include="src\EngineUtils.h" />

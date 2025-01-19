@@ -28,6 +28,9 @@ void Editor::Init()
     ImGui_ImplSDLRenderer2_NewFrame();
     ImGui_ImplSDL2_NewFrame();
 
+    // create engine
+    engine = new Engine();
+    engine->ReadResources();
 
     // Initial Render
     // Start the ImGui frame
@@ -66,7 +69,7 @@ void Editor::EditorLoop()
                 }
                 ImGui_ImplSDL2_ProcessEvent(&event);
             }
-            else if (simulating && currentSimulation && SDL_GetWindowFromID(event.window.windowID) == currentSimulation->GetWindow())
+            else if (simulating && engine && SDL_GetWindowFromID(event.window.windowID) == engine->GetWindow())
             {
                 if ((event.type == SDL_WINDOWEVENT) && (event.window.event == SDL_WINDOWEVENT_CLOSE))
                 {
@@ -97,9 +100,9 @@ void Editor::EditorLoop()
         // if a simulation is running, run its logic
         if (simulating)
         {
-            if (currentSimulation->GetIsRunning())
+            if (engine->GetIsRunning())
             {
-                currentSimulation->Frame();
+                engine->Frame();
             }
             else
             {
@@ -146,12 +149,12 @@ void Editor::RenderEditor(bool resetDefaults)
 
     // Inspector Panel
     ImGui::Begin("Inspector");
-    ImGui::Text("Inspector Content");
+    RenderInspector();
     ImGui::End();
 
     // Scene Hierarchy Panel
     ImGui::Begin("Scene Hierarchy");
-    ImGui::Text("Scene Hierarchy Content");
+    RenderSceneHierarchy();
     ImGui::End();
 
 
@@ -174,7 +177,7 @@ void Editor::RenderEditor(bool resetDefaults)
 
     // Debug Console Panel
     ImGui::Begin("Debug Console");
-    ImGui::Text("Debug Console Logs");
+    RenderDebug();
     ImGui::End();
 
     ImGui::End(); // End Editor Window
@@ -183,19 +186,55 @@ void Editor::RenderEditor(bool resetDefaults)
 
 void Editor::RenderSceneHierarchy() 
 {
-    //for (auto& entity : scene->GetEntities()) 
-    //{
-    //    if (ImGui::Selectable(entity->GetName().c_str(), selectedEntity == entity)) {
-    //        selectedEntity = entity; // Update selected entity
-    //    }
-    //}
+    for (int i = 0; i < SceneDB::GetNumberOfEntitiesInScene(); i++)  
+    {
+        Entity* entity = SceneDB::GetEntityAtIndex(i);
+        if (ImGui::Selectable(entity->GetName().c_str(), selectedEntity == entity)) 
+        {
+            selectedEntity = entity; // Update selected entity
+        }
+    }
 }
 
-void Editor::RenderInspector(Entity* entity)
+void Editor::RenderInspector()
 {
-    if (!entity) return;
+    if (!selectedEntity) return;
+    ImGui::Text(selectedEntity->GetName().c_str());
+    ImGui::Text("Components:");
+    
+    for (auto& component : selectedEntity->components)
+    {
+        std::string componentInfo = component.first + " : " + component.second->type;
+        ImGui::Text(componentInfo.c_str());
+    }
 
-    // TODO
+}
+
+void Editor::RenderDebug()
+{
+    if (DebugDB::DebugStatementsUpdate())
+    {
+        std::vector<DebugLog*> debugStatements = DebugDB::GetDebugStatementsAndMarkClean();
+
+        debugLogs = "";
+
+        for (DebugLog* log : debugStatements)
+        {
+            switch (log->type) 
+            {
+                case (DebugType::Log):
+                    debugLogs += log->message + "\n";
+                    break;
+                case  (DebugType::LogError):
+                    debugLogs += "ERROR:" + log->message + "\n";
+                    break;
+                default:
+                    debugLogs += log->message + "\n";
+            }
+        }
+    }
+
+    ImGui::Text(debugLogs.c_str());
 }
 
 void Editor::Simulate()
@@ -206,8 +245,7 @@ void Editor::Simulate()
         StopSimulation();
     }
 
-    currentSimulation = new Engine();
-    currentSimulation->Start();
+    engine->Start();
     simulating = true;
 }
 
@@ -215,9 +253,9 @@ void Editor::StopSimulation()
 {
     if (simulating)
     {
-        currentSimulation->EndGame();
-        delete(currentSimulation);
+        engine->EndGame();
         simulating = false;
+        engine->ReadResources();
     }
 
 }
@@ -225,10 +263,10 @@ void Editor::StopSimulation()
 Editor::~Editor()
 {
 
-    if (currentSimulation)
+    if (engine)
     {
-        currentSimulation->Quit();
-        delete(currentSimulation);
+        engine->Quit();
+        delete(engine);
     }
 }
 

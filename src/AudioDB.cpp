@@ -57,16 +57,26 @@ void AudioDB::PlayChannel(int channel, const std::string& audioClipName, bool do
 		}
 		else
 		{
+
 			// Better message to say no background music was specified
-			std::cout << "error: failed to play audio clip " + audioClipName;
-			exit(0);
+			std::string message = "failed to play audio clip " + audioClipName;
+
+			DebugDB::AddStatement(DebugType::LogError, "", "", message);
+			//std::cout << "error: failed to play audio clip " + audioClipName;
+			//exit(0);
+			return;
 		}
 
 		audio = AudioHelper::Mix_LoadWAV498(audioPath.c_str());
 		 
-		if (!audio) {
-			std::cout << "error: failed to play audio clip " + audioClipName;
-			exit(0);
+		if (!audio) 
+		{
+			std::string message = "failed to play audio clip " + audioClipName;
+
+			DebugDB::AddStatement(DebugType::LogError, "", "", message);
+			//std::cout << "error: failed to play audio clip " + audioClipName;
+			//exit(0);
+			return;
 		}
 
 		cachedAudio[audioClipName] = audio;
