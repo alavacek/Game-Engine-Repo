@@ -31,7 +31,9 @@ private:
 	Engine* engine = nullptr;
 	SDL_Window* window = nullptr;
 	SDL_Renderer* renderer = nullptr;
+
 	Entity* selectedEntity = nullptr;
+	std::pair<std::string, Component*> selectedComponent = std::make_pair("", nullptr);
 
 	SDL_GLContext glContext;
 	ImVec2 windowSize = ImVec2(1280, 720);

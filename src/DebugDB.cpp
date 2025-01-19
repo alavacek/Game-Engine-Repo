@@ -18,7 +18,7 @@ void DebugDB::Init()
 
 void DebugDB::CppDebugLog(const std::string& message)
 {
-    std::cout << message << std::endl;
+    //std::cout << message << std::endl;
 
     if (saveDebugStatements)
     {
@@ -28,7 +28,7 @@ void DebugDB::CppDebugLog(const std::string& message)
 
 void DebugDB::CppDebugLogError(const std::string& message)
 {
-    std::cerr << message << std::endl;
+    //std::cerr << message << std::endl;
 
     if (saveDebugStatements)
     {

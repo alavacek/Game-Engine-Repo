@@ -30,6 +30,7 @@ public:
 	static void LoadScene(const std::string& sceneName);
 	static void LoadEntitiesInScene(const std::string& sceneName);
 	static std::string GetCurrentSceneName() { return currSceneName; }
+	static std::string GetCurrentScenePath() { return currScenePath; }
 
 	static uint64_t GetNumberOfEntitiesInScene();
 	static Entity* GetEntityAtIndex(int index);
@@ -42,6 +43,7 @@ public:
 	static luabridge::LuaRef FindAll(const std::string& name);
 	static Entity* Instantiate(const std::string& entityTemplateName);
 	static void Destroy(Entity* entity);
+	static void RemoveEntityOutOfSimulation(Entity* entity);
 
 	static void DontDestroy(Entity* entity);
 
@@ -51,6 +53,7 @@ public:
 
 private:
 	static std::string currSceneName;
+	static std::string currScenePath;
 	
 	static std::string pendingSceneName;
 

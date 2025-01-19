@@ -6,6 +6,7 @@ std::vector<Entity*> SceneDB::entitiesToDestroy;
 
 std::string SceneDB::currSceneName;
 std::string SceneDB::pendingSceneName;
+std::string SceneDB::currScenePath;
 bool SceneDB::pendingScene = false;
 
 int SceneDB::totalEntities = 0;
@@ -73,8 +74,8 @@ void SceneDB::LoadScene(const std::string& sceneName)
     // load scene
     currSceneName = sceneName;
 
-	std::string scenePath = "resources/scenes/" + sceneName + ".scene";
-	if (!std::filesystem::exists(scenePath))
+	currScenePath = "resources/scenes/" + sceneName + ".scene";
+	if (!std::filesystem::exists(currScenePath))
 	{
 		std::cout << "error: scene " << sceneName << ".scene is missing";
 		exit(0);
@@ -88,10 +89,10 @@ void SceneDB::LoadEntitiesInScene(const std::string& sceneName)
 {
     lua_State* luaState = LuaStateManager::GetLuaState();
 
-    std::string scenePath = "resources/scenes/" + sceneName + ".scene";
+    currScenePath = "resources/scenes/" + sceneName + ".scene";
 
     rapidjson::Document configDocument;
-    EngineUtils::ReadJsonFile(scenePath, configDocument);
+    EngineUtils::ReadJsonFile(currScenePath, configDocument);
 
     // Ensure the document contains an array named "actors"
     if (!configDocument.HasMember("entities") || !configDocument["entities"].IsArray())
@@ -323,6 +324,8 @@ Entity* SceneDB::Instantiate(const std::string& entityTemplateName)
     else
     {
         std::cout << "error: template " << entityTemplateName << " is missing";
+        DebugDB::AddStatement(DebugType::LogError, "", "", "template " + entityTemplateName + " is missing");
+        return nullptr;
         exit(0);
     }
 
@@ -350,6 +353,8 @@ void SceneDB::Destroy(Entity* entity)
         if (entity->wasDestroyed)
         {
             std::cout << "\033[31m" << "error: attempting to destroy an entity that does not exist" << "\033[0m" << "\n";
+
+            DebugDB::AddStatement(DebugType::LogError, "", "", "attempting to destroy an entity that does not exist");
             return;
         }
 
@@ -379,6 +384,30 @@ void SceneDB::Destroy(Entity* entity)
             entitiesToInstantiate.erase(entitiesToInstantiate.begin() + indexOfEntityInList);
         }
     }
+
+}
+
+// WARNING
+// THIS IS ONLY TO BE CALLED FROM THE EDITOR WHEN WE ARE NOT SIMULATING
+void SceneDB::RemoveEntityOutOfSimulation(Entity* entity)
+{
+    int indexOfEntityInList = -1;
+    // remove from entities vector
+    for (int i = 0; i < entities.size(); i++)
+    {
+        if (entity == entities[i])
+        {
+            indexOfEntityInList = i;
+        }
+    }
+
+    if (indexOfEntityInList != -1)
+    {
+        entities.erase(entities.begin() + indexOfEntityInList);
+        totalEntities--;
+    }
+
+    delete(entity);
 
 }
 

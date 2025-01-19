@@ -249,6 +249,95 @@ void Entity::RemoveComponent(const std::string& typeName)
 	}
 }
 
+void Entity::RemoveComponentByKey(const std::string& key)
+{
+	// Set to nil by default
+	luabridge::LuaRef componentLuaRef = luabridge::LuaRef(LuaStateManager::GetLuaState());
+
+	for (const std::string& componentKey : componentsKeysAlphabeticalOrder)
+	{
+		Component* component = components[componentKey];
+		// found component of type, no need to run logic if already planned to be removed
+		if (componentKey == key && !component->wasRemoved)
+		{
+			// NOTE: this logic will remove all components of type
+			componentLuaRef = *(component->luaRef);
+
+			// Set isEnabled to false
+			luabridge::LuaRef isEnabled = (componentLuaRef)["enabled"];
+			if (isEnabled.isBool() && isEnabled)
+			{
+				(componentLuaRef)["enabled"] = false;
+
+				component->wasRemoved = true;
+
+				keysOfComponentsToRemove.push_back(componentKey);
+
+				// destroy right here to stop simulating
+				if (component->type == "Rigidbody")
+				{
+					component->OnDestroy();
+				}
+			}
+		}
+	}
+
+	// incase added to keysOfNewlyAddComponents, should now remove
+	for (const std::string& componentKey : keysOfNewlyAddedComponents)
+	{
+		Component* component = components[componentKey];
+		// found component of type, no need to run logic if already planned to be removed
+		if (componentKey == key && !component->wasRemoved)
+		{
+			// NOTE: this logic will remove all components of type
+			componentLuaRef = *(component->luaRef);
+
+			// Set isEnabled to false
+			luabridge::LuaRef isEnabled = (componentLuaRef)["enabled"];
+			if (isEnabled.isBool() && isEnabled)
+			{
+				(componentLuaRef)["enabled"] = false;
+
+				component->wasRemoved = true;
+
+				keysOfComponentsToRemove.push_back(componentKey);
+			}
+		}
+	}
+}
+
+
+// WARNING
+// THIS IS ONLY TO BE CALLED FROM THE EDITOR WHEN WE ARE NOT SIMULATING
+void Entity::RemoveComponentByKeyOutOfSimulation(const std::string& key)
+{
+	Component* componentToRemove = components[key];
+
+	// remove from alphabetical order vector
+	int indexToRemove = IndexOfComponentInAlphabeticalVector(key);
+
+	// If binary search failed and returned -1
+	if (indexToRemove < 0)
+	{
+		//std::cout << "ERROR: Trying to remove a key that does not exist!";
+		//exit(0);
+
+		std::string message = "Trying to remove a key that does not exist!";
+
+		DebugDB::AddStatement(DebugType::LogError, "", "", message);
+
+		return;
+	}
+
+	componentsKeysAlphabeticalOrder.erase(componentsKeysAlphabeticalOrder.begin() + indexToRemove);
+
+	// remove from components map
+	components.erase(key);
+
+	// remove component from existence
+	delete(componentToRemove);
+}
+
 int Entity::IndexOfComponentInAlphabeticalVector(const std::string& key)
 {
 	// Binary search hurraw
@@ -363,8 +452,8 @@ void Entity::PostLifeCycleFunctionComponentCleanUp()
 
 Entity::~Entity()
 {
-	//for (const auto& pair : components) 
-	//{
-	//	delete pair.second;
-	//}
+	for (const auto& pair : components) 
+	{
+		delete(pair.second);
+	}
 }

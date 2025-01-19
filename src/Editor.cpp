@@ -191,7 +191,36 @@ void Editor::RenderSceneHierarchy()
         Entity* entity = SceneDB::GetEntityAtIndex(i);
         if (ImGui::Selectable(entity->GetName().c_str(), selectedEntity == entity)) 
         {
-            selectedEntity = entity; // Update selected entity
+            // newly selected, reset selectedComponent
+            if (selectedEntity != entity)
+            {
+                selectedComponent = std::make_pair("", nullptr);
+            }
+
+            // update selected entity
+            selectedEntity = entity; 
+
+        }
+
+        if (entity != nullptr && selectedEntity == entity)
+        {
+            if (ImGui::Button("Remove Entity"))
+            {
+                if (simulating)
+                {
+                    SceneDB::Destroy(entity);
+                }
+                else // actually remove from json file
+                {
+                    // TODO HANDLE TEMPLATES
+                    EngineUtils::RemoveEntityFromJson(SceneDB::GetCurrentScenePath(), entity->entityName);
+
+                    SceneDB::RemoveEntityOutOfSimulation(entity);
+                }
+
+                selectedEntity = nullptr;
+                selectedComponent = std::make_pair("", nullptr);
+            }
         }
     }
 }
@@ -201,11 +230,39 @@ void Editor::RenderInspector()
     if (!selectedEntity) return;
     ImGui::Text(selectedEntity->GetName().c_str());
     ImGui::Text("Components:");
+    bool removeSelectedComponent = false;
     
     for (auto& component : selectedEntity->components)
     {
         std::string componentInfo = component.first + " : " + component.second->type;
-        ImGui::Text(componentInfo.c_str());
+        if (ImGui::Selectable(componentInfo.c_str(), selectedComponent == component))
+        {
+            selectedComponent = std::make_pair(component.first, component.second);
+        }
+
+        if (selectedComponent == component)
+        {
+            if (ImGui::Button("Remove Component"))
+            {
+                removeSelectedComponent = true;
+
+            }
+        }
+    }
+
+    if (removeSelectedComponent)
+    {
+        if (simulating)
+        {
+            SceneDB::Find(selectedComponent.second->owningEntityName)->RemoveComponentByKey(selectedComponent.first);
+        }
+        else // actually remove from json file
+        {
+            EngineUtils::RemoveComponentFromJson(SceneDB::GetCurrentScenePath(), selectedEntity->entityName, selectedComponent.first);
+            selectedEntity->RemoveComponentByKeyOutOfSimulation(selectedComponent.first);
+        }
+
+        selectedComponent = std::make_pair("", nullptr);
     }
 
 }
@@ -256,6 +313,9 @@ void Editor::StopSimulation()
         engine->EndGame();
         simulating = false;
         engine->ReadResources();
+
+        selectedEntity = nullptr;
+        selectedComponent = std::make_pair("", nullptr);
     }
 
 }

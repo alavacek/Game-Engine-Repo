@@ -64,6 +64,8 @@ public:
 
 	luabridge::LuaRef AddComponent(const std::string& typeName);
 	void RemoveComponent(const std::string& typeName);
+	void RemoveComponentByKey(const std::string& key);
+	void RemoveComponentByKeyOutOfSimulation(const std::string& key);
 
 	~Entity();
 private:

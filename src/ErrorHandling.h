@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <string>
 
+#include "DebugDB.h"
 #include "lua.hpp"
 #include "LuaBridge.h"
 
@@ -28,12 +29,15 @@ public:
 			std::cout << "\033[31m" << errorMessage << "\033[0m" << "\n";
 		}
 
+		DebugDB::AddStatement(DebugType::LogError, entityName, "", errorMessage);
+
 	}
 
 	static void ReportString(const std::string& error)
 	{
 		// Display (with color codes)
 		std::cout << "\033[31m" << error << "\033[0m" << "\n";
+		DebugDB::AddStatement(DebugType::LogError, "", "", error);
 	}
 };
 
