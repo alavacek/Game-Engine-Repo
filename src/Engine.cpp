@@ -108,6 +108,9 @@ void Engine::ReadResources()
 		std::string sceneName = configDocument["initial_scene"].GetString();
 
 		SceneDB::LoadScene(sceneName);
+
+		// EDITOR ONLY
+		initialScene = sceneName;
 	}
 	else
 	{
@@ -337,7 +340,6 @@ void Engine::EndGame()
 		ImageDB::Reset();
 		AudioDB::Reset();
 		TextDB::Reset();
-		TemplateDB::Reset();
 		DebugDB::Reset();
 
 		SDL_DestroyWindow(window);

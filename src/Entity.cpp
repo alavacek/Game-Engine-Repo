@@ -172,6 +172,7 @@ luabridge::LuaRef Entity::AddComponent(const std::string& typeName)
 
 		std::shared_ptr<luabridge::LuaRef> instanceTablePtr = std::make_shared<luabridge::LuaRef>(instanceTable);
 		Component* addedComponent = new Component(instanceTablePtr, typeName, parentComponent->hasStart, parentComponent->hasUpdate, parentComponent->hasLateUpdate);
+		addedComponent->owningEntityName = entityName;
 
 		 // add ref for components table
 		 components[componentKey] = addedComponent;

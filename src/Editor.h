@@ -22,6 +22,8 @@ public:
 	void RenderSceneHierarchy();
 	void RenderInspector();
 	void RenderDebug();
+	void RenderAddEntity();
+	void RenderAddComponent();
 
 	void Simulate();
 	void StopSimulation();
@@ -33,13 +35,19 @@ private:
 	SDL_Renderer* renderer = nullptr;
 
 	Entity* selectedEntity = nullptr;
+	std::string loadedScene = "";
+	std::string entityToAddTemplateName = "";
+	std::string componentToAdd = "";
 	std::pair<std::string, Component*> selectedComponent = std::make_pair("", nullptr);
 
 	SDL_GLContext glContext;
 	ImVec2 windowSize = ImVec2(1280, 720);
 
 	std::string debugLogs = "";
+
 	bool simulating = false;
+	bool showAddEntityWindow = false;
+	bool showAddComponentWindow = false;
 
 };
 

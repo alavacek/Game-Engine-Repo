@@ -55,6 +55,9 @@ public:
 	bool GetIsRunning() { return isRunning; }
 	SDL_Window* GetWindow() { return window; }
 
+	// EDITOR ONLY
+	std::string GetInitialSceneName() { return initialScene; }
+
 	static void Quit();
 	static void Sleep(int milliseconds);
 	static void OpenURL(std::string url);
@@ -67,6 +70,10 @@ private:
 	std::string pendingScene;
 
 	std::string configPath;
+
+	//EDITOR ONLY
+	std::string initialScene;
+
 	rapidjson::Document configDocument;
 
 	SDL_Renderer* renderer;

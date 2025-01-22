@@ -24,6 +24,7 @@ public:
 	static Component* LoadComponentInstance(const rapidjson::Value& component, const std::string& componentName); // TODO: assess if passing string is expensive and necessary
 
 	static std::unordered_map<std::string, Component*> components;
+	static std::vector<std::string> componentsAlphabeticalOrder;
 
 	static int numRuntimeAddedComponents;
 

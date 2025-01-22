@@ -32,6 +32,8 @@ void Editor::Init()
     engine = new Engine();
     engine->ReadResources();
 
+    loadedScene = engine->GetInitialSceneName();
+
     // Initial Render
     // Start the ImGui frame
     ImGui::NewFrame();
@@ -223,6 +225,16 @@ void Editor::RenderSceneHierarchy()
             }
         }
     }
+
+    if (ImGui::Button("Add Entity"))
+    {
+        showAddEntityWindow = true;
+    }
+
+    if (showAddEntityWindow)
+    {
+        RenderAddEntity();
+    }
 }
 
 void Editor::RenderInspector()
@@ -244,8 +256,7 @@ void Editor::RenderInspector()
         {
             if (ImGui::Button("Remove Component"))
             {
-                removeSelectedComponent = true;
-
+                removeSelectedComponent = true;        
             }
         }
     }
@@ -254,7 +265,7 @@ void Editor::RenderInspector()
     {
         if (simulating)
         {
-            SceneDB::Find(selectedComponent.second->owningEntityName)->RemoveComponentByKey(selectedComponent.first);
+            selectedEntity->RemoveComponentByKey(selectedComponent.first);
         }
         else // actually remove from json file
         {
@@ -263,6 +274,16 @@ void Editor::RenderInspector()
         }
 
         selectedComponent = std::make_pair("", nullptr);
+    }
+
+    if (ImGui::Button("Add Component"))
+    {
+        showAddComponentWindow = true;
+    }
+
+    if (showAddComponentWindow)
+    {
+        RenderAddComponent();
     }
 
 }
@@ -294,6 +315,83 @@ void Editor::RenderDebug()
     ImGui::Text(debugLogs.c_str());
 }
 
+void Editor::RenderAddEntity()
+{
+    ImGui::Begin("Add Entity to Scene");
+
+    if (ImGui::Selectable("Empty", entityToAddTemplateName == ""))
+    {
+        entityToAddTemplateName = "";
+    }
+
+    // TODO offer different templates?
+
+    if (ImGui::Button("Add Entity"))
+    {
+        if (simulating)
+        {
+            // add entity to simulating game
+            SceneDB::Instantiate(entityToAddTemplateName);
+        }
+        else
+        {
+
+        }
+
+        entityToAddTemplateName = "";
+        showAddEntityWindow = false;
+    }
+
+    if (ImGui::Button("Cancel"))
+    {
+        entityToAddTemplateName = "";
+        showAddEntityWindow = false;
+    }
+
+    ImGui::End();
+}
+
+void Editor::RenderAddComponent()
+{
+    std::string windowTitle = "Add Component to " + selectedEntity->GetName();
+    ImGui::Begin(windowTitle.c_str());
+
+    for (std::string component : ComponentDB::componentsAlphabeticalOrder)
+    {
+        if (ImGui::Selectable(component.c_str(), componentToAdd == component))
+        {
+            componentToAdd = component;
+        }
+    }
+
+    if (componentToAdd != "")
+    {
+        if (ImGui::Button("Add Component"))
+        {
+            if (simulating)
+            {
+                selectedEntity->AddComponent(componentToAdd);
+            }
+            else
+            {
+
+            }
+
+            showAddComponentWindow = false;
+            componentToAdd = "";
+        }
+    }
+
+    if (ImGui::Button("Cancel"))
+    {
+
+        showAddComponentWindow = false;
+        componentToAdd = "";
+    }
+
+    ImGui::End();
+}
+
 void Editor::Simulate()
 {
     // Simulation already open
@@ -312,7 +410,9 @@ void Editor::StopSimulation()
     {
         engine->EndGame();
         simulating = false;
-        engine->ReadResources();
+
+        //reload scene
+        SceneDB::LoadScene(loadedScene);
 
         selectedEntity = nullptr;
         selectedComponent = std::make_pair("", nullptr);

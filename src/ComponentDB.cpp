@@ -1,6 +1,7 @@
 #include "ComponentDB.h"
 
 std::unordered_map<std::string, Component*> ComponentDB::components;
+std::vector<std::string> ComponentDB::componentsAlphabeticalOrder;
 int ComponentDB::numRuntimeAddedComponents = 0;
 lua_State* ComponentDB::luaState;
 
@@ -66,6 +67,8 @@ void ComponentDB::LoadComponents()
 		}
 	}
 
+    
+
     // C++ Components
     // For now just called Rigidbody since this is a 2D engine
     luabridge::getGlobalNamespace(luaState)
@@ -117,6 +120,7 @@ void ComponentDB::LoadComponents()
         .addProperty("trigger_radius", &Rigidbody2DLuaRef::triggerRadius)
         .endClass();
 
+    // C++ Components
     Rigidbody2DLuaRef* RB = new Rigidbody2DLuaRef();
     luabridge::push(luaState, RB);
 
@@ -125,7 +129,15 @@ void ComponentDB::LoadComponents()
 
     components["Rigidbody"] = new Component(luaRefPtr, "Rigidbody", true, true, true);
 
+    // EDITOR ONLY
+    componentsAlphabeticalOrder.reserve(components.size());
 
+    for (auto component : components)
+    {
+        componentsAlphabeticalOrder.push_back(component.first);
+    }
+
+    std::sort(componentsAlphabeticalOrder.begin(), componentsAlphabeticalOrder.end());
 }
 
 void ComponentDB::EstablishLuaInheritance(luabridge::LuaRef& instanceTable, luabridge::LuaRef& parentTable)

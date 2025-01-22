@@ -315,26 +315,35 @@ Entity* SceneDB::Instantiate(const std::string& entityTemplateName)
     std::string entityName = "";
     std::unordered_map<std::string, Component*> componentMap;
 
-    Template* entityTemplate = TemplateDB::FindEntity(entityTemplateName);
-    if (entityTemplate != nullptr)
+    
+    // create empty entity
+    if (entityTemplateName == "")
     {
-        // Extract values from the JSON
-        entityName = entityTemplate->entityName;
+        entityName = "Entity";
     }
     else
     {
-        std::cout << "error: template " << entityTemplateName << " is missing";
-        DebugDB::AddStatement(DebugType::LogError, "", "", "template " + entityTemplateName + " is missing");
-        return nullptr;
-        exit(0);
-    }
+        Template* entityTemplate = TemplateDB::FindEntity(entityTemplateName);
+        if (entityTemplate != nullptr)
+        {
+            // Extract values from the JSON
+            entityName = entityTemplate->entityName;
+        }
+        else
+        {
+            std::cout << "error: template " << entityTemplateName << " is missing";
+            DebugDB::AddStatement(DebugType::LogError, "", "", "template " + entityTemplateName + " is missing");
+            return nullptr;
+            //exit(0);
+        }
 
-    for (auto component : entityTemplate->components)
-    {
-        luabridge::LuaRef instanceTable = ComponentDB::CreateInstanceTableFromTemplate(component.first, component.second->type, *(component.second->luaRef));
+        for (auto component : entityTemplate->components)
+        {
+            luabridge::LuaRef instanceTable = ComponentDB::CreateInstanceTableFromTemplate(component.first, component.second->type, *(component.second->luaRef));
 
-        std::shared_ptr<luabridge::LuaRef> instanceTablePtr = std::make_shared<luabridge::LuaRef>(instanceTable);
-        componentMap[component.first] = new Component(instanceTablePtr, component.second->type, component.second->hasStart, component.second->hasUpdate, component.second->hasLateUpdate);
+            std::shared_ptr<luabridge::LuaRef> instanceTablePtr = std::make_shared<luabridge::LuaRef>(instanceTable);
+            componentMap[component.first] = new Component(instanceTablePtr, component.second->type, component.second->hasStart, component.second->hasUpdate, component.second->hasLateUpdate);
+        }
     }
 
     // Create the Entity object
