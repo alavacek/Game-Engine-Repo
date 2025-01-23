@@ -214,10 +214,10 @@ void Editor::RenderSceneHierarchy()
                 }
                 else // actually remove from json file
                 {
-                    // TODO HANDLE TEMPLATES
                     EngineUtils::RemoveEntityFromJson(SceneDB::GetCurrentScenePath(), entity->entityName);
 
                     SceneDB::RemoveEntityOutOfSimulation(entity);
+                    ResetEditor();
                 }
 
                 selectedEntity = nullptr;
@@ -271,6 +271,8 @@ void Editor::RenderInspector()
         {
             EngineUtils::RemoveComponentFromJson(SceneDB::GetCurrentScenePath(), selectedEntity->entityName, selectedComponent.first);
             selectedEntity->RemoveComponentByKeyOutOfSimulation(selectedComponent.first);
+
+            ResetEditor();
         }
 
         selectedComponent = std::make_pair("", nullptr);
@@ -319,29 +321,43 @@ void Editor::RenderAddEntity()
 {
     ImGui::Begin("Add Entity to Scene");
 
-    if (ImGui::Selectable("Empty", entityToAddTemplateName == ""))
+    for (std::string templateName : TemplateDB::GetBuiltInTemplates())
     {
-        entityToAddTemplateName = "";
+        if (ImGui::Selectable(templateName.c_str(), entityToAddTemplateName == templateName))
+        {
+            entityToAddTemplateName = templateName;
+        }
     }
 
-    // TODO offer different templates?
-
-    if (ImGui::Button("Add Entity"))
+    if (entityToAddTemplateName != "")
     {
-        if (simulating)
+        if (ImGui::Button("Add Entity"))
         {
-            // add entity to simulating game
-            SceneDB::Instantiate(entityToAddTemplateName);
-        }
-        else
-        {
+            if (simulating)
+            {
+                // add entity to simulating game
+                SceneDB::Instantiate(entityToAddTemplateName);
+            }
+            else
+            {
+                Template* temp = TemplateDB::FindTemplate(entityToAddTemplateName);
 
-        }
+                std::string entityName = temp->GetName();
 
-        entityToAddTemplateName = "";
-        showAddEntityWindow = false;
+                if (temp->instanceCountInScene > 0)
+                {
+                    entityName += " (" + std::to_string(temp->instanceCountInScene) + ")";
+                }
+
+                EngineUtils::AddTemplateEntityToJson(SceneDB::GetCurrentScenePath(), entityToAddTemplateName, entityName);
+                ResetEditor();
+            }
+
+            entityToAddTemplateName = "";
+            showAddEntityWindow = false;
+        }
     }
-
+    
     if (ImGui::Button("Cancel"))
     {
         entityToAddTemplateName = "";
@@ -374,7 +390,9 @@ void Editor::RenderAddComponent()
             }
             else
             {
-
+                std::string componentKey = std::to_string(selectedEntity->componentCounter);
+                EngineUtils::AddComponentToEntityInJson(SceneDB::GetCurrentScenePath(), selectedEntity->GetName(), componentKey, componentToAdd);
+                ResetEditor();
             }
 
             showAddComponentWindow = false;
@@ -390,6 +408,28 @@ void Editor::RenderAddComponent()
     }
 
     ImGui::End();
+}
+
+void Editor::ResetEditor()
+{
+    std::string selectedEntityName = selectedEntity->GetName();
+
+    // reload current scene
+    engine->ReloadSceneFiles(loadedScene);
+
+    // reset all of these because they rely on certain entities existing
+    selectedEntity = SceneDB::Find(selectedEntityName);
+    if (selectedEntity == luabridge::LuaRef(LuaStateManager::GetLuaState()))
+    {
+        selectedEntity = nullptr;
+    }
+
+    entityToAddTemplateName = "";
+    componentToAdd = "";
+    selectedComponent = std::make_pair("", nullptr);             
+    showAddEntityWindow = false;
+    showAddComponentWindow = false;
+
 }
 
 void Editor::Simulate()

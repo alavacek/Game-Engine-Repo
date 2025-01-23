@@ -19,12 +19,22 @@
 class TemplateDB
 {
 public:
-    static Template* FindEntity(std::string templateName);
+    static Template* FindTemplate(std::string templateName);
     static void LoadTemplates();
+
+    // EDITOR ONLY
     static void Reset();
+    
+    static void ResetInstancesCountPerScene();
+
+    // EDITOR ONLY
+    static std::vector<std::string> GetBuiltInTemplates() { return builtInTemplates; }
 
 private:
-    static std::unordered_map<std::string, Template*> templates;
+    static std::unordered_map<std::string, Template*> templates; // ones created by user
+
+    // EDITOR ONLY
+    static std::vector<std::string> builtInTemplates; // built in
 };
 
 #endif

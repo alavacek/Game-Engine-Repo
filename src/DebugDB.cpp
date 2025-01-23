@@ -52,6 +52,7 @@ void DebugDB::AddStatement(DebugType type, std::string entityName, std::string c
     }
 }
 
+// EDITOR ONLY
 void DebugDB::Reset()
 {
     for (DebugLog* statement : debugStatements)

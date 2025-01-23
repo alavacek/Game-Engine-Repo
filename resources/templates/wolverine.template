@@ -1,0 +1,8 @@
+{
+  "name": "wolverine",
+  "components": {
+    "1": {
+      "type": "OutputMessage2"
+    }
+  }
+}

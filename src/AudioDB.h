@@ -20,6 +20,7 @@ public:
 	static void HaltChannel(int channel);
 	static void SetVolume(int channel, float volume);
 
+	// EDITOR ONLY
 	static void Reset();
 
 private:

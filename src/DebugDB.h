@@ -35,6 +35,8 @@ public:
 	static void CppDebugLogError(const std::string& message);
 
 	static void AddStatement(DebugType type, std::string entityName, std::string componentType, std::string message);
+
+	// EDITOR ONLY
 	static void Reset(); // reset between simulations
 
 	// just returning debugStatements every frame is super expensive, 

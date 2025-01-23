@@ -200,6 +200,142 @@ public:
 		printf("JSON file '%s' updated successfully.\n", jsonFilePath.c_str());
 	}
 
+	static void AddTemplateEntityToJson(const std::string& jsonFilePath, const std::string& templateName, const std::string& entityName)
+	{
+		// Open the JSON file for reading
+		FILE* file = nullptr;
+		errno_t err = fopen_s(&file, jsonFilePath.c_str(), "rb");
+		if (err != 0 || !file) {
+			printf("Failed to open JSON file: %s\n", jsonFilePath.c_str());
+			return;
+		}
+
+		// Read the JSON file into a buffer
+		char readBuffer[65536];
+		rapidjson::FileReadStream readStream(file, readBuffer, sizeof(readBuffer));
+		rapidjson::Document document;
+		document.ParseStream(readStream);
+		fclose(file);
+
+		// Check if the document contains an "entities" array
+		if (!document.IsObject() || !document.HasMember("entities") || !document["entities"].IsArray()) {
+			printf("Invalid JSON format or missing 'entities' array.\n");
+			return;
+		}
+
+		// Access the "entities" array
+		rapidjson::Value& entities = document["entities"];
+
+		// Create the new template entity
+		rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
+		rapidjson::Value newEntity(rapidjson::kObjectType);
+
+		// Add the "template" field
+		newEntity.AddMember("template", rapidjson::Value(templateName.c_str(), allocator).Move(), allocator);
+
+		// Add the "name" field
+		newEntity.AddMember("name", rapidjson::Value(entityName.c_str(), allocator).Move(), allocator);
+
+		// Add the new entity to the entities array
+		entities.PushBack(newEntity, allocator);
+
+		// Write the updated JSON back to the file
+		err = fopen_s(&file, jsonFilePath.c_str(), "wb");
+		if (err != 0 || !file) {
+			printf("Failed to open JSON file for writing: %s\n", jsonFilePath.c_str());
+			return;
+		}
+
+		rapidjson::FileWriteStream writeStream(file, readBuffer, sizeof(readBuffer));
+		rapidjson::Writer<rapidjson::FileWriteStream> writer(writeStream);
+		document.Accept(writer);
+		fclose(file);
+
+		printf("Template entity '%s' with name '%s' added to JSON file: %s\n", templateName.c_str(), entityName.c_str(), jsonFilePath.c_str());
+	}
+
+	static void AddComponentToEntityInJson(const std::string& jsonFilePath, const std::string& entityName, const std::string& componentKey, const std::string& componentType)
+	{
+		// Open the JSON file for reading
+		FILE* file = nullptr;
+		errno_t err = fopen_s(&file, jsonFilePath.c_str(), "rb");
+		if (err != 0 || !file) {
+			printf("Failed to open JSON file: %s\n", jsonFilePath.c_str());
+			return;
+		}
+
+		// Read the JSON file into a buffer
+		char readBuffer[65536];
+		rapidjson::FileReadStream readStream(file, readBuffer, sizeof(readBuffer));
+		rapidjson::Document document;
+		document.ParseStream(readStream);
+		fclose(file);
+
+		// Check if the document contains an "entities" array
+		if (!document.IsObject() || !document.HasMember("entities") || !document["entities"].IsArray()) {
+			printf("Invalid JSON format or missing 'entities' array.\n");
+			return;
+		}
+
+		// Access the "entities" array
+		rapidjson::Value& entities = document["entities"];
+
+		for (rapidjson::SizeType i = 0; i < entities.Size(); ++i) {
+			rapidjson::Value& entity = entities[i];
+
+			// Check if the entity matches the given name
+			if (entity.HasMember("name") && entity["name"].IsString() && entityName == entity["name"].GetString()) {
+				// Check if "components" field exists, if not create it
+				if (!entity.HasMember("components") || !entity["components"].IsObject()) {
+					entity.AddMember("components", rapidjson::Value(rapidjson::kObjectType), document.GetAllocator());
+				}
+
+				// Access the "components" field
+				rapidjson::Value& components = entity["components"];
+
+				// Check if the component already exists; if not, add it
+				if (!components.HasMember(componentKey.c_str())) {
+					rapidjson::Value componentObject(rapidjson::kObjectType); // Create an empty object for the component
+					componentObject.AddMember(
+						"type",
+						rapidjson::Value(componentType.c_str(), document.GetAllocator()).Move(),
+						document.GetAllocator()
+					);
+
+					// Add the component to the "components" field
+					components.AddMember(
+						rapidjson::Value(componentKey.c_str(), document.GetAllocator()).Move(),
+						componentObject,
+						document.GetAllocator()
+					);
+				}
+
+				break; // Stop searching after modifying the matching entity
+			}
+		}
+
+		// Write the updated JSON back to the file
+		err = fopen_s(&file, jsonFilePath.c_str(), "wb");
+		if (err != 0 || !file) {
+			printf("Failed to open JSON file for writing: %s\n", jsonFilePath.c_str());
+			return;
+		}
+
+		rapidjson::FileWriteStream writeStream(file, readBuffer, sizeof(readBuffer));
+		rapidjson::Writer<rapidjson::FileWriteStream> writer(writeStream);
+		document.Accept(writer);
+		fclose(file);
+
+		printf("Component '%s' added to entity '%s' in JSON file: %s\n", componentKey.c_str(), entityName.c_str(), jsonFilePath.c_str());
+	}
+
+	static bool isNumber(const std::string& s)
+	{
+		std::string::const_iterator it = s.begin();
+		while (it != s.end() && std::isdigit(*it)) ++it;
+		return !s.empty() && it == s.end();
+	}
+
 };
 
 #endif

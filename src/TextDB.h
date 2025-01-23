@@ -47,6 +47,7 @@ public:
 		const std::string& fontName, float fontSize, float r, float g, float b, float a);
 	static void RenderText();
 
+	// EDITOR ONLY
 	static void Reset();
 private:
 	static TTF_Font* FindFont(const std::string& fontName, int fontSize);

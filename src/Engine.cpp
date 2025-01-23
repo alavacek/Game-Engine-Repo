@@ -332,6 +332,7 @@ void Engine::Render()
 
 void Engine::EndGame()
 {
+	// EDITOR ONLY
 	if (editorInstance)
 	{
 		isRunning = false;
@@ -342,6 +343,8 @@ void Engine::EndGame()
 		TextDB::Reset();
 		DebugDB::Reset();
 
+		ComponentDB::numRuntimeAddedComponents = 0;
+
 		SDL_DestroyWindow(window);
 		SDL_DestroyRenderer(renderer);
 	}
@@ -349,6 +352,71 @@ void Engine::EndGame()
 	{
 		exit(1);
 	}
+}
+
+// EDITOR ONLY
+void Engine::FullReset()
+{
+	if (isRunning)
+	{
+		std::cerr << "Attempting to full reset while simulating \n";
+		exit(0);
+	}
+
+	SceneDB::Reset();
+	ImageDB::Reset();
+	AudioDB::Reset();
+	TextDB::Reset();
+	DebugDB::Reset();
+	ComponentDB::Reset();
+	TemplateDB::Reset();
+
+	ReadResources();
+}
+
+
+void Engine::ReloadSceneFiles(std::string sceneName)
+{
+	if (isRunning)
+	{
+		std::cerr << "Attempting to reload scene files while simulating \n";
+		exit(1);
+	}
+
+	SceneDB::Reset();
+	SceneDB::LoadScene(sceneName);
+}
+
+// EDITOR ONLY
+void Engine::ReloadComponentsFiles()
+{
+	if (isRunning)
+	{
+		std::cerr << "Attempting to reload component files while simulating \n";
+		exit(1);
+	}
+
+	ComponentDB::Reset();
+
+	// Determine what components exist in resources/component_types
+	ComponentDB::LoadComponents();
+
+}
+
+// EDITOR ONLY
+void Engine::ReloadTemplatesFiles()
+{
+	if (isRunning)
+	{
+		std::cerr << "Attempting to reload template files while simulating \n";
+		exit(1);
+	}
+
+	TemplateDB::Reset();
+
+	// template config
+	TemplateDB::LoadTemplates();
+
 }
 
 // Lua Functions

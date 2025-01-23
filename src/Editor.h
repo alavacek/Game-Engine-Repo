@@ -24,6 +24,8 @@ public:
 	void RenderDebug();
 	void RenderAddEntity();
 	void RenderAddComponent();
+	
+	void ResetEditor();
 
 	void Simulate();
 	void StopSimulation();

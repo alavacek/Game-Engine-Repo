@@ -113,14 +113,38 @@ void SceneDB::LoadEntitiesInScene(const std::string& sceneName)
         std::string name = "";
         std::unordered_map<std::string, Component*> componentMap;
 
+        // EDITOR ONLY
+        int componentCounter = 0;
+
         if (entityJson.HasMember("template"))
         {
             std::string templateName = entityJson["template"].GetString();
-            Template* entityTemplate = TemplateDB::FindEntity(templateName);
+            Template* entityTemplate = TemplateDB::FindTemplate(templateName);
+
             if (entityTemplate != nullptr)
             {
                 // Extract values from the JSON
-                name = entityTemplate->entityName;
+                name = entityJson.HasMember("name") ? entityJson["name"].GetString() : entityTemplate->entityName;
+
+                // Define the regex pattern for "(someNumber)" with no spaces
+                std::regex pattern(R"(\((\d+)\)$)");
+                std::smatch match;
+
+                if (std::regex_search(name, match, pattern)) 
+                {
+                    // If there's a match, extract the number and convert to an integer
+                    int instanceNumber = std::stoi(match[1].str());
+
+                    // if number is higher than instanceCountInScene, then should update instanceCountInScene
+                    if ((instanceNumber + 1) > entityTemplate->instanceCountInScene)
+                    {
+                        entityTemplate->instanceCountInScene = instanceNumber + 1;
+                    }
+                }
+                else
+                {
+                    entityTemplate->instanceCountInScene = 1;
+                }
             }
             else
             {
@@ -134,12 +158,19 @@ void SceneDB::LoadEntitiesInScene(const std::string& sceneName)
 
                 std::shared_ptr<luabridge::LuaRef> instanceTablePtr = std::make_shared<luabridge::LuaRef>(instanceTable);
                 componentMap[component.first] = new Component(instanceTablePtr, component.second->type, component.second->hasStart, component.second->hasUpdate, component.second->hasLateUpdate);
+
+                // EDITOR ONLY
+                if (EngineUtils::isNumber(component.first) && std::stoi(component.first) >= componentCounter)
+                {
+                    componentCounter = std::stoi(component.first) + 1;
+                }
             }
         }
-
-        // Extract values from the JSON
-        // Override template if applicable
-        name = entityJson.HasMember("name") ? entityJson["name"].GetString() : name;
+        else
+        {
+            // Extract values from the JSON
+            name = entityJson.HasMember("name") ? entityJson["name"].GetString() : name;
+        }
 
         // Loop through each component in the JSON array
         if (entityJson.HasMember("components"))
@@ -155,6 +186,13 @@ void SceneDB::LoadEntitiesInScene(const std::string& sceneName)
                 const rapidjson::Value& component = itr->value;
 
                 componentMap[componentName] = ComponentDB::LoadComponentInstance(component, componentName);
+
+                // EDITOR ONLY
+                if (EngineUtils::isNumber(componentName) && std::stoi(componentName) >= componentCounter)
+                {
+                    componentCounter = std::stoi(componentName) + 1;
+                }
+                
             }
         }
 
@@ -162,6 +200,8 @@ void SceneDB::LoadEntitiesInScene(const std::string& sceneName)
         Entity* entity = new Entity(
             name, componentMap 
         );
+
+        entity->componentCounter = componentCounter;
 
         // Add the entity to the entities vector
         entities.push_back(entity);
@@ -282,6 +322,8 @@ Entity* SceneDB::Find(const std::string& name)
     return luabridge::LuaRef(LuaStateManager::GetLuaState());
 }
 
+// Recent changes should make this not a useful function to call since all entities will have unique names now
+// TODO: possibly see if we can slice off the count at the end of the entity and return all entities with the same base name (ex. if we have an entity, entity 1, and entity 2, return all 3 of these
 luabridge::LuaRef SceneDB::FindAll(const std::string& name)
 {
     luabridge::LuaRef entityTable = luabridge::newTable(LuaStateManager::GetLuaState());
@@ -314,36 +356,36 @@ Entity* SceneDB::Instantiate(const std::string& entityTemplateName)
     lua_State* luaState = LuaStateManager::GetLuaState();
     std::string entityName = "";
     std::unordered_map<std::string, Component*> componentMap;
+ 
+    Template* entityTemplate = TemplateDB::FindTemplate(entityTemplateName);
 
-    
-    // create empty entity
-    if (entityTemplateName == "")
+    if (entityTemplate != nullptr)
     {
-        entityName = "Entity";
+        // Extract values from the JSON
+        entityName = entityTemplate->entityName;
+
+        if (entityTemplate->instanceCountInScene > 0)
+        {
+            std::string suffix = " (" + std::to_string(entityTemplate->instanceCountInScene) + ")";
+            entityName.append(suffix);
+        }
+
+        entityTemplate->instanceCountInScene++;
     }
     else
     {
-        Template* entityTemplate = TemplateDB::FindEntity(entityTemplateName);
-        if (entityTemplate != nullptr)
-        {
-            // Extract values from the JSON
-            entityName = entityTemplate->entityName;
-        }
-        else
-        {
-            std::cout << "error: template " << entityTemplateName << " is missing";
-            DebugDB::AddStatement(DebugType::LogError, "", "", "template " + entityTemplateName + " is missing");
-            return nullptr;
-            //exit(0);
-        }
+        std::cout << "error: template " << entityTemplateName << " is missing";
+        DebugDB::AddStatement(DebugType::LogError, "", "", "template " + entityTemplateName + " is missing");
+        return nullptr;
+        //exit(0);
+    }
 
-        for (auto component : entityTemplate->components)
-        {
-            luabridge::LuaRef instanceTable = ComponentDB::CreateInstanceTableFromTemplate(component.first, component.second->type, *(component.second->luaRef));
+    for (auto component : entityTemplate->components)
+    {
+        luabridge::LuaRef instanceTable = ComponentDB::CreateInstanceTableFromTemplate(component.first, component.second->type, *(component.second->luaRef));
 
-            std::shared_ptr<luabridge::LuaRef> instanceTablePtr = std::make_shared<luabridge::LuaRef>(instanceTable);
-            componentMap[component.first] = new Component(instanceTablePtr, component.second->type, component.second->hasStart, component.second->hasUpdate, component.second->hasLateUpdate);
-        }
+        std::shared_ptr<luabridge::LuaRef> instanceTablePtr = std::make_shared<luabridge::LuaRef>(instanceTable);
+        componentMap[component.first] = new Component(instanceTablePtr, component.second->type, component.second->hasStart, component.second->hasUpdate, component.second->hasLateUpdate);
     }
 
     // Create the Entity object
@@ -425,6 +467,7 @@ void SceneDB::DontDestroy(Entity* entity)
     entity->destroyOnLoad = false;
 }
 
+// EDITOR ONLY
 void SceneDB::Reset()
 {
     for (int i = 0; i < entities.size(); i++)
@@ -435,6 +478,8 @@ void SceneDB::Reset()
     entities.clear();
     entitiesToInstantiate.clear();
     entitiesToDestroy.clear();
+
+    TemplateDB::ResetInstancesCountPerScene();
 
     // reset physics
     delete(b2WorldDB::b2WorldInstance);

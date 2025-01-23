@@ -14,6 +14,7 @@ public:
         templateName(templateName) {}
 
     std::string templateName;
+    int instanceCountInScene = 0; // for naming
 };
 
 #endif

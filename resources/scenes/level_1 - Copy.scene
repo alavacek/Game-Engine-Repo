@@ -15,7 +15,8 @@
       }
     },
     {
-      "template": "PlayerController"
+      "template": "PlayerController",
+      "name": "player"
     },
     {
       "name": "lower_ground",
@@ -43,3 +44,4 @@
     }
   ]
 }
+

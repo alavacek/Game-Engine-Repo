@@ -3,6 +3,7 @@
 
 #include <filesystem>
 #include <iostream>
+#include <regex>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -47,6 +48,7 @@ public:
 
 	static void DontDestroy(Entity* entity);
 
+	// EDITOR ONLY
 	static void Reset();
 
 	static bool pendingScene;

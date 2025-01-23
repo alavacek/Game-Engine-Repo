@@ -139,6 +139,7 @@ public:
 	static void DrawPixel(float x, float y, float r, float g, float b, float a);
 	static void DrawLine(float x1, float y1, float x2, float y2, float r, float g, float b, float a);
 	
+	// EDITOR ONLY
 	static void Reset();
 private:
 	static bool CompareImageRequests(const ImageRenderRequest& a, const ImageRenderRequest& b);

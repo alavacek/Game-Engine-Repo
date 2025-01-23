@@ -51,6 +51,12 @@ public:
 	void Render();
 
 	void EndGame();
+	
+	// EDITOR ONLY
+	void FullReset();
+	void ReloadSceneFiles(std::string sceneName);
+	void ReloadComponentsFiles();
+	void ReloadTemplatesFiles();
 
 	bool GetIsRunning() { return isRunning; }
 	SDL_Window* GetWindow() { return window; }
@@ -84,7 +90,7 @@ private:
 	int framesOfDamageIndicator = 30;
 	int framesOfAttackIndicator = 30;
 
-	bool isRunning = true;	
+	bool isRunning = false;	
 	bool inHealthCooldown = false;
 	bool debugShowCollisions = true;
 	bool editorInstance = true;

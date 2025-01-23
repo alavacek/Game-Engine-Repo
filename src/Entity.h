@@ -67,6 +67,10 @@ public:
 	void RemoveComponentByKey(const std::string& key);
 	void RemoveComponentByKeyOutOfSimulation(const std::string& key);
 
+	// EDITOR ONLY
+	// okay so what are the odds 2 billion adds will happen and overflow
+	unsigned int componentCounter = 0;
+
 	~Entity();
 private:
 	int IndexOfComponentInAlphabeticalVector(const std::string& key);
@@ -75,6 +79,8 @@ private:
 
 	std::vector<std::string> keysOfComponentsToRemove;
 	std::vector<std::string> keysOfNewlyAddedComponents;
+
+
 };
 
 #endif

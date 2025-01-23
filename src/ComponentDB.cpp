@@ -285,6 +285,14 @@ Component* ComponentDB::LoadComponentInstance(const rapidjson::Value& component,
     }
 }
 
+// EDITOR ONLY
+void ComponentDB::Reset()
+{
+    numRuntimeAddedComponents = 0;
+    components.clear();
+    componentsAlphabeticalOrder.clear();
+}
+
 ComponentDB::~ComponentDB()
 {
 	for (auto& component : components)
