@@ -56,6 +56,7 @@ private:
 	std::string selectedAsset = "";
 
 	// Asset directories for each category
+	const std::string emptyAssetDir = "resources/empty_assets/";
 	const std::string sceneDir = "resources/scenes/";
 	const std::string templateDir = "resources/templates/";
 	const std::string componentDir = "resources/component_types/";

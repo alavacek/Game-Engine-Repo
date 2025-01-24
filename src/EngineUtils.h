@@ -1,7 +1,9 @@
 #ifndef ENGINEUTILS_H
 #define ENGINEUTILS_H
 
+// EDITOR ONLY
 #include <cstdlib>  // For system()
+
 #include <iostream>
 #include <filesystem>
 #include <fstream>
@@ -74,6 +76,7 @@ public:
 		return input.substr(pos, endPos - pos);
 	}
 
+	// EDITOR ONLY
 	static void RemoveEntityFromJson(const std::string& jsonFilePath, const std::string& entityName) 
 	{
 		// Open the JSON file for reading
@@ -476,6 +479,44 @@ public:
 #error Platform not supported
 #endif
 		std::system(command.c_str()); // Execute the command
+	}
+
+	static void CreateNewAsset(const std::string& sourcePath, const std::string& destDir, const std::string& newName) 
+	{
+		try {
+			// Ensure the destination directory exists
+			std::filesystem::create_directories(destDir);
+
+			// Construct the full destination path
+			std::string destPath = destDir + newName;
+
+			// Copy the file to the destination
+			std::filesystem::copy(sourcePath, destPath, std::filesystem::copy_options::overwrite_existing);
+
+			std::cout << "Created new asset: " << destPath << std::endl;
+		}
+		catch (const std::exception& e) {
+			std::cerr << "Error creating new asset: " << e.what() << std::endl;
+		}
+	}
+
+	static void DeleteAsset(const std::string& assetPath) 
+	{
+		try
+		{
+			if (std::filesystem::exists(assetPath)) 
+			{
+				std::filesystem::remove(assetPath);
+				std::cout << "Deleted asset: " << assetPath << std::endl;
+			}
+			else {
+				std::cerr << "Asset does not exist: " << assetPath << std::endl;
+			}
+		}
+		catch (const std::exception& e)
+		{
+			std::cerr << "Error deleting asset: " << e.what() << std::endl;
+		}
 	}
 };
 

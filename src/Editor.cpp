@@ -450,6 +450,8 @@ void Editor::RenderAssets()
 
     if (!displayedAssets.empty())
     {
+        bool deleteAsset = false;
+
         for (const auto& asset : displayedAssets)
         {
             if (ImGui::Selectable(asset.c_str(), selectedAsset == asset)) 
@@ -458,7 +460,7 @@ void Editor::RenderAssets()
             }
 
             if (selectedAsset == asset)
-            {
+            {               
                 if (!simulating && currentCategory == AssetCategory::Scenes)
                 {
                     if (ImGui::Button("Load Scene"))
@@ -484,13 +486,128 @@ void Editor::RenderAssets()
                         EngineUtils::OpenAsset(assetPath);
                     }
                 }
+
+                // Delete Asset
+                if (!simulating)
+                {
+                    if (currentCategory == AssetCategory::Scenes)
+                    {
+                        // only want to ber able to delete 
+                        if (selectedAsset != "" && displayedAssets.size() > 1)
+                        { // Ensure an asset is selected
+                            if (ImGui::Button("Delete Scene"))
+                            {
+                                deleteAsset = true;
+                            }
+                        }
+                    }
+                    else if (currentCategory == AssetCategory::Templates)
+                    {
+                        if (selectedAsset != "")
+                        {
+                            if (ImGui::Button("Delete Template"))
+                            {
+                                deleteAsset = true;
+                            }
+                        }
+                    }
+                    else if (currentCategory == AssetCategory::Components)
+                    {
+                        if (selectedAsset != "")
+                        {
+                            if (ImGui::Button("Delete Component"))
+                            {
+                                deleteAsset = true;
+                            }
+                        }
+                    }
+                }
             }
         }
+
+        if (deleteAsset)
+        {
+            if (currentCategory == AssetCategory::Scenes)
+            {
+                if (selectedAsset == loadedScene)
+                {
+                    if (displayedAssets.size() > 0)
+                    {
+                        loadedScene = displayedAssets[0];
+                    }
+                }
+
+                std::string assetPath = sceneDir + selectedAsset + ".scene";
+                EngineUtils::DeleteAsset(assetPath);
+
+                displayedAssets = EngineUtils::GetFilesInDirectory(sceneDir, ".scene");
+
+            }
+            else if (currentCategory == AssetCategory::Templates)
+            {
+                if (selectedEntity && selectedAsset == static_cast<Template*>(selectedEntity)->templateName)
+                {
+                    selectedEntity = nullptr;
+                }
+
+                std::string assetPath = templateDir + selectedAsset + ".template";
+                EngineUtils::DeleteAsset(assetPath);
+
+                engine->ReloadTemplatesFiles();
+                ResetEditor();
+
+                displayedAssets = EngineUtils::GetFilesInDirectory(templateDir, ".template");
+            }
+            else if (currentCategory == AssetCategory::Components)
+            {
+                std::string assetPath = componentDir + selectedAsset + ".lua";
+                EngineUtils::DeleteAsset(assetPath);
+
+                engine->ReloadComponentsFiles();
+                ResetEditor();
+
+                displayedAssets = EngineUtils::GetFilesInDirectory(componentDir, ".lua");
+            }
+
+            selectedAsset = "";
+        }
+        
     }
-    else 
+
+    if (currentCategory == AssetCategory::Scenes)
     {
-        ImGui::Text("No scenes found.");
-    } 
+        if (ImGui::Button("Create New Scene")) 
+        {
+            std::string emptyScene = emptyAssetDir + "Empty.scene";
+            std::string newSceneName = "NewScene.scene"; // Replace with your logic for naming
+            EngineUtils::CreateNewAsset(emptyScene, sceneDir, newSceneName);
+            displayedAssets = EngineUtils::GetFilesInDirectory(sceneDir, ".scene");
+        }
+    }
+    else if (currentCategory == AssetCategory::Templates) 
+    {
+        if (ImGui::Button("Create New Template")) 
+        {
+            std::string emptyTemplate = emptyAssetDir + "Empty.template";
+            std::string newTemplateName = "NewTemplate.template"; // Replace with your logic for naming
+            EngineUtils::CreateNewAsset(emptyTemplate, templateDir, newTemplateName);
+
+            engine->ReloadTemplatesFiles();
+            ResetEditor();
+        }
+    }
+    else if (currentCategory == AssetCategory::Components) 
+    {
+        if (ImGui::Button("Create New Component")) 
+        {
+            std::string emptyComponent = emptyAssetDir + "Empty.lua";
+            std::string newComponentName = "NewComponent.lua"; // Replace with your logic for naming
+            EngineUtils::CreateNewAsset(emptyComponent, componentDir, newComponentName);
+
+            engine->ReloadComponentsFiles();
+            ResetEditor();
+        }
+    }
 
 }
 
