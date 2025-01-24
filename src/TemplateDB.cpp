@@ -43,6 +43,9 @@ void TemplateDB::LoadTemplates()
 
                     std::unordered_map<std::string, Component*> componentMap;
 
+                    // EDITOR ONLY
+                    int componentCounter = 0;
+
                     // Loop through each component in the JSON array
                     if (templateDocument.HasMember("components"))
                     {
@@ -58,6 +61,12 @@ void TemplateDB::LoadTemplates()
                             const rapidjson::Value& component = itr->value;
 
                             componentMap[componentName] = ComponentDB::LoadComponentInstance(component, componentName);
+
+                            // EDITOR ONLY
+                            if (EngineUtils::isNumber(componentName) && std::stoi(componentName) >= componentCounter)
+                            {
+                                componentCounter = std::stoi(componentName) + 1;
+                            }
                         }
                     }
 
@@ -65,6 +74,8 @@ void TemplateDB::LoadTemplates()
                     Template* newEntityTemplate = new Template(
                         templateName, name, componentMap
                     );
+
+                    newEntityTemplate->componentCounter = componentCounter;
 
                     templates[templateName] = newEntityTemplate;
 
@@ -88,6 +99,9 @@ void TemplateDB::Reset()
     }
 
     templates.clear();
+    
+    // EDITOR ONLY
+    builtInTemplates.clear();
 }
 
 void TemplateDB::ResetInstancesCountPerScene()

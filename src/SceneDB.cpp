@@ -97,7 +97,7 @@ void SceneDB::LoadEntitiesInScene(const std::string& sceneName)
     // Ensure the document contains an array named "actors"
     if (!configDocument.HasMember("entities") || !configDocument["entities"].IsArray())
     {
-        std::cout << "error: no actors found in scene " << sceneName;
+        std::cout << "error: no entities found in scene " << sceneName;
         exit(0);
     }
 

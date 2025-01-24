@@ -45,6 +45,10 @@ void Editor::Init()
     ImGui::Render();
     ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
 
+    // start with scene assets loaded
+    currentCategory = AssetCategory::Scenes;
+    displayedAssets = EngineUtils::GetFilesInDirectory(sceneDir, ".scene");
+
     // show all renders now
     SDL_RenderPresent(renderer);
 
@@ -173,8 +177,8 @@ void Editor::RenderEditor(bool resetDefaults)
 
 
     // Asset Browser Panel
-    ImGui::Begin("Asset Browser");
-    ImGui::Text("Asset Browser Content");
+    ImGui::Begin("Asset Browser", nullptr, ImGuiWindowFlags_MenuBar);
+    RenderAssets();
     ImGui::End();
 
     // Debug Console Panel
@@ -201,6 +205,10 @@ void Editor::RenderSceneHierarchy()
 
             // update selected entity
             selectedEntity = entity; 
+            if (currentCategory == AssetCategory::Templates)
+            {
+                selectedAsset = "";
+            }
 
         }
 
@@ -211,16 +219,17 @@ void Editor::RenderSceneHierarchy()
                 if (simulating)
                 {
                     SceneDB::Destroy(entity);
+                    selectedEntity = nullptr;
                 }
                 else // actually remove from json file
                 {
                     EngineUtils::RemoveEntityFromJson(SceneDB::GetCurrentScenePath(), entity->entityName);
 
                     SceneDB::RemoveEntityOutOfSimulation(entity);
+                    selectedEntity = nullptr;
                     ResetEditor();
                 }
 
-                selectedEntity = nullptr;
                 selectedComponent = std::make_pair("", nullptr);
             }
         }
@@ -265,12 +274,21 @@ void Editor::RenderInspector()
     {
         if (simulating)
         {
+            // TODO: do i want additional logic here if we update a template mid simulation?
             selectedEntity->RemoveComponentByKey(selectedComponent.first);
         }
         else // actually remove from json file
         {
-            EngineUtils::RemoveComponentFromJson(SceneDB::GetCurrentScenePath(), selectedEntity->entityName, selectedComponent.first);
-            selectedEntity->RemoveComponentByKeyOutOfSimulation(selectedComponent.first);
+            if (static_cast<Template*>(selectedEntity))
+            {
+                Template* selectedTemplate = static_cast<Template*>(selectedEntity);
+                std::string path = templateDir + selectedTemplate->templateName + ".template";
+                EngineUtils::RemoveComponentFromTemplateJson(path, selectedComponent.first);
+            }
+            else
+            {
+                EngineUtils::RemoveComponentFromJson(SceneDB::GetCurrentScenePath(), selectedEntity->entityName, selectedComponent.first);
+            }
 
             ResetEditor();
         }
@@ -333,25 +351,7 @@ void Editor::RenderAddEntity()
     {
         if (ImGui::Button("Add Entity"))
         {
-            if (simulating)
-            {
-                // add entity to simulating game
-                SceneDB::Instantiate(entityToAddTemplateName);
-            }
-            else
-            {
-                Template* temp = TemplateDB::FindTemplate(entityToAddTemplateName);
-
-                std::string entityName = temp->GetName();
-
-                if (temp->instanceCountInScene > 0)
-                {
-                    entityName += " (" + std::to_string(temp->instanceCountInScene) + ")";
-                }
-
-                EngineUtils::AddTemplateEntityToJson(SceneDB::GetCurrentScenePath(), entityToAddTemplateName, entityName);
-                ResetEditor();
-            }
+            AddTemplateTypeToCurrentScene(entityToAddTemplateName);
 
             entityToAddTemplateName = "";
             showAddEntityWindow = false;
@@ -380,18 +380,31 @@ void Editor::RenderAddComponent()
         }
     }
 
-    if (componentToAdd != "")
+    if (selectedEntity && componentToAdd != "")
     {
         if (ImGui::Button("Add Component"))
         {
             if (simulating)
             {
+                // TODO: do i want additional logic here if we update a template mid simulation?
                 selectedEntity->AddComponent(componentToAdd);
             }
             else
             {
                 std::string componentKey = std::to_string(selectedEntity->componentCounter);
-                EngineUtils::AddComponentToEntityInJson(SceneDB::GetCurrentScenePath(), selectedEntity->GetName(), componentKey, componentToAdd);
+
+                if (static_cast<Template*>(selectedEntity))
+                {
+                    Template* selectedTemplate = static_cast<Template*>(selectedEntity);
+                    std::string path = templateDir + selectedTemplate->templateName + ".template";
+                    EngineUtils::AddComponentToTemplateInJson(path, componentKey, componentToAdd);
+                }
+                else
+                {
+                    EngineUtils::AddComponentToEntityInJson(SceneDB::GetCurrentScenePath(), selectedEntity->GetName(), componentKey, componentToAdd);
+
+                }
+
                 ResetEditor();
             }
 
@@ -410,16 +423,112 @@ void Editor::RenderAddComponent()
     ImGui::End();
 }
 
+void Editor::RenderAssets()
+{
+    if (ImGui::BeginMenuBar()) 
+    {
+        if (ImGui::MenuItem("Scenes", nullptr, currentCategory == AssetCategory::Scenes)) 
+        {
+            currentCategory = AssetCategory::Scenes;
+            displayedAssets = EngineUtils::GetFilesInDirectory(sceneDir, ".scene");
+            selectedAsset = ""; // reset
+        }
+        if (ImGui::MenuItem("Templates", nullptr, currentCategory == AssetCategory::Templates)) 
+        {
+            currentCategory = AssetCategory::Templates;
+            displayedAssets = EngineUtils::GetFilesInDirectory(templateDir, ".template");
+            selectedAsset = ""; // reset
+        }
+        if (ImGui::MenuItem("Components", nullptr, currentCategory == AssetCategory::Components)) 
+        {
+            currentCategory = AssetCategory::Components;
+            displayedAssets = EngineUtils::GetFilesInDirectory(componentDir, ".lua");
+            selectedAsset = ""; // reset
+        }
+        ImGui::EndMenuBar();
+    }
+
+
+    if (!displayedAssets.empty())
+    {
+        for (const auto& asset : displayedAssets)
+        {
+            if (ImGui::Selectable(asset.c_str(), selectedAsset == asset)) 
+            {
+                selectedAsset = asset.c_str();
+            }
+
+            if (selectedAsset == asset)
+            {
+                if (!simulating && currentCategory == AssetCategory::Scenes)
+                {
+                    if (ImGui::Button("Load Scene"))
+                    {
+                        loadedScene = selectedAsset;
+                        selectedEntity = nullptr;
+                        ResetEditor();
+                    }
+                }
+                else if (currentCategory == AssetCategory::Templates)
+                {
+                    if (ImGui::Button("Add Template to Scene"))
+                    {
+                        AddTemplateTypeToCurrentScene(selectedAsset);
+                    }
+                    selectedEntity = TemplateDB::FindTemplate(selectedAsset);
+                }
+            }
+        }
+    }
+    else 
+    {
+        ImGui::Text("No scenes found.");
+    } 
+
+}
+
+
 void Editor::ResetEditor()
 {
-    std::string selectedEntityName = selectedEntity->GetName();
+    std::string selectedEntityName = "";
+    bool selectedEntityIsTemplate = false;
+
+    // selected entity is a template
+    if (static_cast<Template*>(selectedEntity))
+    {
+        Template* selectedTemplate = static_cast<Template*>(selectedEntity);
+        selectedEntityIsTemplate = true;
+        selectedEntityName = selectedTemplate->templateName;
+
+        engine->ReloadTemplatesFiles();
+    }
+    // if reloading same scene and an entity is selected in hierarchy
+    else if (SceneDB::GetCurrentSceneName() == loadedScene && selectedEntity)
+    {
+        selectedEntityName = selectedEntity->GetName();
+    }
 
     // reload current scene
     engine->ReloadSceneFiles(loadedScene);
 
     // reset all of these because they rely on certain entities existing
-    selectedEntity = SceneDB::Find(selectedEntityName);
-    if (selectedEntity == luabridge::LuaRef(LuaStateManager::GetLuaState()))
+    if (selectedEntityName != "")
+    {
+        if (selectedEntityIsTemplate)
+        {
+            selectedEntity = TemplateDB::FindTemplate(selectedEntityName);
+        }
+        else
+        {
+            selectedEntity = SceneDB::Find(selectedEntityName);
+            if (selectedEntity == luabridge::LuaRef(LuaStateManager::GetLuaState()))
+            {
+                selectedEntity = nullptr;
+            }
+        }
+
+    }
+    else
     {
         selectedEntity = nullptr;
     }
@@ -458,6 +567,29 @@ void Editor::StopSimulation()
         selectedComponent = std::make_pair("", nullptr);
     }
 
+}
+
+void Editor::AddTemplateTypeToCurrentScene(const std::string& templateName)
+{
+    if (simulating)
+    {
+        // add entity to simulating game
+        SceneDB::Instantiate(templateName);
+    }
+    else
+    {
+        Template* temp = TemplateDB::FindTemplate(templateName);
+
+        std::string entityName = temp->GetName();
+
+        if (temp->instanceCountInScene > 0)
+        {
+            entityName += " (" + std::to_string(temp->instanceCountInScene) + ")";
+        }
+
+        EngineUtils::AddTemplateEntityToJson(SceneDB::GetCurrentScenePath(), templateName, entityName);
+        ResetEditor();
+    }
 }
 
 Editor::~Editor()

@@ -2,9 +2,11 @@
 #define ENGINEUTILS_H
 
 #include <iostream>
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <vector>
 #include <stdio.h>
 
 
@@ -200,6 +202,60 @@ public:
 		printf("JSON file '%s' updated successfully.\n", jsonFilePath.c_str());
 	}
 
+	static void RemoveComponentFromTemplateJson(const std::string& jsonFilePath, const std::string& componentKey)
+	{
+		// Open the JSON file for reading
+		FILE* file = nullptr;
+		errno_t err = fopen_s(&file, jsonFilePath.c_str(), "rb");
+		if (err != 0 || !file) {
+			printf("Failed to open JSON file: %s\n", jsonFilePath.c_str());
+			return;
+		}
+
+		// Read the JSON file into a buffer
+		char readBuffer[65536];
+		rapidjson::FileReadStream readStream(file, readBuffer, sizeof(readBuffer));
+		rapidjson::Document document;
+		document.ParseStream(readStream);
+		fclose(file);
+
+		// Check if the entity has a "components" object
+		if (document.HasMember("components") && document["components"].IsObject())
+		{
+			rapidjson::Value& components = document["components"];
+
+			// Check if the component to be removed exists
+			if (components.HasMember(componentKey.c_str()))
+			{
+				// Remove the component
+				components.RemoveMember(componentKey.c_str());
+				printf("Component '%s' removed from template json '%s'.\n", componentKey.c_str(), jsonFilePath.c_str());
+			}
+			else
+			{
+				printf("Component '%s' not found in template json '%s'.\n", componentKey.c_str(), jsonFilePath.c_str());
+			}
+		}
+		else
+		{
+			printf("Template json '%s' does not have a 'components' object.\n", jsonFilePath.c_str());
+		}
+
+		// Write the updated JSON back to the file
+		err = fopen_s(&file, jsonFilePath.c_str(), "wb");
+		if (err != 0 || !file) {
+			printf("Failed to open JSON file for writing: %s\n", jsonFilePath.c_str());
+			return;
+		}
+
+		rapidjson::FileWriteStream writeStream(file, readBuffer, sizeof(readBuffer));
+		rapidjson::Writer<rapidjson::FileWriteStream> writer(writeStream);
+		document.Accept(writer);
+		fclose(file);
+
+		printf("JSON file '%s' updated successfully.\n", jsonFilePath.c_str());
+	}
+
 	static void AddTemplateEntityToJson(const std::string& jsonFilePath, const std::string& templateName, const std::string& entityName)
 	{
 		// Open the JSON file for reading
@@ -329,13 +385,82 @@ public:
 		printf("Component '%s' added to entity '%s' in JSON file: %s\n", componentKey.c_str(), entityName.c_str(), jsonFilePath.c_str());
 	}
 
+	static void AddComponentToTemplateInJson(const std::string& jsonFilePath, const std::string& componentKey, const std::string& componentType)
+	{
+		// Open the JSON file for reading
+		FILE* file = nullptr;
+		errno_t err = fopen_s(&file, jsonFilePath.c_str(), "rb");
+		if (err != 0 || !file) {
+			printf("Failed to open JSON file: %s\n", jsonFilePath.c_str());
+			return;
+		}
+
+		// Read the JSON file into a buffer
+		char readBuffer[65536];
+		rapidjson::FileReadStream readStream(file, readBuffer, sizeof(readBuffer));
+		rapidjson::Document document;
+		document.ParseStream(readStream);
+		fclose(file);
+
+		if (!document.HasMember("components") || !document["components"].IsObject()) {
+			document.AddMember("components", rapidjson::Value(rapidjson::kObjectType), document.GetAllocator());
+		}
+
+		// Access the "components" field
+		rapidjson::Value& components = document["components"];
+
+		// Check if the component already exists; if not, add it
+		if (!components.HasMember(componentKey.c_str())) {
+			rapidjson::Value componentObject(rapidjson::kObjectType); // Create an empty object for the component
+			componentObject.AddMember(
+				"type",
+				rapidjson::Value(componentType.c_str(), document.GetAllocator()).Move(),
+				document.GetAllocator()
+			);
+
+			// Add the component to the "components" field
+			components.AddMember(
+				rapidjson::Value(componentKey.c_str(), document.GetAllocator()).Move(),
+				componentObject,
+				document.GetAllocator()
+			);
+		}
+
+		// Write the updated JSON back to the file
+		err = fopen_s(&file, jsonFilePath.c_str(), "wb");
+		if (err != 0 || !file) {
+			printf("Failed to open JSON file for writing: %s\n", jsonFilePath.c_str());
+			return;
+		}
+
+		rapidjson::FileWriteStream writeStream(file, readBuffer, sizeof(readBuffer));
+		rapidjson::Writer<rapidjson::FileWriteStream> writer(writeStream);
+		document.Accept(writer);
+		fclose(file);
+
+		printf("Component '%s' added to template JSON file: %s\n", componentKey.c_str(), jsonFilePath.c_str());
+	}
+
+	static std::vector<std::string> GetFilesInDirectory(const std::string& directory, const std::string& extension) 
+	{
+		std::vector<std::string> files;
+		for (const auto& entry : std::filesystem::directory_iterator(directory)) 
+		{
+			if (entry.is_regular_file() && entry.path().extension() == extension) 
+			{
+				files.push_back(entry.path().stem().string()); // Use .stem() to exclude the extension
+			}
+		}
+		return files;
+	}
+	
+
 	static bool isNumber(const std::string& s)
 	{
 		std::string::const_iterator it = s.begin();
 		while (it != s.end() && std::isdigit(*it)) ++it;
 		return !s.empty() && it == s.end();
 	}
-
 };
 
 #endif

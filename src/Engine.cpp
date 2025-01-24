@@ -66,6 +66,8 @@ void Engine::Start()
 
 	// let editor know its 
 	DebugDB::MarkDebugStatementsDirty();
+
+	Helper::frame_number = 0; // TODO THIS IS DIRTY SHOULD ELIMINATE HELPER CLASS
 }
 
 void Engine::ReadResources()
@@ -306,6 +308,8 @@ void Engine::Update()
 		SceneDB::LateUpdate();
 
 		Input::LateUpdate();
+
+		Helper::frame_number++; // TODO THIS IS DIRTY SHOULD ELIMINATE HELPER CLASS
 	}
 }
 

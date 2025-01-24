@@ -85,11 +85,6 @@ private:
 	SDL_Renderer* renderer;
 	SDL_Window* window;
 
-	int frameSinceDamageTaken;
-
-	int framesOfDamageIndicator = 30;
-	int framesOfAttackIndicator = 30;
-
 	bool isRunning = false;	
 	bool inHealthCooldown = false;
 	bool debugShowCollisions = true;

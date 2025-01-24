@@ -11,6 +11,12 @@
 #include "SDL2/SDL.h"
 #include "SDLHelper.h"
 
+enum class AssetCategory {
+	Scenes,
+	Templates,
+	Components
+};
+
 class Editor
 {
 public:
@@ -24,11 +30,13 @@ public:
 	void RenderDebug();
 	void RenderAddEntity();
 	void RenderAddComponent();
+	void RenderAssets();
 	
 	void ResetEditor();
 
 	void Simulate();
 	void StopSimulation();
+	void AddTemplateTypeToCurrentScene(const std::string& templateName);
 
 	~Editor();
 private:
@@ -37,10 +45,20 @@ private:
 	SDL_Renderer* renderer = nullptr;
 
 	Entity* selectedEntity = nullptr;
+
+	std::pair<std::string, Component*> selectedComponent = std::make_pair("", nullptr);
 	std::string loadedScene = "";
 	std::string entityToAddTemplateName = "";
 	std::string componentToAdd = "";
-	std::pair<std::string, Component*> selectedComponent = std::make_pair("", nullptr);
+
+	AssetCategory currentCategory = AssetCategory::Scenes;
+	std::vector<std::string> displayedAssets;
+	std::string selectedAsset = "";
+
+	// Asset directories for each category
+	const std::string sceneDir = "resources/scenes/";
+	const std::string templateDir = "resources/templates/";
+	const std::string componentDir = "resources/components_types/";
 
 	SDL_GLContext glContext;
 	ImVec2 windowSize = ImVec2(1280, 720);

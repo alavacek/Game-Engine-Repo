@@ -307,38 +307,6 @@ void Entity::RemoveComponentByKey(const std::string& key)
 	}
 }
 
-
-// WARNING
-// THIS IS ONLY TO BE CALLED FROM THE EDITOR WHEN WE ARE NOT SIMULATING
-void Entity::RemoveComponentByKeyOutOfSimulation(const std::string& key)
-{
-	Component* componentToRemove = components[key];
-
-	// remove from alphabetical order vector
-	int indexToRemove = IndexOfComponentInAlphabeticalVector(key);
-
-	// If binary search failed and returned -1
-	if (indexToRemove < 0)
-	{
-		//std::cout << "ERROR: Trying to remove a key that does not exist!";
-		//exit(0);
-
-		std::string message = "Trying to remove a key that does not exist!";
-
-		DebugDB::AddStatement(DebugType::LogError, "", "", message);
-
-		return;
-	}
-
-	componentsKeysAlphabeticalOrder.erase(componentsKeysAlphabeticalOrder.begin() + indexToRemove);
-
-	// remove from components map
-	components.erase(key);
-
-	// remove component from existence
-	delete(componentToRemove);
-}
-
 int Entity::IndexOfComponentInAlphabeticalVector(const std::string& key)
 {
 	// Binary search hurraw

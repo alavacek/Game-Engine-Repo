@@ -1,8 +1,1 @@
-{
-  "name": "wolverine",
-  "components": {
-    "1": {
-      "type": "OutputMessage2"
-    }
-  }
-}
+{"name":"wolverine","components":{"0":{"type":"OutputMessage2"}}}
