@@ -448,7 +448,6 @@ void Editor::RenderAssets()
         ImGui::EndMenuBar();
     }
 
-
     if (!displayedAssets.empty())
     {
         for (const auto& asset : displayedAssets)
@@ -476,6 +475,14 @@ void Editor::RenderAssets()
                         AddTemplateTypeToCurrentScene(selectedAsset);
                     }
                     selectedEntity = TemplateDB::FindTemplate(selectedAsset);
+                }
+                else if (currentCategory == AssetCategory::Components)
+                {
+                    if (ImGui::Button("Open Asset"))
+                    {
+                        std::string assetPath = componentDir + selectedAsset + ".lua";
+                        EngineUtils::OpenAsset(assetPath);
+                    }
                 }
             }
         }

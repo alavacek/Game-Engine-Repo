@@ -58,7 +58,7 @@ private:
 	// Asset directories for each category
 	const std::string sceneDir = "resources/scenes/";
 	const std::string templateDir = "resources/templates/";
-	const std::string componentDir = "resources/components_types/";
+	const std::string componentDir = "resources/component_types/";
 
 	SDL_GLContext glContext;
 	ImVec2 windowSize = ImVec2(1280, 720);

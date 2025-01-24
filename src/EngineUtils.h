@@ -1,6 +1,7 @@
 #ifndef ENGINEUTILS_H
 #define ENGINEUTILS_H
 
+#include <cstdlib>  // For system()
 #include <iostream>
 #include <filesystem>
 #include <fstream>
@@ -460,6 +461,21 @@ public:
 		std::string::const_iterator it = s.begin();
 		while (it != s.end() && std::isdigit(*it)) ++it;
 		return !s.empty() && it == s.end();
+	}
+
+	// Function to open a file or directory
+	static void OpenAsset(const std::string& path) 
+	{
+#if defined(_WIN32)
+		std::string command = "start \"\" \"" + path + "\""; // Use 'start' for Windows
+#elif defined(__APPLE__)
+		std::string command = "open \"" + path + "\"";       // Use 'open' for macOS
+#elif defined(__linux__)
+		std::string command = "xdg-open \"" + path + "\"";   // Use 'xdg-open' for Linux
+#else
+#error Platform not supported
+#endif
+		std::system(command.c_str()); // Execute the command
 	}
 };
 
