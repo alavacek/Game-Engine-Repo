@@ -1,4 +1,4 @@
-NewComponent = {
+Empty = {
 
     OnStart = function(self)
 

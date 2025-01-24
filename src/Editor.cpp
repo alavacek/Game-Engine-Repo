@@ -579,8 +579,9 @@ void Editor::RenderAssets()
         if (ImGui::Button("Create New Scene")) 
         {
             std::string emptyScene = emptyAssetDir + "Empty.scene";
-            std::string newSceneName = "NewScene.scene"; // Replace with your logic for naming
+            std::string newSceneName = "NewScene.scene"; // TODO: Replace with logic for naming
             EngineUtils::CreateNewAsset(emptyScene, sceneDir, newSceneName);
+
             displayedAssets = EngineUtils::GetFilesInDirectory(sceneDir, ".scene");
         }
     }
@@ -589,11 +590,13 @@ void Editor::RenderAssets()
         if (ImGui::Button("Create New Template")) 
         {
             std::string emptyTemplate = emptyAssetDir + "Empty.template";
-            std::string newTemplateName = "NewTemplate.template"; // Replace with your logic for naming
+            std::string newTemplateName = "NewTemplate.template"; // TODO: Replace with logic for naming
             EngineUtils::CreateNewAsset(emptyTemplate, templateDir, newTemplateName);
 
             engine->ReloadTemplatesFiles();
             ResetEditor();
+
+            displayedAssets = EngineUtils::GetFilesInDirectory(templateDir, ".template");
         }
     }
     else if (currentCategory == AssetCategory::Components) 
@@ -601,11 +604,13 @@ void Editor::RenderAssets()
         if (ImGui::Button("Create New Component")) 
         {
             std::string emptyComponent = emptyAssetDir + "Empty.lua";
-            std::string newComponentName = "NewComponent.lua"; // Replace with your logic for naming
-            EngineUtils::CreateNewAsset(emptyComponent, componentDir, newComponentName);
+            std::string newComponentName = "NewComponent.lua"; // TODO: Replace with logic for naming
+            EngineUtils::CreateNewAsset(emptyComponent, componentDir, newComponentName, true);
 
             engine->ReloadComponentsFiles();
             ResetEditor();
+
+            displayedAssets = EngineUtils::GetFilesInDirectory(componentDir, ".lua");
         }
     }
 

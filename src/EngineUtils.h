@@ -481,8 +481,7 @@ public:
 		std::system(command.c_str()); // Execute the command
 	}
 
-	static void CreateNewAsset(const std::string& sourcePath, const std::string& destDir, const std::string& newName) 
-	{
+	static void CreateNewAsset(const std::string& sourcePath, const std::string& destDir, const std::string& newName, bool updateLuaContents = false) {
 		try {
 			// Ensure the destination directory exists
 			std::filesystem::create_directories(destDir);
@@ -492,6 +491,35 @@ public:
 
 			// Copy the file to the destination
 			std::filesystem::copy(sourcePath, destPath, std::filesystem::copy_options::overwrite_existing);
+
+			// Update Lua contents if needed
+			if (updateLuaContents) 
+			{
+				std::ifstream fileIn(destPath);
+				if (!fileIn.is_open()) {
+					throw std::ios_base::failure("Failed to open file for reading: " + destPath);
+				}
+
+				std::stringstream buffer;
+				buffer << fileIn.rdbuf(); // Read the entire file contents into the buffer
+				fileIn.close();
+
+				// Replace "Empty" with the new name
+				std::string contents = buffer.str();
+				std::string oldName = "Empty";
+				size_t pos = contents.find(oldName);
+				if (pos != std::string::npos) {
+					contents.replace(pos, oldName.length(), newName.substr(0, newName.find('.'))); // Use the name without extension
+				}
+
+				// Write the updated contents back to the file
+				std::ofstream fileOut(destPath);
+				if (!fileOut.is_open()) {
+					throw std::ios_base::failure("Failed to open file for writing: " + destPath);
+				}
+				fileOut << contents;
+				fileOut.close();
+			}
 
 			std::cout << "Created new asset: " << destPath << std::endl;
 		}
