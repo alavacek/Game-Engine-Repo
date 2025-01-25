@@ -419,10 +419,3 @@ void Entity::PostLifeCycleFunctionComponentCleanUp()
 
 }
 
-Entity::~Entity()
-{
-	for (const auto& pair : components) 
-	{
-		delete(pair.second);
-	}
-}

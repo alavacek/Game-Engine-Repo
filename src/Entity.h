@@ -70,7 +70,13 @@ public:
 	// okay so what are the odds 2 billion adds will happen and overflow
 	unsigned int componentCounter = 0;
 
-	~Entity();
+	virtual ~Entity()
+	{
+		for (const auto& pair : components)
+		{
+			delete pair.second; // Properly delete dynamically allocated components
+		}
+	}
 private:
 	int IndexOfComponentInAlphabeticalVector(const std::string& key);
 	void PreLifeCycleFunctionComponentCleanUp();

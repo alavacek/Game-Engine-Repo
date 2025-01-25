@@ -279,9 +279,8 @@ void Editor::RenderInspector()
         }
         else // actually remove from json file
         {
-            if (static_cast<Template*>(selectedEntity))
+            if (Template* selectedTemplate = dynamic_cast<Template*>(selectedEntity))
             {
-                Template* selectedTemplate = static_cast<Template*>(selectedEntity);
                 std::string path = templateDir + selectedTemplate->templateName + ".template";
                 EngineUtils::RemoveComponentFromTemplateJson(path, selectedComponent.first);
             }
@@ -393,9 +392,8 @@ void Editor::RenderAddComponent()
             {
                 std::string componentKey = std::to_string(selectedEntity->componentCounter);
 
-                if (static_cast<Template*>(selectedEntity))
+                if (Template * selectedTemplate = dynamic_cast<Template*>(selectedEntity))
                 {
-                    Template* selectedTemplate = static_cast<Template*>(selectedEntity);
                     std::string path = templateDir + selectedTemplate->templateName + ".template";
                     EngineUtils::AddComponentToTemplateInJson(path, componentKey, componentToAdd);
                 }
@@ -545,7 +543,7 @@ void Editor::RenderAssets()
             }
             else if (currentCategory == AssetCategory::Templates)
             {
-                if (selectedEntity && selectedAsset == static_cast<Template*>(selectedEntity)->templateName)
+                if (selectedEntity && selectedAsset == dynamic_cast<Template*>(selectedEntity)->templateName)
                 {
                     selectedEntity = nullptr;
                 }
@@ -623,9 +621,8 @@ void Editor::ResetEditor()
     bool selectedEntityIsTemplate = false;
 
     // selected entity is a template
-    if (static_cast<Template*>(selectedEntity))
+    if (Template* selectedTemplate = dynamic_cast<Template*>(selectedEntity))
     {
-        Template* selectedTemplate = static_cast<Template*>(selectedEntity);
         selectedEntityIsTemplate = true;
         selectedEntityName = selectedTemplate->templateName;
 
