@@ -166,7 +166,7 @@ void Editor::RenderEditor(bool resetDefaults)
 
     // Scene Hierarchy Panel
     ImGui::Begin("Simulate");
-
+    ImGui::Text(loadedScene.c_str());
     if (ImGui::Button("Play"))
     {
         // When the button is pressed, call PlayFunction
@@ -430,18 +430,24 @@ void Editor::RenderAssets()
             currentCategory = AssetCategory::Scenes;
             displayedAssets = EngineUtils::GetFilesInDirectory(sceneDir, ".scene");
             selectedAsset = ""; // reset
+            showAssetCreationWindow = false;
+            newAssetName = "";
         }
         if (ImGui::MenuItem("Templates", nullptr, currentCategory == AssetCategory::Templates)) 
         {
             currentCategory = AssetCategory::Templates;
             displayedAssets = EngineUtils::GetFilesInDirectory(templateDir, ".template");
             selectedAsset = ""; // reset
+            showAssetCreationWindow = false;
+            newAssetName = "";
         }
         if (ImGui::MenuItem("Components", nullptr, currentCategory == AssetCategory::Components)) 
         {
             currentCategory = AssetCategory::Components;
             displayedAssets = EngineUtils::GetFilesInDirectory(componentDir, ".lua");
             selectedAsset = ""; // reset
+            showAssetCreationWindow = false;
+            newAssetName = "";
         }
         ImGui::EndMenuBar();
     }
@@ -531,7 +537,14 @@ void Editor::RenderAssets()
                 {
                     if (displayedAssets.size() > 0)
                     {
-                        loadedScene = displayedAssets[0];
+                        for (std::string asset : displayedAssets)
+                        {
+                            if (asset != loadedScene)
+                            {
+                                loadedScene = asset;
+                                break;
+                            }
+                        }
                     }
                 }
 
@@ -539,6 +552,7 @@ void Editor::RenderAssets()
                 EngineUtils::DeleteAsset(assetPath);
 
                 displayedAssets = EngineUtils::GetFilesInDirectory(sceneDir, ".scene");
+                ResetEditor();
 
             }
             else if (currentCategory == AssetCategory::Templates)
@@ -574,44 +588,191 @@ void Editor::RenderAssets()
 
     if (currentCategory == AssetCategory::Scenes)
     {
-        if (ImGui::Button("Create New Scene")) 
+        if (showAssetCreationWindow || ImGui::Button("Create New Scene"))
         {
-            std::string emptyScene = emptyAssetDir + "Empty.scene";
-            std::string newSceneName = "NewScene.scene"; // TODO: Replace with logic for naming
-            EngineUtils::CreateNewAsset(emptyScene, sceneDir, newSceneName);
-
-            displayedAssets = EngineUtils::GetFilesInDirectory(sceneDir, ".scene");
+            showAssetCreationWindow = true;
+            RenderCreateScene();
         }
     }
-    else if (currentCategory == AssetCategory::Templates) 
+    else if (currentCategory == AssetCategory::Templates)
     {
-        if (ImGui::Button("Create New Template")) 
+        if (showAssetCreationWindow || ImGui::Button("Create New Template"))
         {
-            std::string emptyTemplate = emptyAssetDir + "Empty.template";
-            std::string newTemplateName = "NewTemplate.template"; // TODO: Replace with logic for naming
-            EngineUtils::CreateNewAsset(emptyTemplate, templateDir, newTemplateName);
-
-            engine->ReloadTemplatesFiles();
-            ResetEditor();
-
-            displayedAssets = EngineUtils::GetFilesInDirectory(templateDir, ".template");
+            showAssetCreationWindow = true;
+            RenderCreateTemplate();
         }
     }
-    else if (currentCategory == AssetCategory::Components) 
+    else if (currentCategory == AssetCategory::Components)
     {
-        if (ImGui::Button("Create New Component")) 
+        if (showAssetCreationWindow || ImGui::Button("Create New Component"))
         {
-            std::string emptyComponent = emptyAssetDir + "Empty.lua";
-            std::string newComponentName = "NewComponent.lua"; // TODO: Replace with logic for naming
-            EngineUtils::CreateNewAsset(emptyComponent, componentDir, newComponentName, true);
-
-            engine->ReloadComponentsFiles();
-            ResetEditor();
-
-            displayedAssets = EngineUtils::GetFilesInDirectory(componentDir, ".lua");
+            showAssetCreationWindow = true;
+            RenderCreateComponent();
         }
     }
 
+}
+
+void Editor::RenderCreateScene()
+{
+    char newSceneName[20] = { };
+    ImGui::Begin("CreateScenePanel");
+    ImGui::Text("Enter scene name:");
+    ImGui::InputText("New scene name", newSceneName, 20);
+    
+    bool nameAlreadyExists = false;
+
+    if (displayedAssets.find(newSceneName) != displayedAssets.end())
+    {
+        nameAlreadyExists = true;
+    }
+
+    // because when focus changes, newSceneName is set to empty
+    if (newSceneName[0] != '\0')
+    {
+        newAssetName = newSceneName; 
+    }
+
+    if (newAssetName != "")
+    {     
+        if (nameAlreadyExists)
+        {
+            ImGui::Text("Scene name already exists!");
+        }
+        else
+        {
+            
+            if (ImGui::Button("Create Scene"))
+            {
+                std::string emptyScene = emptyAssetDir + "Empty.scene";
+                std::string newSceneFullName = newAssetName;
+                newSceneFullName.append(".scene");
+
+                EngineUtils::CreateNewAsset(emptyScene, sceneDir, newSceneFullName);
+
+                displayedAssets = EngineUtils::GetFilesInDirectory(sceneDir, ".scene");
+
+                showAssetCreationWindow = false;
+            }
+        }
+    }
+
+    if (ImGui::Button("Cancel"))
+    {
+        showAssetCreationWindow = false;
+    }
+
+    ImGui::End();
+
+}
+
+void Editor::RenderCreateTemplate()
+{
+    char newTemplateName[20] = { };
+    ImGui::Begin("CreateTemplatePanel");
+    ImGui::Text("Enter template name:");
+    ImGui::InputText("New Template Name", newTemplateName, 20);
+
+    bool nameAlreadyExists = false;
+
+    if (displayedAssets.find(newTemplateName) != displayedAssets.end())
+    {
+        nameAlreadyExists = true;
+    }
+
+    // because when focus changes, newSceneName is set to empty
+    if (newTemplateName[0] != '\0')
+    {
+        newAssetName = newTemplateName;
+    }
+
+    if (newAssetName != "")
+    {
+        if (nameAlreadyExists)
+        {
+            ImGui::Text("Template name already exists!");
+        }
+        else
+        {
+            if (ImGui::Button("Create Template"))
+            {
+                std::string emptyTemplate = emptyAssetDir + "Empty.template";
+                std::string newTemplateFullName = newAssetName;
+                newTemplateFullName.append(".template");
+
+                EngineUtils::CreateNewAsset(emptyTemplate, templateDir, newTemplateFullName);
+
+                engine->ReloadTemplatesFiles();
+                ResetEditor();
+
+                displayedAssets = EngineUtils::GetFilesInDirectory(templateDir, ".template");
+
+                showAssetCreationWindow = false;
+            }
+        }
+    }
+
+    if (ImGui::Button("Cancel"))
+    {
+        showAssetCreationWindow = false;
+    }
+
+    ImGui::End();
+}
+
+void Editor::RenderCreateComponent()
+{
+    char newComponentName[20] = { };
+    ImGui::Begin("CreateComponentPanel");
+    ImGui::Text("Enter component name:");
+    ImGui::InputText("New component name", newComponentName, 20);
+
+    bool nameAlreadyExists = false;
+
+    if (displayedAssets.find(newComponentName) != displayedAssets.end())
+    {
+        nameAlreadyExists = true;
+    }
+
+    // because when focus changes, newSceneName is set to empty
+    if (newComponentName[0] != '\0')
+    {
+        newAssetName = newComponentName;
+    }
+
+    if (newAssetName != "")
+    {
+        if (nameAlreadyExists)
+        {
+            ImGui::Text("Component name already exists!");
+        }
+        else
+        {
+
+            if (ImGui::Button("Create Component"))
+            {
+                std::string emptyComponent = emptyAssetDir + "Empty.lua";
+                std::string newComponentFullName = newAssetName;
+                newComponentFullName.append(".lua");
+
+                EngineUtils::CreateNewAsset(emptyComponent, componentDir, newComponentFullName, true);
+
+                engine->ReloadComponentsFiles();
+                ResetEditor();
+
+                displayedAssets = EngineUtils::GetFilesInDirectory(componentDir, ".lua");
+
+                showAssetCreationWindow = false;
+            }
+        }
+    }
+
+    if (ImGui::Button("Cancel"))
+    {
+        showAssetCreationWindow = false;
+    }
+
+    ImGui::End();
 }
 
 

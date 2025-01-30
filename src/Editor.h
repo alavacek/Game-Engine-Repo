@@ -31,6 +31,10 @@ public:
 	void RenderAddEntity();
 	void RenderAddComponent();
 	void RenderAssets();
+
+	void RenderCreateScene();
+	void RenderCreateTemplate();
+	void RenderCreateComponent();
 	
 	void ResetEditor();
 
@@ -50,9 +54,10 @@ private:
 	std::string loadedScene = "";
 	std::string entityToAddTemplateName = "";
 	std::string componentToAdd = "";
+	std::string newAssetName;
 
 	AssetCategory currentCategory = AssetCategory::Scenes;
-	std::vector<std::string> displayedAssets;
+	std::unordered_set<std::string> displayedAssets;
 	std::string selectedAsset = "";
 
 	// Asset directories for each category
@@ -69,6 +74,7 @@ private:
 	bool simulating = false;
 	bool showAddEntityWindow = false;
 	bool showAddComponentWindow = false;
+	bool showAssetCreationWindow = false;
 
 };
 

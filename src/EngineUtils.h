@@ -9,14 +9,15 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <unordered_set>
 #include <vector>
 #include <stdio.h>
 
 
 #include "rapidjson/document.h"
 #include "rapidjson/filereadstream.h"
-#include <rapidjson/filewritestream.h>
-#include <rapidjson/writer.h>
+#include "rapidjson/filewritestream.h"
+#include "rapidjson/writer.h"
 
 class EngineUtils
 {
@@ -445,14 +446,14 @@ public:
 		printf("Component '%s' added to template JSON file: %s\n", componentKey.c_str(), jsonFilePath.c_str());
 	}
 
-	static std::vector<std::string> GetFilesInDirectory(const std::string& directory, const std::string& extension) 
+	static std::unordered_set<std::string> GetFilesInDirectory(const std::string& directory, const std::string& extension) 
 	{
-		std::vector<std::string> files;
+		std::unordered_set<std::string> files;
 		for (const auto& entry : std::filesystem::directory_iterator(directory)) 
 		{
 			if (entry.is_regular_file() && entry.path().extension() == extension) 
 			{
-				files.push_back(entry.path().stem().string()); // Use .stem() to exclude the extension
+				files.insert(entry.path().stem().string()); // Use .stem() to exclude the extension
 			}
 		}
 		return files;
